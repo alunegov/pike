@@ -1,0 +1,3 @@
+LIBRARY lcomp64.dll
+EXPORTS
+   CreateInstance @1 PRIVATE
