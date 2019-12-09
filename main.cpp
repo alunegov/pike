@@ -1,3 +1,7 @@
+#ifdef _MSC_VER
+//#include <vld.h>
+#endif
+
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -7,6 +11,10 @@
 #include <vector>
 #include <thread>
 
+#include <QtWidgets/QApplication>
+#include <QtWidgets/QMainWindow>
+
+#include <CD22.h>
 #include <LCardDevice.h>
 
 template <typename T>
@@ -53,7 +61,19 @@ double_t calc_rms(const T* data, size_t count, size_t channel_index, size_t chan
     return std::sqrt(sqr_sum / count);
 }
 
-int main(int, const char**)
+int main(int argc, char** argv)
+{
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
+    QApplication app(argc, argv);
+
+    QMainWindow win;
+    win.showMaximized();
+
+    return QApplication::exec();
+}
+
+/*int main(int, const char**)
 {
     constexpr uint32_t PointsCount{ 32768 };
 
@@ -83,7 +103,7 @@ int main(int, const char**)
 
         /*for (auto& v : values) {
             v *= AdcToVolt;
-        }*/
+        }*//*
 
         // точки
         const double_t dt{ 1.0 / (reg_freq * 1000) };
@@ -101,7 +121,7 @@ int main(int, const char**)
     dev.Deinit();
 
     return 0;
-}
+}*/
 
 /*int main2(int, const char**)
 {
