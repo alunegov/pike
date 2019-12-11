@@ -1,5 +1,5 @@
 #ifdef _MSC_VER
-//#include <vld.h>
+#include <vld.h>
 #endif
 
 #include <atomic>
@@ -14,8 +14,23 @@
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
 
+#include <ceSerial.h>
+
 #include <CD22.h>
-#include <LCardDevice.h>
+#include <Ender.h>
+#include <Inclinometer.h>
+#include <Mover.h>
+#include <Odometer.h>
+#include <Pike.h>
+#include <Rotator.h>
+
+#include <MovementAndOrientationReader.h>
+#include <Slicer.h>
+
+#include <MainPresenter.h>
+#include <MainPresenterImpl.h>
+//#include <MainView.h>
+#include <MainViewImpl.h>
 
 template <typename T>
 T calc_max(const T* data, size_t count, size_t channel_index, size_t channelsCount)
@@ -68,7 +83,37 @@ int main(int argc, char** argv)
     QApplication app(argc, argv);
 
     QMainWindow win;
-    win.showMaximized();
+    win.show();
+
+    auto lcard = new ros::dc::lcard::LCardDevice;
+    //lcard->Init();
+
+    auto ender1 = new ros::devices::Ender{lcard, 3 - 1};
+
+    auto ender2 = new ros::devices::Ender{lcard, 4 - 1};
+
+    auto rotator = new ros::devices::Rotator{lcard, 3 - 1, 5 - 1, 4 - 1, 6 - 1};
+
+    auto mover = new ros::devices::Mover{lcard, 1 - 1, 2 - 1};
+
+    auto odometer = new ros::devices::Odometer{(5 - 1) | 32, (6 - 1) | 32};
+
+    auto inclinometer = new ros::devices::Inclinometer{(1 - 1) | 32, (2 - 1) | 32};
+
+    ce::ceSerial cd22_transport{"\\\\.\\COM43", 115200, 8, 'N', 1};
+    auto cd22 = new ros::devices::CD22{std::move(cd22_transport)};
+
+    auto pike = new ros::devices::Pike{lcard, ender1, ender2, rotator, mover, odometer, inclinometer, cd22};
+
+    auto movementAndOrientationReader = new ros::pike::logic::MovementAndOrientationReader{pike};
+
+    auto slicer = new ros::pike::logic::Slicer{pike};
+
+    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike};
+
+    auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl};
+
+    win.setCentralWidget(mainViewImpl);
 
     return QApplication::exec();
 }

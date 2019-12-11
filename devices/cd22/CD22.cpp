@@ -9,15 +9,17 @@
 
 namespace ros { namespace devices {
 
-int16_t CD22::ReadDist()
+int16_t CD22::Read()
 {
+    const int16_t NoValue{INT16_MIN};
+
     uint8_t query[] = {0x02, 0x43, 0xb0, 0x01, 0x03, 0xf2};
     uint8_t ans[6];
     bool r;
 
     if (!transport_.Write(reinterpret_cast<char*>(query), 6)) {
         //std::cout << "Port write error" << std::endl;
-        return 0;
+        return NoValue;
     }
 
     memset(ans, 0, sizeof(ans));
@@ -28,7 +30,7 @@ int16_t CD22::ReadDist()
             ans[i] = c;
         } else {
             //std::cout << "Port read error at " << i << " byte" << std::endl;
-            return 0;
+            return NoValue;
         }
     }
 
@@ -41,17 +43,17 @@ int16_t CD22::ReadDist()
     // BCC check
     if ((ans[1] ^ ans[2] ^ ans[3]) != ans[5]) {
         //std::cout << "an BCC is invalid" << std::endl;
-        return 0;
+        return NoValue;
     }
     // error check
     if (ans[1] == 0x15) {
         //std::cout << "error code " << std::hex << static_cast<int>(ans[2]) << " " << std::endl;
-        return 0;
+        return NoValue;
     }
     // ACK check
     if (ans[1] != 0x06) {
         //std::cout << "not an ACK but " << std::hex << static_cast<int>(ans[1]) << " " << std::endl;
-        return 0;
+        return NoValue;
     }
 
     return static_cast<int16_t>((ans[2] << 8) | ans[3]);

@@ -99,6 +99,14 @@ void LCardDevice::TtlOut(uint16_t value)
     ULONG status = device_->IoAsync(&async_param);
 }
 
+void LCardDevice::TtlOut_SetPin(uint16_t value)
+{
+}
+
+void LCardDevice::TtlOut_ClrPin(uint16_t value)
+{
+}
+
 uint16_t LCardDevice::TtlIn()
 {
     assert(device_ != nullptr);

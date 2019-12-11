@@ -23,6 +23,8 @@ public:
 
     void TtlEnable(bool enable);
     void TtlOut(uint16_t value);
+    void TtlOut_SetPin(uint16_t value);
+    void TtlOut_ClrPin(uint16_t value);
     uint16_t TtlIn();
 
     void AdcRead(double_t& reg_freq, size_t point_count, const std::vector<uint16_t>& channels, int16_t* values);
