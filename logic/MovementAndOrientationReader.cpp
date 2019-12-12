@@ -34,9 +34,19 @@ void MovementAndOrientationReader::Start(std::function<CallbackFunc> callback)
             pike_->inclinometer()->Update(values);
             const auto angle = pike_->inclinometer()->Get();
 
-            callback(distance, angle);
+            int16_t depth{INT16_MIN};
+            if (!depth_idle_token_) {
+                depth = pike_->depthometer()->Read();
+            }
+
+            callback(distance, angle, depth);
         }
     }};
+}
+
+void MovementAndOrientationReader::IdleDepth(bool value)
+{
+    depth_idle_token_ = value;
 }
 
 }}}

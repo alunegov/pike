@@ -105,7 +105,7 @@ void MainViewImpl::SetDepth(int16_t value)
 
 void MainViewImpl::UpdateSliceDepth(double_t angle, int16_t depth)
 {
-    depth_label_->setText(QString{"{0} at {1}"}.arg(depth).arg(angle));
+    depth_label_->setText(QString{"%1 at %2"}.arg(depth).arg(angle));
 }
 
 }}}

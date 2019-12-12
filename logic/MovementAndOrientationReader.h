@@ -10,7 +10,7 @@ namespace ros { namespace pike { namespace logic {
 
 class MovementAndOrientationReader {
 public:
-    using CallbackFunc = void(int32_t, double_t);
+    using CallbackFunc = void(int32_t, double_t, int16_t);
 
     MovementAndOrientationReader() = delete;
 
@@ -22,11 +22,15 @@ public:
 
     void Start(std::function<CallbackFunc> callback);
 
+    void IdleDepth(bool value);
+
 private:
     ros::devices::Pike* pike_{nullptr};
 
     std::thread thread_;
     std::atomic_bool cancel_token_{false};
+
+    std::atomic_bool depth_idle_token_{false};
 };
 
 }}}

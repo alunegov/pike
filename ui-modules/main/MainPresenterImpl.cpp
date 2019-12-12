@@ -14,11 +14,6 @@ MainPresenterImpl::~MainPresenterImpl()
         slice_thread_.join();
     }
 
-    if (depth_thread_.joinable()) {
-        depth_cancel_token_ = true;
-        depth_thread_.join();
-    }
-
     delete movementAndOrientationReader_;
     delete slicer_;
 
@@ -33,27 +28,17 @@ void MainPresenterImpl::SetView(ros::pike::modules::MainView* view)
 
 void MainPresenterImpl::OnShow()
 {
-    /*movementAndOrientationReader_->Start([this](int32_t distance, double_t angle) {
+    movementAndOrientationReader_->Start([this](int32_t distance, double_t angle, int16_t depth) {
         if (view_ != nullptr) {
             view_->SetDistance(distance);
             view_->SetAngle(angle);
-        }
-    });*/
 
-    depth_cancel_token_ = false;
-
-    depth_thread_ = std::thread{[this]() {
-        while (!depth_cancel_token_) {
-            if (!depth_idle_token_) {
-                const auto depth = pike_->depthometer()->Read();
-                if (view_ != nullptr) {
-                    view_->SetDepth(depth);
-                }
+            // не идёт оцифровка сечения?
+            if (depth != INT16_MIN) {
+                view_->SetDepth(depth);
             }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds{1000});
         }
-    }};
+    });
 }
 
 void MainPresenterImpl::StartMoving(ros::devices::MoverDirection dir)
@@ -86,7 +71,8 @@ void MainPresenterImpl::SliceClicked()
     if (!slice_thread_.joinable()) {
         // TODO: выставить "запись" у кнопки
         
-        depth_idle_token_ = true;
+        movementAndOrientationReader_->IdleDepth(true);
+
         slice_cancel_token_ = false;
 
         slice_thread_ = std::thread{[this]() {
@@ -96,7 +82,7 @@ void MainPresenterImpl::SliceClicked()
                 }
             });
             
-            depth_idle_token_ = false;
+            movementAndOrientationReader_->IdleDepth(false);
 
             if (slice_cancel_token_) {
                 return;
@@ -109,7 +95,7 @@ void MainPresenterImpl::SliceClicked()
         slice_cancel_token_ = true;
         slice_thread_.join();
 
-        depth_idle_token_ = false;
+        movementAndOrientationReader_->IdleDepth(false);
 
         // TODO: убрать "запись" у кнопки
     }

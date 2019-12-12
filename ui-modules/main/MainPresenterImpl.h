@@ -53,10 +53,6 @@ private:
 
     std::thread slice_thread_;
     std::atomic_bool slice_cancel_token_{false};
-
-    std::thread depth_thread_;
-    std::atomic_bool depth_cancel_token_{false};
-    std::atomic_bool depth_idle_token_{false};
 };
 
 }}}
