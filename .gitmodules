@@ -3,4 +3,4 @@
 	url = https://github.com/yan9a/serial.git
 [submodule "_ext/RosMath"]
 	path = _ext/RosMath
-	url = http://rosgit:3000/ROS/RosMath.git
+	url = ../RosMath.git
