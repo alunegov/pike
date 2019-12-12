@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <thread>
 
 #include <LCardDevice.h>
 
@@ -33,6 +34,8 @@ public:
         m0_pin_{m0_pin}
     {}
 
+    ~Rotator();
+
     void SetDirection(RotatorDirection direction);
 
     void SetSpeed(RotatorSpeed speed);
@@ -63,7 +66,8 @@ private:
     RotatorDirection direction_{RotatorDirection::CW};
     RotatorSpeed speed_{RotatorSpeed::Low};
 
-    std::atomic_bool rotating{false};
+    std::thread rotate_thread_;
+    std::atomic_bool rotate_cancel_token_{false};
 };
 
 }}

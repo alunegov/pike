@@ -4,6 +4,11 @@
 
 namespace ros { namespace devices {
 
+Mover::~Mover()
+{
+    Stop();
+}
+
 void Mover::SetDirection(MoverDirection direction)
 {
     direction_ = direction;
@@ -16,22 +21,22 @@ void Mover::Start()
 
     applyDirection();
 
-    daq_->TtlOut_SetPin(1 << pwm_pin_);
+    daq_->TtlOut_SetPin(pwm_pin_);
 }
 
 void Mover::Stop()
 {
-    daq_->TtlOut_ClrPin(1 << pwm_pin_);
+    daq_->TtlOut_ClrPin(pwm_pin_);
 }
 
 void Mover::applyDirection()
 {
     switch (direction_) {
     case MoverDirection::Forward:
-        daq_->TtlOut_ClrPin(1 << dir_pin_);
+        daq_->TtlOut_ClrPin(dir_pin_);
         break;
     case MoverDirection::Backward:
-        daq_->TtlOut_SetPin(1 << dir_pin_);
+        daq_->TtlOut_SetPin(dir_pin_);
         break;
     default:
         assert(false);

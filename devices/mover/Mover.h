@@ -25,6 +25,8 @@ public:
         dir_pin_{dir_pin}
     {}
 
+    ~Mover();
+
     void SetDirection(MoverDirection direction);
 
     void Start();

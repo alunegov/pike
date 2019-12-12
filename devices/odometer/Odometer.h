@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <vector>
 
@@ -19,9 +20,13 @@ public:
 
     int32_t Get();
 
+    void Reset();
+
 private:
     uint16_t a_channel_{0};
     uint16_t b_channel_{0};
+
+    std::atomic_int32_t distance_{0};
 };
 
 }}

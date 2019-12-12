@@ -1,41 +1,47 @@
 #include <Inclinometer.h>
 
 #define _USE_MATH_DEFINES
-#include <cmath>
+#include <math.h>
+
+#include <RosMath.h>
 
 namespace ros { namespace devices {
 
 void Inclinometer::Update(const std::vector<int16_t>& values)
 {
-    std::vector<int16_t> x_values;
-    std::vector<int16_t> y_values;
+    //double_t x_rms = Rms_AdcRaw(values.data(), 1024, 4, 0, 0);
+    //double_t y_rms = Rms_AdcRaw(values.data(), 1024, 4, 1, 0);
 
-    double_t sin_fi_x;
-    double_t sin_fi_y;
-    double_t res;
+    double_t sin_fi_x{0};
+    double_t sin_fi_y{0};
+
+    double_t new_angle;
 
     if (sin_fi_x < sqrt(2) / 2) {
         if (sin_fi_y > 0) {
-            res = asin(sin_fi_x) * 180 / M_PI;
+            new_angle = asin(sin_fi_x) * 180 / M_PI;
         } else {
             if (sin_fi_x > 0) {
-                res = 180 - asin(sin_fi_x) * 180 / M_PI;
+                new_angle = 180 - asin(sin_fi_x) * 180 / M_PI;
             } else {
-                // TODO:
+                // TODO: на блок-схеме этот кусок не влез
+                new_angle = 0;
             }
         }
     } else {
         if (sin_fi_x > 0) {
-            res = 90 - asin(sin_fi_y) * 180 / M_PI;
+            new_angle = 90 - asin(sin_fi_y) * 180 / M_PI;
         } else {
-            res = -90 + asin(sin_fi_y) * 180 / M_PI;
+            new_angle = -90 + asin(sin_fi_y) * 180 / M_PI;
         }
     }
+
+    angle_ = new_angle;
 }
 
-int32_t Inclinometer::Get()
+double_t Inclinometer::Get()
 {
-    return 0;
+    return angle_;
 }
 
 }}

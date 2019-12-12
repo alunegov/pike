@@ -26,9 +26,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
 target_include_directories(${PROJECT_NAME}
-    PUBLIC "../_ext/lcomp/include"
     PUBLIC "../_ext/serial"
-    PUBLIC "../dc/lcard"
     PUBLIC "cd22"
     PUBLIC "ender"
     PUBLIC "inclinometer"
@@ -36,6 +34,11 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC "odometer"
     PUBLIC "pike"
     PUBLIC "rotator"
+)
+
+target_compile_definitions(${PROJECT_NAME}
+    PUBLIC ${K3_ADCRAW}
+    PUBLIC ${K3_ROSFLOAT}
 )
 
 if(MSVC)
@@ -49,5 +52,6 @@ else()
 endif()
 
 target_link_libraries(${PROJECT_NAME}
+    PUBLIC RosMath
     PUBLIC dc-lcard
 )

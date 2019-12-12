@@ -86,7 +86,9 @@ int main(int argc, char** argv)
     win.show();
 
     auto lcard = new ros::dc::lcard::LCardDevice;
-    //lcard->Init();
+
+    lcard->Init(0);
+    lcard->TtlEnable(true);
 
     auto ender1 = new ros::devices::Ender{lcard, 3 - 1};
 
@@ -101,18 +103,19 @@ int main(int argc, char** argv)
     auto inclinometer = new ros::devices::Inclinometer{(1 - 1) | 32, (2 - 1) | 32};
 
     ce::ceSerial cd22_transport{"\\\\.\\COM43", 115200, 8, 'N', 1};
-    auto cd22 = new ros::devices::CD22{std::move(cd22_transport)};
+    cd22_transport.Open();
 
-    auto pike = new ros::devices::Pike{lcard, ender1, ender2, rotator, mover, odometer, inclinometer, cd22};
+    auto depthometer = new ros::devices::CD22{std::move(cd22_transport)};
+
+    auto pike = new ros::devices::Pike{lcard, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
 
     auto movementAndOrientationReader = new ros::pike::logic::MovementAndOrientationReader{pike};
 
     auto slicer = new ros::pike::logic::Slicer{pike};
 
-    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike};
+    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, movementAndOrientationReader, slicer};
 
     auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl};
-
     win.setCentralWidget(mainViewImpl);
 
     return QApplication::exec();

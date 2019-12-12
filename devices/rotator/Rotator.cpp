@@ -5,6 +5,14 @@
 
 namespace ros { namespace devices {
 
+Rotator::~Rotator()
+{
+    if (rotate_thread_.joinable()) {
+        rotate_cancel_token_ = true;
+        rotate_thread_.join();
+    }
+}
+
 void Rotator::SetDirection(RotatorDirection direction)
 {
     direction_ = direction;
@@ -17,35 +25,38 @@ void Rotator::SetSpeed(RotatorSpeed speed)
 
 void Rotator::Start()
 {
-    assert(!rotating);
+    assert(!rotate_thread_.joinable());
+
+    Enable();
+
+    applyDirection();
+
+    applySpeed();
 
     // запуск потока, генерирующего step
-    rotating = true;
+    rotate_cancel_token_ = false;
 
-    std::thread{[&]() {
-        Enable();
-
-        applyDirection();
-
-        applySpeed();
-
-        while (rotating) {
+    rotate_thread_ = std::thread{[this]() {
+        while (!rotate_cancel_token_) {
             Step();
         }
 
         // оставляем enable
-    }}.detach();
+    }};
 }
 
 void Rotator::Stop()
 {
+    assert(rotate_thread_.joinable());
+
     // останов (и завершение) потока, генерирующего step
-    rotating = false;
+    rotate_cancel_token_ = true;
+    rotate_thread_.join();
 }
 
 void Rotator::Rotate(size_t steps_count)
 {
-    assert(!rotating);
+    assert(!rotate_thread_.joinable());
 
     Enable();
 
@@ -64,21 +75,21 @@ void Rotator::Rotate(size_t steps_count)
 
 void Rotator::Enable()
 {
-    daq_->TtlOut_ClrPin(1 << enable_pin_);
+    daq_->TtlOut_ClrPin(enable_pin_);
     // delay MIN 650 nanosec to STEP
 }
 
 void Rotator::Disable()
 {
-    daq_->TtlOut_SetPin(1 << enable_pin_);
+    daq_->TtlOut_SetPin(enable_pin_);
 }
 
 void Rotator::Step()
 {
-    daq_->TtlOut_SetPin(1 << step_pin_);
+    daq_->TtlOut_SetPin(step_pin_);
     // delay MIN 1.9 microsec
 
-    daq_->TtlOut_ClrPin(1 << step_pin_);
+    daq_->TtlOut_ClrPin(step_pin_);
     // delay MIN 1.9 microsec
 }
 
@@ -86,10 +97,10 @@ void Rotator::applyDirection()
 {
     switch (direction_) {
     case RotatorDirection::CW:
-        daq_->TtlOut_ClrPin(1 << direction_pin_);
+        daq_->TtlOut_ClrPin(direction_pin_);
         break;
     case RotatorDirection::CCW:
-        daq_->TtlOut_SetPin(1 << direction_pin_);
+        daq_->TtlOut_SetPin(direction_pin_);
         break;
     default:
         assert(false);
@@ -102,10 +113,10 @@ void Rotator::applySpeed()
 {
     switch (speed_) {
     case RotatorSpeed::Low:
-        daq_->TtlOut_ClrPin(1 << m0_pin_);
+        daq_->TtlOut_ClrPin(m0_pin_);
         break;
     case RotatorSpeed::High:
-        daq_->TtlOut_SetPin(1 << m0_pin_);
+        daq_->TtlOut_SetPin(m0_pin_);
         break;
     default:
         assert(false);

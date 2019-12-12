@@ -1,22 +1,42 @@
 #include <MovementAndOrientationReader.h>
 
+#include <cassert>
 #include <cstdint>
 #include <vector>
 
 namespace ros { namespace pike { namespace logic {
 
-void MovementAndOrientationReader::Start()
+MovementAndOrientationReader::~MovementAndOrientationReader()
 {
-    double_t regFreq{12.8};
-    std::vector<int16_t> values(1024 * 4);
+    if (thread_.joinable()) {
+        cancel_token_ = true;
+        thread_.join();
+    }
+}
 
-    pike_->daq()->AdcRead(regFreq, 1024, {1 | 32, 2 | 32, 5 | 32, 6 | 32}, values.data());
+void MovementAndOrientationReader::Start(std::function<CallbackFunc> callback)
+{
+    assert(!thread_.joinable());
 
-    pike_->odometer()->Update(values);
-    const auto distance = pike_->odometer()->Get();
+    cancel_token_ = false;
 
-    pike_->inclinometer()->Update(values);
-    const auto angle = pike_->inclinometer()->Get();
+    thread_ = std::thread{[this, callback]() {
+        std::vector<int16_t> values(1024 * 4);
+
+        while (!cancel_token_) {
+            double_t regFreq{12.8};
+
+            pike_->daq()->AdcRead(regFreq, 1024, {1 | 32, 2 | 32, 5 | 32, 6 | 32}, values.data());
+
+            pike_->odometer()->Update(values);
+            const auto distance = pike_->odometer()->Get();
+
+            pike_->inclinometer()->Update(values);
+            const auto angle = pike_->inclinometer()->Get();
+
+            callback(distance, angle);
+        }
+    }};
 }
 
 }}}
