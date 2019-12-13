@@ -26,7 +26,7 @@ public:
     Rotator() = delete;
 
     Rotator(ros::dc::lcard::LCardDevice* daq, uint16_t enable_pin, uint16_t step_pin, uint16_t direction_pin,
-        uint16_t m0_pin) :
+            uint16_t m0_pin) :
         daq_{daq},
         enable_pin_{enable_pin},
         step_pin_{step_pin},
