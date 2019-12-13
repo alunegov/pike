@@ -6,7 +6,7 @@
 
 namespace ros { namespace dc { namespace lcard {
 
-constexpr const char* LCompName{ "lcomp64.dll" };
+const char* const LCompName{"lcomp64.dll"};
 
 LCardDevice::~LCardDevice()
 {
@@ -17,20 +17,20 @@ void LCardDevice::Init(ULONG slot_num)
 {
     assert(device_ == nullptr);
 
-    typedef IDaqLDevice* (*CREATEFUNCPTR)(ULONG slot);
+    using CREATEFUNCPTR = IDaqLDevice*(*)(ULONG slot);
 
     ULONG status;
 
     lcomp_handle_ = LoadLibrary(LCompName);
 
-    CREATEFUNCPTR create_instance = (CREATEFUNCPTR)GetProcAddress(lcomp_handle_, "CreateInstance");
+    auto create_instance = (CREATEFUNCPTR)GetProcAddress(lcomp_handle_, "CreateInstance");
     
     IDaqLDevice* device_instance = create_instance(slot_num);
 
     HRESULT query_res = device_instance->QueryInterface(IID_ILDEV, (void**)&device_);
 
     device_instance->Release();
-    device_instance = nullptr;
+    //device_instance = nullptr;
 
     HANDLE device_handle = device_->OpenLDevice();
 
@@ -95,14 +95,14 @@ void LCardDevice::TtlOut(uint16_t value)
 
 void LCardDevice::TtlOut_SetPin(uint16_t value)
 {
-    const uint16_t new_ttl_out_value = ttl_out_value | (1 << value);
+    const uint16_t new_ttl_out_value = ttl_out_value | (1u << value);
 
     return TtlOut(new_ttl_out_value);
 }
 
 void LCardDevice::TtlOut_ClrPin(uint16_t value)
 {
-    const uint16_t new_ttl_out_value = ttl_out_value & ~(1 << value);
+    const uint16_t new_ttl_out_value = ttl_out_value & ~(1u << value);
 
     return TtlOut(new_ttl_out_value);
 }
@@ -166,7 +166,7 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const std::vec
 
     status = device_->FillDAQparameters(&adc_param.t1);
 
-    // большой уход выставленной от запрошенной частоты регистрации (частоты кадров)
+    // Р±РѕР»СЊС€РѕР№ СѓС…РѕРґ РІС‹СЃС‚Р°РІР»РµРЅРЅРѕР№ РѕС‚ Р·Р°РїСЂРѕС€РµРЅРЅРѕР№ С‡Р°СЃС‚РѕС‚С‹ СЂРµРіРёСЃС‚СЂР°С†РёРё (С‡Р°СЃС‚РѕС‚С‹ РєР°РґСЂРѕРІ)
     assert(abs(1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr) - reg_freq) < (0.02 * reg_freq));
 
     reg_freq = 1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr);
@@ -176,7 +176,7 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const std::vec
 
     status = device_->SetParametersStream(&adc_param.t1, &tm, &data, (void**)&sync, L_STREAM_ADC);
 
-    // SetParametersStream могла откорректировать параметры буфера
+    // SetParametersStream РјРѕРіР»Р° РѕС‚РєРѕСЂСЂРµРєС‚РёСЂРѕРІР°С‚СЊ РїР°СЂР°РјРµС‚СЂС‹ Р±СѓС„РµСЂР°
     ULONG irq_step = adc_param.t1.IrqStep; 
     ULONG pages = adc_param.t1.Pages;
 
@@ -186,18 +186,18 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const std::vec
 
     assert(point_size == sizeof(int16_t));
 
-    // размер половины буфера платы, в отсчётах
+    // СЂР°Р·РјРµСЂ РїРѕР»РѕРІРёРЅС‹ Р±СѓС„РµСЂР° РїР»Р°С‚С‹, РІ РѕС‚СЃС‡С‘С‚Р°С…
     size_t half_buffer = irq_step * pages / 2;
 
-    // кол-во половинок, нужное для запрошенного количества точек
+    // РєРѕР»-РІРѕ РїРѕР»РѕРІРёРЅРѕРє, РЅСѓР¶РЅРѕРµ РґР»СЏ Р·Р°РїСЂРѕС€РµРЅРЅРѕРіРѕ РєРѕР»РёС‡РµСЃС‚РІР° С‚РѕС‡РµРє
     size_t half_buffer_count = point_count * channels.size() / half_buffer;
     if (half_buffer * half_buffer_count < point_count * channels.size()) {
         half_buffer_count++;
     }
     assert(half_buffer * half_buffer_count >= point_count * channels.size());
 
-    // размер "последней половины" - чтобы завершить чтение сразу после получения запрошенного количества точек (при
-    // малой частоте сбора заполнение всей половины м.б. долгим).
+    // СЂР°Р·РјРµСЂ "РїРѕСЃР»РµРґРЅРµР№ РїРѕР»РѕРІРёРЅС‹" - С‡С‚РѕР±С‹ Р·Р°РІРµСЂС€РёС‚СЊ С‡С‚РµРЅРёРµ СЃСЂР°Р·Сѓ РїРѕСЃР»Рµ РїРѕР»СѓС‡РµРЅРёСЏ Р·Р°РїСЂРѕС€РµРЅРЅРѕРіРѕ РєРѕР»РёС‡РµСЃС‚РІР° С‚РѕС‡РµРє (РїСЂРё
+    // РјР°Р»РѕР№ С‡Р°СЃС‚РѕС‚Рµ СЃР±РѕСЂР° Р·Р°РїРѕР»РЅРµРЅРёРµ РІСЃРµР№ РїРѕР»РѕРІРёРЅС‹ Рј.Р±. РґРѕР»РіРёРј).
     size_t final_half_buffer = point_count * channels.size() - (half_buffer_count - 1) * half_buffer;
 
     status = device_->InitStartLDevice();
@@ -207,14 +207,14 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const std::vec
     //
     size_t f1, f2;
        
-    // какой смысл использовать InterlockedExchange(&s, *sync) (как в примере)? - ведь нужно синхронизировать доступ
-    // к sync, а не к s.
+    // РєР°РєРѕР№ СЃРјС‹СЃР» РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊ InterlockedExchange(&s, *sync) (РєР°Рє РІ РїСЂРёРјРµСЂРµ)? - РІРµРґСЊ РЅСѓР¶РЅРѕ СЃРёРЅС…СЂРѕРЅРёР·РёСЂРѕРІР°С‚СЊ РґРѕСЃС‚СѓРї
+    // Рє sync, Р° РЅРµ Рє s.
     f1 = (*sync < half_buffer) ? 0 : 1;
     f2 = (*sync < half_buffer) ? 0 : 1;
     size_t tmp_half_buffer{(half_buffer_count == 1) ? final_half_buffer : half_buffer};
 
     for (size_t i = 0; i < half_buffer_count; i++) {
-        // ожидание заполнения очередной половины буфера
+        // РѕР¶РёРґР°РЅРёРµ Р·Р°РїРѕР»РЅРµРЅРёСЏ РѕС‡РµСЂРµРґРЅРѕР№ РїРѕР»РѕРІРёРЅС‹ Р±СѓС„РµСЂР°
         while (f1 == f2) {
             f2 = (*sync < tmp_half_buffer) ? 0 : 1;
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
@@ -226,7 +226,7 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const std::vec
 
         f1 = (*sync < half_buffer) ? 0 : 1;
 
-        // для "последней половины" корректируем ожидаемое кол-во точек
+        // РґР»СЏ "РїРѕСЃР»РµРґРЅРµР№ РїРѕР»РѕРІРёРЅС‹" РєРѕСЂСЂРµРєС‚РёСЂСѓРµРј РѕР¶РёРґР°РµРјРѕРµ РєРѕР»-РІРѕ С‚РѕС‡РµРє
         if ((i + 1) == half_buffer_count) {
             tmp_half_buffer = final_half_buffer;
         }

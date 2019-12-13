@@ -2,15 +2,13 @@
 
 #include <algorithm>
 #include <cassert>
-
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 
 #include <RosMath.h>
 
 namespace ros { namespace devices {
 
-Inclinometer::Inclinometer(uint16_t x_channel, uint16_t y_channel, std::vector<TransTableEntry> trans_table) :
+Inclinometer::Inclinometer(uint16_t x_channel, uint16_t y_channel, const std::vector<TransTableEntry>& trans_table) :
     x_channel_{x_channel},
     y_channel_{y_channel}
 {
@@ -19,7 +17,7 @@ Inclinometer::Inclinometer(uint16_t x_channel, uint16_t y_channel, std::vector<T
         channels_trans_table_[1].emplace_back(entry.SinFi, entry.Y);
     }
 
-    // приводим Y к порядку X (по убыванию) - знание о порядке используется в CalcChannelsFi
+    // РїСЂРёРІРѕРґРёРј Y Рє РїРѕСЂСЏРґРєСѓ X (РїРѕ СѓР±С‹РІР°РЅРёСЋ) - Р·РЅР°РЅРёРµ Рѕ РїРѕСЂСЏРґРєРµ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ РІ CalcChannelsFi
     std::reverse(channels_trans_table_[1].begin(), channels_trans_table_[1].end());
 }
 
@@ -48,7 +46,7 @@ void Inclinometer::Update(const std::vector<uint16_t>& channels, const std::vect
             if (sin_fi_x > 0) {
                 new_angle = 180 - asin(sin_fi_x) * 180 / M_PI;
             } else {
-                // TODO: на блок-схеме этот кусок не влез
+                // TODO: РЅР° Р±Р»РѕРє-СЃС…РµРјРµ СЌС‚РѕС‚ РєСѓСЃРѕРє РЅРµ РІР»РµР·
                 new_angle = 0;
             }
         }
@@ -76,10 +74,9 @@ std::array<double_t, 2> Inclinometer::CalcChannelsValue(const std::vector<uint16
     assert((values.size() % channels.size()) == 0);
 
     const size_t points_count{values.size() / channels.size()};
-    assert(points_count <= UINT32_MAX);
 
     std::array<uint16_t, 2> channels_num{x_channel_, y_channel_};
-    std::array<double_t, 2> res;
+    std::array<double_t, 2> res{0, 0};
 
     std::transform(channels_num.begin(), channels_num.end(), res.begin(), [=](uint16_t channel_num) -> double_t {
         const auto channel = std::find(channels.begin(), channels.end(), channel_num);
@@ -104,7 +101,7 @@ std::array<double_t, 2> Inclinometer::CalcChannelsFi(const std::array<double_t, 
         return p1.SinFi + (x - p1.V) * (p2.SinFi - p1.SinFi) / (p2.V - p1.V);
     };
 
-    std::array<double_t, 2> res;
+    std::array<double_t, 2> res{0, 0};
 
     std::transform(channels_value.begin(), channels_value.end(), channels_trans_table_.begin(), res.begin(),
         [=](double_t channel_value, const std::vector<ChannelTransTableEntry>& channel_trans_table) -> double_t {

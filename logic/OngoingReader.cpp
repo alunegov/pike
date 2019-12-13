@@ -14,7 +14,7 @@ OngoingReader::~OngoingReader()
     }
 }
 
-void OngoingReader::Start(std::function<CallbackFunc> callback)
+void OngoingReader::Start(const std::function<CallbackFunc>& callback)
 {
     assert(!thread_.joinable());
 

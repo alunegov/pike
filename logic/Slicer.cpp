@@ -2,14 +2,14 @@
 
 namespace ros { namespace pike { namespace logic {
 
-void Slicer::Read(const std::atomic_bool& cancel_token, std::function<CallbackFunc> callback)
+void Slicer::Read(const std::atomic_bool& cancel_token, const std::function<CallbackFunc>& callback)
 {
-    // поворот в крайнее левое положение
+    // РїРѕРІРѕСЂРѕС‚ РІ РєСЂР°Р№РЅРµРµ Р»РµРІРѕРµ РїРѕР»РѕР¶РµРЅРёРµ
     pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CCW);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
 
-    // TODO: не более числа шагов, нужного на полный оборот (вдруг ender не работает)
-    // TODO: "дожимать" несколько шагов после срабатывания ender
+    // TODO: РЅРµ Р±РѕР»РµРµ С‡РёСЃР»Р° С€Р°РіРѕРІ, РЅСѓР¶РЅРѕРіРѕ РЅР° РїРѕР»РЅС‹Р№ РѕР±РѕСЂРѕС‚ (РІРґСЂСѓРі ender РЅРµ СЂР°Р±РѕС‚Р°РµС‚)
+    // TODO: "РґРѕР¶РёРјР°С‚СЊ" РЅРµСЃРєРѕР»СЊРєРѕ С€Р°РіРѕРІ РїРѕСЃР»Рµ СЃСЂР°Р±Р°С‚С‹РІР°РЅРёСЏ ender
     while (!pike_->ender1()->Read()) {
         pike_->rotator()->Rotate();
 
@@ -18,15 +18,15 @@ void Slicer::Read(const std::atomic_bool& cancel_token, std::function<CallbackFu
         }
     }
 
-    // получение положения в пространстве
+    // РїРѕР»СѓС‡РµРЅРёРµ РїРѕР»РѕР¶РµРЅРёСЏ РІ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРµ
     const auto angle = pike_->inclinometer()->Get();
 
-    // измерение, поворачивая в крайнее правое положение
+    // РёР·РјРµСЂРµРЅРёРµ, РїРѕРІРѕСЂР°С‡РёРІР°СЏ РІ РєСЂР°Р№РЅРµРµ РїСЂР°РІРѕРµ РїРѕР»РѕР¶РµРЅРёРµ
     pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CW);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::Low);
 
-    // TODO: не более числа шагов, нужного на полный оборот (вдруг ender не работает)
-    // TODO: "дожимать" несколько шагов после срабатывания ender
+    // TODO: РЅРµ Р±РѕР»РµРµ С‡РёСЃР»Р° С€Р°РіРѕРІ, РЅСѓР¶РЅРѕРіРѕ РЅР° РїРѕР»РЅС‹Р№ РѕР±РѕСЂРѕС‚ (РІРґСЂСѓРі ender РЅРµ СЂР°Р±РѕС‚Р°РµС‚)
+    // TODO: "РґРѕР¶РёРјР°С‚СЊ" РЅРµСЃРєРѕР»СЊРєРѕ С€Р°РіРѕРІ РїРѕСЃР»Рµ СЃСЂР°Р±Р°С‚С‹РІР°РЅРёСЏ ender
     while (!pike_->ender2()->Read()) {
         const auto depth = pike_->depthometer()->Read();
 

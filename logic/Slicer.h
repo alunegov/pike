@@ -8,7 +8,7 @@
 
 namespace ros { namespace pike { namespace logic {
 
-// Режим измерения сечения
+// Р РµР¶РёРј РёР·РјРµСЂРµРЅРёСЏ СЃРµС‡РµРЅРёСЏ
 class Slicer {
 public:
     using CallbackFunc = void(double_t, int16_t);
@@ -19,7 +19,7 @@ public:
         pike_{pike}
     {}
 
-    void Read(const std::atomic_bool& cancel_token, std::function<CallbackFunc> callback);
+    void Read(const std::atomic_bool& cancel_token, const std::function<CallbackFunc>& callback);
 
 private:
     ros::devices::Pike* pike_{nullptr};

@@ -6,8 +6,8 @@ namespace ros { namespace devices {
 
 bool Ender::Read()
 {
-    const auto ttl_in = daq_->TtlIn();
-    return (ttl_in & (1 << pin_)) != 0;
+    const uint16_t ttl_in = daq_->TtlIn();
+    return (ttl_in & (1u << pin_)) != 0;
 }
 
 }}

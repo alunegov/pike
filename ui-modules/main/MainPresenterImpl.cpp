@@ -2,7 +2,6 @@
 
 #include <cassert>
 #include <chrono>
-#include <future>
 #include <thread>
 
 namespace ros { namespace pike { namespace modules {
@@ -17,7 +16,7 @@ MainPresenterImpl::~MainPresenterImpl()
     delete ongoingReader_;
     delete slicer_;
 
-    // удаляемые выше зависят от pike_
+    // СѓРґР°Р»СЏРµРјС‹Рµ РІС‹С€Рµ Р·Р°РІРёСЃСЏС‚ РѕС‚ pike_
     delete pike_;
 }
 
@@ -33,7 +32,7 @@ void MainPresenterImpl::OnShow()
             view_->SetDistance(distance);
             view_->SetAngle(angle);
 
-            // не идёт оцифровка сечения?
+            // РЅРµ РёРґС‘С‚ РѕС†РёС„СЂРѕРІРєР° СЃРµС‡РµРЅРёСЏ?
             if (depth != INT16_MIN) {
                 view_->SetDepth(depth);
             }
@@ -69,7 +68,7 @@ void MainPresenterImpl::StopRotation()
 void MainPresenterImpl::SliceClicked()
 {
     if (!slice_thread_.joinable()) {
-        // TODO: выставить "запись" у кнопки
+        // TODO: РІС‹СЃС‚Р°РІРёС‚СЊ "Р·Р°РїРёСЃСЊ" Сѓ РєРЅРѕРїРєРё
         
         ongoingReader_->IdleDepth(true);
 
@@ -88,8 +87,8 @@ void MainPresenterImpl::SliceClicked()
                 return;
             }
 
-            // TODO: убрать "запись" у кнопки
-            // TODO: отобразить и сохранить результат
+            // TODO: СѓР±СЂР°С‚СЊ "Р·Р°РїРёСЃСЊ" Сѓ РєРЅРѕРїРєРё
+            // TODO: РѕС‚РѕР±СЂР°Р·РёС‚СЊ Рё СЃРѕС…СЂР°РЅРёС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚
         }};
     } else {
         slice_cancel_token_ = true;
@@ -97,7 +96,7 @@ void MainPresenterImpl::SliceClicked()
 
         ongoingReader_->IdleDepth(false);
 
-        // TODO: убрать "запись" у кнопки
+        // TODO: СѓР±СЂР°С‚СЊ "Р·Р°РїРёСЃСЊ" Сѓ РєРЅРѕРїРєРё
     }
 }
 

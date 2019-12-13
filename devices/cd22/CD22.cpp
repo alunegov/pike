@@ -1,11 +1,8 @@
 #include <CD22.h>
 
 #include <chrono>
-#include <iomanip>
-#include <iostream>
-#include <thread>
-
-#include <ceSerial.h>
+//#include <iomanip>
+//#include <iostream>
 
 namespace ros { namespace devices {
 

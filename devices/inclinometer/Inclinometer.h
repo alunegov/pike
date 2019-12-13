@@ -29,16 +29,16 @@ struct ChannelTransTableEntry {
     {}
 };
 
-// Инклинометр
-// С датчика приходят два PWM-сигнала. Для упрощения считаем по ним СКЗ и используем таблицы пересчёта (вместо расчёта
-// коэффициента заполнения).
-// В классе повсеместно используется std::array<_Ty, 2>: первый элемент - канал X, второй элемент - канал Y.
+// РРЅРєР»РёРЅРѕРјРµС‚СЂ
+// РЎ РґР°С‚С‡РёРєР° РїСЂРёС…РѕРґСЏС‚ РґРІР° PWM-СЃРёРіРЅР°Р»Р°. Р”Р»СЏ СѓРїСЂРѕС‰РµРЅРёСЏ СЃС‡РёС‚Р°РµРј РїРѕ РЅРёРј РЎРљР— Рё РёСЃРїРѕР»СЊР·СѓРµРј С‚Р°Р±Р»РёС†С‹ РїРµСЂРµСЃС‡С‘С‚Р° (РІРјРµСЃС‚Рѕ СЂР°СЃС‡С‘С‚Р°
+// РєРѕСЌС„С„РёС†РёРµРЅС‚Р° Р·Р°РїРѕР»РЅРµРЅРёСЏ).
+// Р’ РєР»Р°СЃСЃРµ РїРѕРІСЃРµРјРµСЃС‚РЅРѕ РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ std::array<_Ty, 2>: РїРµСЂРІС‹Р№ СЌР»РµРјРµРЅС‚ - РєР°РЅР°Р» X, РІС‚РѕСЂРѕР№ СЌР»РµРјРµРЅС‚ - РєР°РЅР°Р» Y.
 class Inclinometer {
 public:
     Inclinometer() = delete;
 
-    // Ожидается, что значения TransTableEntry.X расположены по убыванию, а TransTableEntry.Y - по возрастанию.
-    Inclinometer(uint16_t x_channel, uint16_t y_channel, std::vector<TransTableEntry> trans_table);
+    // РћР¶РёРґР°РµС‚СЃСЏ, С‡С‚Рѕ Р·РЅР°С‡РµРЅРёСЏ TransTableEntry.X СЂР°СЃРїРѕР»РѕР¶РµРЅС‹ РїРѕ СѓР±С‹РІР°РЅРёСЋ, Р° TransTableEntry.Y - РїРѕ РІРѕР·СЂР°СЃС‚Р°РЅРёСЋ.
+    Inclinometer(uint16_t x_channel, uint16_t y_channel, const std::vector<TransTableEntry>& trans_table);
 
     void FillChannels(std::vector<uint16_t>& channels);
 
@@ -47,17 +47,17 @@ public:
     double_t Get();
 
 private:
-    // Расчёт значения по каналам регистрации (считаем СКЗ)
+    // Р Р°СЃС‡С‘С‚ Р·РЅР°С‡РµРЅРёСЏ РїРѕ РєР°РЅР°Р»Р°Рј СЂРµРіРёСЃС‚СЂР°С†РёРё (СЃС‡РёС‚Р°РµРј РЎРљР—)
     std::array<double_t, 2> CalcChannelsValue(const std::vector<uint16_t>& channels,
             const std::vector<int16_t>& values, double_t adc_to_volt);
 
-    // Преобразование значения по каналам регистрации в SinFi (по настроечным таблицам)
+    // РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ Р·РЅР°С‡РµРЅРёСЏ РїРѕ РєР°РЅР°Р»Р°Рј СЂРµРіРёСЃС‚СЂР°С†РёРё РІ SinFi (РїРѕ РЅР°СЃС‚СЂРѕРµС‡РЅС‹Рј С‚Р°Р±Р»РёС†Р°Рј)
     std::array<double_t, 2> CalcChannelsFi(const std::array<double_t, 2>& channels_value);
 
     uint16_t x_channel_{0};
     uint16_t y_channel_{0};
 
-    // Ожидается, что значения ChannelTransTableEntry.V расположены по убыванию.
+    // РћР¶РёРґР°РµС‚СЃСЏ, С‡С‚Рѕ Р·РЅР°С‡РµРЅРёСЏ ChannelTransTableEntry.V СЂР°СЃРїРѕР»РѕР¶РµРЅС‹ РїРѕ СѓР±С‹РІР°РЅРёСЋ.
     std::array<std::vector<ChannelTransTableEntry>, 2> channels_trans_table_;
 
     std::atomic<double_t> angle_{0};
