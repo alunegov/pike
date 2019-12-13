@@ -24,7 +24,7 @@
 #include <Pike.h>
 #include <Rotator.h>
 
-#include <MovementAndOrientationReader.h>
+#include <OngoingReader.h>
 #include <Slicer.h>
 
 #include <MainPresenter.h>
@@ -85,35 +85,40 @@ int main(int argc, char** argv)
     QMainWindow win;
     win.show();
 
-    auto lcard = new ros::dc::lcard::LCardDevice;
+    auto daq = new ros::dc::lcard::LCardDevice;
+    daq->Init(0);
+    daq->TtlEnable(true);
 
-    lcard->Init(0);
-    lcard->TtlEnable(true);
+    auto ender1 = new ros::devices::Ender{daq, 3 - 1};
 
-    auto ender1 = new ros::devices::Ender{lcard, 3 - 1};
+    auto ender2 = new ros::devices::Ender{daq, 4 - 1};
 
-    auto ender2 = new ros::devices::Ender{lcard, 4 - 1};
+    auto rotator = new ros::devices::Rotator{daq, 3 - 1, 5 - 1, 4 - 1, 6 - 1};
 
-    auto rotator = new ros::devices::Rotator{lcard, 3 - 1, 5 - 1, 4 - 1, 6 - 1};
-
-    auto mover = new ros::devices::Mover{lcard, 1 - 1, 2 - 1};
+    auto mover = new ros::devices::Mover{daq, 1 - 1, 2 - 1};
 
     auto odometer = new ros::devices::Odometer{(5 - 1) | 32, (6 - 1) | 32};
 
-    auto inclinometer = new ros::devices::Inclinometer{(1 - 1) | 32, (2 - 1) | 32};
+    std::vector<ros::devices::TransTableEntry> trans_table{
+        { 1.0, 4.1,  1.1},
+        { 0.0, 2.58, 2.525},
+        {-1.0, 1.06, 4.15},
+    };
 
-    ce::ceSerial cd22_transport{"\\\\.\\COM43", 115200, 8, 'N', 1};
-    cd22_transport.Open();
+    auto inclinometer = new ros::devices::Inclinometer{(1 - 1) | 32, (2 - 1) | 32, std::move(trans_table)};
 
-    auto depthometer = new ros::devices::CD22{std::move(cd22_transport)};
+    ce::ceSerial depthometer_transport{"\\\\.\\COM43", 115200, 8, 'N', 1};
+    depthometer_transport.Open();
 
-    auto pike = new ros::devices::Pike{lcard, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
+    auto depthometer = new ros::devices::CD22{std::move(depthometer_transport)};
 
-    auto movementAndOrientationReader = new ros::pike::logic::MovementAndOrientationReader{pike};
+    auto pike = new ros::devices::Pike{daq, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
+
+    auto ongoingReader = new ros::pike::logic::OngoingReader{pike};
 
     auto slicer = new ros::pike::logic::Slicer{pike};
 
-    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, movementAndOrientationReader, slicer};
+    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer};
 
     auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl};
     win.setCentralWidget(mainViewImpl);

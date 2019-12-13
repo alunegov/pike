@@ -32,13 +32,28 @@ public:
 
     ~Pike();
 
+    // Плата АЦП/ЦАП/ТТЛ
     ros::dc::lcard::LCardDevice* daq() const { return daq_; }
+
+    // "Концевой" датчик 1
     ros::devices::Ender* ender1() const { return ender1_; }
+
+    // "Концевой" датчик 2
     ros::devices::Ender* ender2() const { return ender2_; }
+
+    // Вращатель измерительного блока с глубинометром и камерами
     ros::devices::Rotator* rotator() const { return rotator_; }
+
+    // Перемещатель
     ros::devices::Mover* mover() const { return mover_; }
+
+    // Одометр
     ros::devices::Odometer* odometer() const { return odometer_; }
+
+    // Инклинометр
     ros::devices::Inclinometer* inclinometer() const { return inclinometer_; }
+
+    // Глубинометр
     ros::devices::CD22* depthometer() const { return depthometer_; }
 
 private:

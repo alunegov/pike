@@ -7,6 +7,7 @@
 
 namespace ros { namespace pike { namespace modules {
 
+// Презентер главного окна
 class MainPresenter {
 public:
     virtual ~MainPresenter() = default;

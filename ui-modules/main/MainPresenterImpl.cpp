@@ -14,7 +14,7 @@ MainPresenterImpl::~MainPresenterImpl()
         slice_thread_.join();
     }
 
-    delete movementAndOrientationReader_;
+    delete ongoingReader_;
     delete slicer_;
 
     // удаляемые выше зависят от pike_
@@ -28,7 +28,7 @@ void MainPresenterImpl::SetView(ros::pike::modules::MainView* view)
 
 void MainPresenterImpl::OnShow()
 {
-    movementAndOrientationReader_->Start([this](int32_t distance, double_t angle, int16_t depth) {
+    ongoingReader_->Start([this](int32_t distance, double_t angle, int16_t depth) {
         if (view_ != nullptr) {
             view_->SetDistance(distance);
             view_->SetAngle(angle);
@@ -71,7 +71,7 @@ void MainPresenterImpl::SliceClicked()
     if (!slice_thread_.joinable()) {
         // TODO: выставить "запись" у кнопки
         
-        movementAndOrientationReader_->IdleDepth(true);
+        ongoingReader_->IdleDepth(true);
 
         slice_cancel_token_ = false;
 
@@ -82,7 +82,7 @@ void MainPresenterImpl::SliceClicked()
                 }
             });
             
-            movementAndOrientationReader_->IdleDepth(false);
+            ongoingReader_->IdleDepth(false);
 
             if (slice_cancel_token_) {
                 return;
@@ -95,7 +95,7 @@ void MainPresenterImpl::SliceClicked()
         slice_cancel_token_ = true;
         slice_thread_.join();
 
-        movementAndOrientationReader_->IdleDepth(false);
+        ongoingReader_->IdleDepth(false);
 
         // TODO: убрать "запись" у кнопки
     }

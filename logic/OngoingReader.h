@@ -8,17 +8,19 @@
 
 namespace ros { namespace pike { namespace logic {
 
-class MovementAndOrientationReader {
+// Режим измерения пройденного расстояния, положения в пространстве и глубины
+// Измерение идёт постоянно, кроме глубины, которая "приостанавливается" на время измерения сечения (Slicer).
+class OngoingReader {
 public:
     using CallbackFunc = void(int32_t, double_t, int16_t);
 
-    MovementAndOrientationReader() = delete;
+    OngoingReader() = delete;
 
-    explicit MovementAndOrientationReader(ros::devices::Pike* pike) :
+    explicit OngoingReader(ros::devices::Pike* pike) :
         pike_{pike}
     {}
 
-    ~MovementAndOrientationReader();
+    ~OngoingReader();
 
     void Start(std::function<CallbackFunc> callback);
 

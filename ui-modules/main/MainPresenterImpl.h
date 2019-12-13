@@ -5,7 +5,7 @@
 
 #include <Pike.h>
 
-#include <MovementAndOrientationReader.h>
+#include <OngoingReader.h>
 #include <Slicer.h>
 
 #include <MainPresenter.h>
@@ -13,20 +13,22 @@
 
 namespace ros { namespace pike { namespace modules {
 
+// Реализация презентера главного окна
 class MainPresenterImpl : public MainPresenter {
 public:
     MainPresenterImpl() = delete;
 
-    MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::MovementAndOrientationReader* movementAndOrientationReader,
+    MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
             ros::pike::logic::Slicer* slicer) :
         pike_{pike},
-        movementAndOrientationReader_{movementAndOrientationReader},
+        ongoingReader_{ongoingReader},
         slicer_(slicer)
     {}
 
     ~MainPresenterImpl() override;
 
     // MainPresenter
+
     void SetView(ros::pike::modules::MainView* view) override;
 
     void OnShow() override;
@@ -48,7 +50,7 @@ private:
 
     ros::devices::Pike* pike_{nullptr};
 
-    ros::pike::logic::MovementAndOrientationReader* movementAndOrientationReader_{nullptr};
+    ros::pike::logic::OngoingReader* ongoingReader_{nullptr};
     ros::pike::logic::Slicer* slicer_{nullptr};
 
     std::thread slice_thread_;

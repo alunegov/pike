@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(logic LANGUAGES CXX)
 
 set(source_list
-    "MovementAndOrientationReader.cpp"
-    "MovementAndOrientationReader.h"
+    "OngoingReader.cpp"
+    "OngoingReader.h"
     "Slicer.cpp"
     "Slicer.h"
 )

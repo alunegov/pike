@@ -16,7 +16,9 @@ public:
         b_channel_{b_channel}
     {}
 
-    void Update(const std::vector<int16_t>& values);
+    void FillChannels(std::vector<uint16_t>& channels);
+
+    void Update(const std::vector<uint16_t>& channels, const std::vector<int16_t>& values, double_t adc_to_volt);
 
     int32_t Get();
 

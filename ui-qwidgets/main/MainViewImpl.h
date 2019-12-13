@@ -11,6 +11,7 @@
 
 namespace ros { namespace pike { namespace ui {
 
+// Реализация вида главного окна
 class MainViewImpl :
     public QWidget,
     public ros::pike::modules::MainView
@@ -25,6 +26,7 @@ public:
     ~MainViewImpl() override;
 
     // MainView
+
     void SetDistance(int32_t value) override;
 
     void SetAngle(double_t value) override;

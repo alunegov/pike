@@ -8,7 +8,7 @@
 
 namespace ros { namespace pike { namespace logic {
 
-// Измерение сечения
+// Режим измерения сечения
 class Slicer {
 public:
     using CallbackFunc = void(double_t, int16_t);

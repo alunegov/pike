@@ -18,7 +18,7 @@ void Slicer::Read(const std::atomic_bool& cancel_token, std::function<CallbackFu
         }
     }
 
-    // измерение положения в пространстве
+    // получение положения в пространстве
     const auto angle = pike_->inclinometer()->Get();
 
     // измерение, поворачивая в крайнее правое положение
