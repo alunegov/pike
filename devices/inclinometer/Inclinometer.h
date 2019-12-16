@@ -2,28 +2,23 @@
 
 #include <array>
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
+#include <InclinometerTransTable.h>
+
 namespace ros { namespace devices {
 
-struct TransTableEntry {
+// Строка в настроечной таблице инклинометра для преобразования значений канала (X или Y) в значение SinFi
+// Это InclinometerTransTableEntry, разделённая на отдельные каналы для удобства обработки.
+struct InclinometerChannelTransTableEntry {
+    // Значение SinFi
     double_t SinFi;
-    double_t X;
-    double_t Y;
-
-    TransTableEntry(double_t sin_fi, double_t x, double_t y) :
-        SinFi{sin_fi},
-        X{x},
-        Y{y}
-    {}
-};
-
-struct ChannelTransTableEntry {
-    double_t SinFi;
+    // Значение канала, В
     double_t V;
 
-    ChannelTransTableEntry(double_t sin_fi, double_t v) :
+    InclinometerChannelTransTableEntry(double_t sin_fi, double_t v) :
         SinFi{sin_fi},
         V{v}
     {}
@@ -37,8 +32,9 @@ class Inclinometer {
 public:
     Inclinometer() = delete;
 
-    // Ожидается, что значения TransTableEntry.X расположены по убыванию, а TransTableEntry.Y - по возрастанию.
-    Inclinometer(uint16_t x_channel, uint16_t y_channel, const std::vector<TransTableEntry>& trans_table);
+    // Ожидается, что значения InclinometerTransTableEntry.X расположены по убыванию, а InclinometerTransTableEntry.Y
+    // - по возрастанию.
+    Inclinometer(uint16_t x_channel, uint16_t y_channel, const std::vector<InclinometerTransTableEntry>& trans_table);
 
     void FillChannels(std::vector<uint16_t>& channels);
 
@@ -57,8 +53,8 @@ private:
     uint16_t x_channel_{0};
     uint16_t y_channel_{0};
 
-    // Ожидается, что значения ChannelTransTableEntry.V расположены по убыванию.
-    std::array<std::vector<ChannelTransTableEntry>, 2> channels_trans_table_;
+    // Ожидается, что значения InclinometerChannelTransTableEntry.V расположены по убыванию.
+    std::array<std::vector<InclinometerChannelTransTableEntry>, 2> channels_trans_table_;
 
     std::atomic<double_t> angle_{0};
 };

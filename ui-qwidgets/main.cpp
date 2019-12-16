@@ -2,8 +2,6 @@
 //#include <vld.h>
 #endif
 
-#include <vector>
-
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
 
@@ -12,6 +10,7 @@
 #include <CD22.h>
 #include <Ender.h>
 #include <Inclinometer.h>
+#include <InclinometerTransTableMapper.h>
 #include <Mover.h>
 #include <Odometer.h>
 #include <Pike.h>
@@ -48,11 +47,7 @@ int main(int argc, char** argv)
 
     auto odometer = new ros::devices::Odometer{(5u - 1u) | 32u, (6u - 1u) | 32u};
 
-    std::vector<ros::devices::TransTableEntry> trans_table{
-        { 1.0, 4.1,  1.1},
-        { 0.0, 2.58, 2.525},
-        {-1.0, 1.06, 4.15},
-    };
+    auto trans_table = ros::devices::InclinometerTransTableMapper::Load("inclinometer.tbl");
 
     auto inclinometer = new ros::devices::Inclinometer{(1u - 1u) | 32u, (2u - 1u) | 32u, trans_table};
 
@@ -70,6 +65,7 @@ int main(int argc, char** argv)
     auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer};
 
     auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl};
+
     win.setCentralWidget(mainViewImpl);
 
     return QApplication::exec();
