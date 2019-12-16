@@ -3,6 +3,9 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(logic LANGUAGES CXX)
 
 set(source_list
+    "Conf.h"
+    "ConfMapper.cpp"
+    "ConfMapper.h"
     "OngoingReader.h"
     "OngoingReaderImpl.cpp"
     "OngoingReaderImpl.h"
@@ -18,6 +21,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC "."
+    PRIVATE "../_ext/rapidjson/include"
 )
 
 if(MSVC)

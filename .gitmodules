@@ -4,3 +4,6 @@
 [submodule "_ext/RosMath"]
 	path = _ext/RosMath
 	url = ../RosMath.git
+[submodule "_ext/rapidjson"]
+	path = _ext/rapidjson
+	url = https://github.com/Tencent/rapidjson/

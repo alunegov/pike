@@ -17,8 +17,9 @@ class OngoingReaderImpl : public OngoingReader {
 public:
     OngoingReaderImpl() = delete;
 
-    explicit OngoingReaderImpl(ros::devices::Pike* pike) :
-        pike_{pike}
+    explicit OngoingReaderImpl(ros::devices::Pike* pike, double_t adc_rate) :
+        pike_{pike},
+        adc_rate_{adc_rate}
     {}
 
     ~OngoingReaderImpl() override;
@@ -29,6 +30,8 @@ public:
 
 private:
     ros::devices::Pike* pike_{nullptr};
+
+    double_t adc_rate_{0};
 
     std::thread thread_;
     std::atomic_bool cancel_token_{false};

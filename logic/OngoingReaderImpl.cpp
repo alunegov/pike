@@ -21,7 +21,6 @@ void OngoingReaderImpl::Start(const std::function<CallbackFunc>& callback)
     cancel_token_ = false;
 
     thread_ = std::thread{[this, callback]() {
-        const double_t RegFreq{12.8};
         const size_t PointsCount{1024};
         const double_t AdcToVolt{10.0 / 8000.0};  // TODO: get AdcToVolt from daq
 
@@ -32,7 +31,7 @@ void OngoingReaderImpl::Start(const std::function<CallbackFunc>& callback)
         std::vector<int16_t> values(PointsCount * channels.size());
 
         while (!cancel_token_) {
-            double_t regFreq{RegFreq};
+            double_t regFreq{adc_rate_};
 
             pike_->daq()->AdcRead(regFreq, PointsCount, channels, values.data());
 

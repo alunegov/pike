@@ -1,0 +1,48 @@
+{
+    "daq": {
+        "name": "Л-Кард",
+        "slot": 0,
+        "common_gnd": true,
+        "adc_rate": 12.8
+    },
+    "depthometer": {
+        "name": "Датчик глубины CD22",
+        "port_name": "\\\\.\\COM43",
+        "baud_rate": 115200
+    },
+    "ender1": {
+        "name": "К1",
+        "pin": 3
+    },
+    "ender2": {
+        "name": "К2",
+        "pin": 4
+    },
+    "inclinometer": {
+        "name": "Инклинометр",
+        "x_channel": 1,
+        "y_channel": 2,
+        "trans_table_file": "inclinometer.tbl"
+    },
+    "mover": {
+        "name": "Коллекторный двигатель",
+        "pwm_pin": 1,
+        "dir_pin": 2
+    },
+    "odometer": {
+        "name": "Датчик расстояния ЛИР",
+        "a_channel": 5,
+        "b_channel": 6,
+        "threshold": 2.0,
+        "distance_per_pulse": 0.36
+    },
+    "rotator": {
+        "name": "Шаговый двигатель",
+        "en_pin": 3,
+        "step_pin": 5,
+        "dir_pin": 4,
+        "mx_pin": 6,
+        "steps_per_msr": 24686,
+        "steps_per_view": 1543
+    }
+}
