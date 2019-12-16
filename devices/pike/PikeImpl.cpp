@@ -1,8 +1,8 @@
-#include <Pike.h>
+#include <PikeImpl.h>
 
 namespace ros { namespace devices {
 
-Pike::~Pike()
+PikeImpl::~PikeImpl()
 {
     delete ender1_;
     delete ender2_;

@@ -2,30 +2,26 @@
 
 #include <cstdint>
 
-#include <LCardDevice.h>
+#include <Mover.h>
+
+#include <DAQ.h>
 
 namespace ros { namespace devices {
-
-// Направление движения
-enum class MoverDirection {
-    Forward,   // вперёд
-    Backward,  // назад
-};
 
 // Перемещение вперёд-назад с помощью коллекторного двигателя
 // Частота импульсов PWM 10кГц. Мы используем режим максимальной скорости (единичный коэфф. заполнения). Перед сменой
 // направления нужно обязательно останавливать двигатель.
-class Mover {
+class MoverImpl : public Mover {
 public:
-    Mover() = delete;
+    MoverImpl() = delete;
 
-    Mover(ros::dc::lcard::LCardDevice* daq, uint16_t pwm_pin, uint16_t dir_pin) :
+    MoverImpl(ros::dc::DAQ* daq, uint16_t pwm_pin, uint16_t dir_pin) :
         daq_{daq},
         pwm_pin_{pwm_pin},
         dir_pin_{dir_pin}
     {}
 
-    ~Mover();
+    ~MoverImpl() override;
 
     void SetDirection(MoverDirection direction);
 
@@ -36,7 +32,7 @@ public:
 private:
     void applyDirection();
 
-    ros::dc::lcard::LCardDevice* daq_{nullptr};
+    ros::dc::DAQ* daq_{nullptr};
     uint16_t pwm_pin_{0};
     uint16_t dir_pin_{0};
 

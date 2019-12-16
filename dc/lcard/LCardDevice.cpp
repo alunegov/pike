@@ -13,7 +13,7 @@ LCardDevice::~LCardDevice()
     Deinit();
 }
 
-void LCardDevice::Init(ULONG slot_num)
+void LCardDevice::Init(size_t slot_num)
 {
     assert(device_ == nullptr);
 
@@ -25,7 +25,7 @@ void LCardDevice::Init(ULONG slot_num)
 
     auto create_instance = (CREATEFUNCPTR)GetProcAddress(lcomp_handle_, "CreateInstance");
     
-    IDaqLDevice* device_instance = create_instance(slot_num);
+    IDaqLDevice* device_instance = create_instance(static_cast<ULONG>(slot_num));
 
     HRESULT query_res = device_instance->QueryInterface(IID_ILDEV, (void**)&device_);
 

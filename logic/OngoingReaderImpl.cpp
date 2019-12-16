@@ -1,4 +1,4 @@
-#include <OngoingReader.h>
+#include <OngoingReaderImpl.h>
 
 #include <cassert>
 #include <cstdint>
@@ -6,7 +6,7 @@
 
 namespace ros { namespace pike { namespace logic {
 
-OngoingReader::~OngoingReader()
+OngoingReaderImpl::~OngoingReaderImpl()
 {
     if (thread_.joinable()) {
         cancel_token_ = true;
@@ -14,7 +14,7 @@ OngoingReader::~OngoingReader()
     }
 }
 
-void OngoingReader::Start(const std::function<CallbackFunc>& callback)
+void OngoingReaderImpl::Start(const std::function<CallbackFunc>& callback)
 {
     assert(!thread_.joinable());
 
@@ -52,7 +52,7 @@ void OngoingReader::Start(const std::function<CallbackFunc>& callback)
     }};
 }
 
-void OngoingReader::IdleDepth(bool value)
+void OngoingReaderImpl::IdleDepth(bool value)
 {
     depth_idle_token_ = value;
 }

@@ -11,9 +11,11 @@
 #include <ioctl.h>
 #include <ifc_ldev.h>
 
+#include <DAQ.h>
+
 namespace ros { namespace dc { namespace lcard {
 
-// Параметры платы, используемые для настройки частоты АЦП (межкадровой и межканальной задержек)
+// Параметры платы Л-Кард, используемые для настройки частоты АЦП (межкадровой и межканальной задержек)
 struct AdcRateParams {
     double_t FClock;
     uint32_t FClock_MinDiv;
@@ -23,27 +25,27 @@ struct AdcRateParams {
 };
 
 // Плата АЦП/ЦАП/ТТЛ от Л-Кард (через lcomp)
-class LCardDevice {
+class LCardDevice : public DAQ {
 public:
     LCardDevice() = default;
 
-    virtual ~LCardDevice();
+    ~LCardDevice() override;
 
-    void Init(ULONG slot_num);
+    void Init(size_t slot_num) override;
 
-    void Deinit();
+    void Deinit() override;
 
-    void TtlEnable(bool enable);
+    void TtlEnable(bool enable) override;
 
-    void TtlOut(uint16_t value);
+    void TtlOut(uint16_t value) override;
 
-    void TtlOut_SetPin(uint16_t value);
+    void TtlOut_SetPin(uint16_t value) override;
 
-    void TtlOut_ClrPin(uint16_t value);
+    void TtlOut_ClrPin(uint16_t value) override;
 
-    uint16_t TtlIn();
+    uint16_t TtlIn() override;
 
-    void AdcRead(double_t& reg_freq, size_t point_count, const std::vector<uint16_t>& channels, int16_t* values);
+    void AdcRead(double_t& reg_freq, size_t point_count, const std::vector<uint16_t>& channels, int16_t* values) override;
 
 private:
     static const char* DetectBiosName(ULONG board_type);
@@ -57,7 +59,7 @@ private:
     HINSTANCE lcomp_handle_{0};
     IDaqLDevice* device_{nullptr};
     ULONG board_type_{NONE};
-    AdcRateParams adc_rate_params_;
+    AdcRateParams adc_rate_params_{};
 
     uint16_t ttl_out_value{0};
 };

@@ -1,12 +1,12 @@
-#include <InclinometerTransTableMapper.h>
+#include <InclinometerImplTransTableMapper.h>
 
 #include <fstream>
 
 namespace ros { namespace devices {
 
-std::vector<InclinometerTransTableEntry> InclinometerTransTableMapper::Load(const std::string& fileName)
+std::vector<InclinometerImplTransTableEntry> InclinometerImplTransTableMapper::Load(const std::string& fileName)
 {
-    std::vector<InclinometerTransTableEntry> res;
+    std::vector<InclinometerImplTransTableEntry> res;
 
     std::ifstream file{fileName};
 

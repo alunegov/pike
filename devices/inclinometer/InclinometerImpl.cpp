@@ -1,4 +1,4 @@
-#include <Inclinometer.h>
+#include <InclinometerImpl.h>
 
 #include <algorithm>
 #include <cassert>
@@ -8,12 +8,11 @@
 
 namespace ros { namespace devices {
 
-Inclinometer::Inclinometer(uint16_t x_channel, uint16_t y_channel,
-        const std::vector<InclinometerTransTableEntry>& trans_table) :
+InclinometerImpl::InclinometerImpl(uint16_t x_channel, uint16_t y_channel, const std::vector<_Entry>& trans_table) :
     x_channel_{x_channel},
     y_channel_{y_channel}
 {
-    for (const InclinometerTransTableEntry& entry : trans_table) {
+    for (const _Entry& entry : trans_table) {
         channels_trans_table_[0].emplace_back(entry.SinFi, entry.X);
         channels_trans_table_[1].emplace_back(entry.SinFi, entry.Y);
     }
@@ -22,13 +21,13 @@ Inclinometer::Inclinometer(uint16_t x_channel, uint16_t y_channel,
     std::reverse(channels_trans_table_[1].begin(), channels_trans_table_[1].end());
 }
 
-void Inclinometer::FillChannels(std::vector<uint16_t>& channels)
+void InclinometerImpl::FillChannels(std::vector<uint16_t>& channels)
 {
     channels.push_back(x_channel_);
     channels.push_back(y_channel_);
 }
 
-void Inclinometer::Update(const std::vector<uint16_t>& channels, const std::vector<int16_t>& values,
+void InclinometerImpl::Update(const std::vector<uint16_t>& channels, const std::vector<int16_t>& values,
         double_t adc_to_volt)
 {
     const auto channels_value = CalcChannelsValue(channels, values, adc_to_volt);
@@ -62,12 +61,12 @@ void Inclinometer::Update(const std::vector<uint16_t>& channels, const std::vect
     angle_ = new_angle;
 }
 
-double_t Inclinometer::Get()
+double_t InclinometerImpl::Get()
 {
     return angle_;
 }
 
-std::array<double_t, 2> Inclinometer::CalcChannelsValue(const std::vector<uint16_t>& channels,
+std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const std::vector<uint16_t>& channels,
         const std::vector<int16_t>& values, double_t adc_to_volt)
 {
     assert(!channels.empty());
@@ -96,17 +95,16 @@ std::array<double_t, 2> Inclinometer::CalcChannelsValue(const std::vector<uint16
     return res;
 }
 
-std::array<double_t, 2> Inclinometer::CalcChannelsFi(const std::array<double_t, 2>& channels_value)
+std::array<double_t, 2> InclinometerImpl::CalcChannelsFi(const std::array<double_t, 2>& channels_value)
 {
-    const auto line = [](const InclinometerChannelTransTableEntry& p1, const InclinometerChannelTransTableEntry& p2,
-            double_t x) -> double_t {
+    const auto line = [](const _ChannelEntry& p1, const _ChannelEntry& p2, double_t x) -> double_t {
         return p1.SinFi + (x - p1.V) * (p2.SinFi - p1.SinFi) / (p2.V - p1.V);
     };
 
     std::array<double_t, 2> res{0, 0};
 
     std::transform(channels_value.begin(), channels_value.end(), channels_trans_table_.begin(), res.begin(),
-        [=](double_t channel_value, const std::vector<InclinometerChannelTransTableEntry>& channel_trans_table) -> double_t {
+        [=](double_t channel_value, const std::vector<_ChannelEntry>& channel_trans_table) -> double_t {
             assert(channel_trans_table.size() >= 2);
 
             if (channel_value >= channel_trans_table.front().V) {
@@ -114,8 +112,7 @@ std::array<double_t, 2> Inclinometer::CalcChannelsFi(const std::array<double_t, 
             } else if (channel_value <= channel_trans_table.back().V) {
                 return channel_trans_table.back().SinFi;
             } else {
-                const auto entry = std::find_if(channel_trans_table.begin(), channel_trans_table.end(),
-                        [=](const InclinometerChannelTransTableEntry& it) {
+                const auto entry = std::find_if(channel_trans_table.begin(), channel_trans_table.end(), [=](const _ChannelEntry& it) {
                     return channel_value <= it.V;
                 });
                 assert(entry != channel_trans_table.begin());

@@ -3,24 +3,31 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(devices LANGUAGES CXX)
 
 set(source_list
-    "../_ext/serial/ceSerial.cpp"
+    "Depthometer.h"
+    "Ender.h"
+    "Inclinometer.h"
+    "Mover.h"
+    "Odometer.h"
+    "Pike.h"
+    "Rotator.h"
     "cd22/CD22.cpp"
     "cd22/CD22.h"
-    "ender/Ender.cpp"
-    "ender/Ender.h"
-    "inclinometer/Inclinometer.cpp"
-    "inclinometer/Inclinometer.h"
-    "inclinometer/InclinometerTransTable.h"
-    "inclinometer/InclinometerTransTableMapper.cpp"
-    "inclinometer/InclinometerTransTableMapper.h"
-    "mover/Mover.cpp"
-    "mover/Mover.h"
-    "odometer/Odometer.cpp"
-    "odometer/Odometer.h"
-    "pike/Pike.cpp"
-    "pike/Pike.h"
-    "rotator/Rotator.cpp"
-    "rotator/Rotator.h"
+    "ender/EnderImpl.cpp"
+    "ender/EnderImpl.h"
+    "inclinometer/InclinometerImpl.cpp"
+    "inclinometer/InclinometerImpl.h"
+    "inclinometer/InclinometerImplTransTable.h"
+    "inclinometer/InclinometerImplTransTableMapper.cpp"
+    "inclinometer/InclinometerImplTransTableMapper.h"
+    "mover/MoverImpl.cpp"
+    "mover/MoverImpl.h"
+    "odometer/OdometerImpl.cpp"
+    "odometer/OdometerImpl.h"
+    "pike/PikeImpl.cpp"
+    "pike/PikeImpl.h"
+    "rotator/RotatorImpl.cpp"
+    "rotator/RotatorImpl.h"
+    "../_ext/serial/ceSerial.cpp"
 )
 
 add_library(${PROJECT_NAME} ${source_list})
@@ -29,14 +36,15 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
 target_include_directories(${PROJECT_NAME}
-    PUBLIC "../_ext/serial"
-    PUBLIC "cd22"
-    PUBLIC "ender"
-    PUBLIC "inclinometer"
-    PUBLIC "mover"
-    PUBLIC "odometer"
-    PUBLIC "pike"
-    PUBLIC "rotator"
+    PUBLIC "."
+    PRIVATE "cd22"
+    PRIVATE "ender"
+    PRIVATE "inclinometer"
+    PRIVATE "mover"
+    PRIVATE "odometer"
+    PRIVATE "pike"
+    PRIVATE "rotator"
+    PRIVATE "../_ext/serial"
 )
 
 target_compile_definitions(${PROJECT_NAME}
@@ -56,5 +64,5 @@ endif()
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC RosMath
-    PUBLIC dc-lcard
+    PUBLIC dc
 )

@@ -21,6 +21,18 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 target_include_directories(${PROJECT_NAME}
     PRIVATE "."
     PRIVATE "main"
+
+    PRIVATE "../devices/cd22"
+    PRIVATE "../devices/ender"
+    PRIVATE "../devices/inclinometer"
+    PRIVATE "../devices/mover"
+    PRIVATE "../devices/odometer"
+    PRIVATE "../devices/pike"
+    PRIVATE "../devices/rotator"
+    PRIVATE "../_ext/serial"
+
+    PRIVATE "../dc/lcard"
+    PRIVATE "../_ext/lcomp/include"
 )
 
 if(MSVC)

@@ -3,10 +3,12 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project(logic LANGUAGES CXX)
 
 set(source_list
-    "OngoingReader.cpp"
     "OngoingReader.h"
-    "Slicer.cpp"
+    "OngoingReaderImpl.cpp"
+    "OngoingReaderImpl.h"
     "Slicer.h"
+    "SlicerImpl.cpp"
+    "SlicerImpl.h"
 )
 
 add_library(${PROJECT_NAME} ${source_list})

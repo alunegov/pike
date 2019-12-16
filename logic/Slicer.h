@@ -5,25 +5,16 @@
 #include <cstdint>
 #include <functional>
 
-#include <Pike.h>
-
 namespace ros { namespace pike { namespace logic {
 
-// Р РµР¶РёРј РёР·РјРµСЂРµРЅРёСЏ СЃРµС‡РµРЅРёСЏ
+// Режим измерения сечения
 class Slicer {
 public:
     using CallbackFunc = void(double_t, int16_t);
 
-    Slicer() = delete;
+    virtual ~Slicer() = default;
 
-    explicit Slicer(ros::devices::Pike* pike) :
-        pike_{pike}
-    {}
-
-    void Read(const std::atomic_bool& cancel_token, const std::function<CallbackFunc>& callback);
-
-private:
-    ros::devices::Pike* pike_{nullptr};
+    virtual void Read(const std::atomic_bool& cancel_token, const std::function<CallbackFunc>& callback) = 0;
 };
 
 }}}

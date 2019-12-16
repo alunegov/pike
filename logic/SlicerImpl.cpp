@@ -1,8 +1,8 @@
-#include <Slicer.h>
+#include <SlicerImpl.h>
 
 namespace ros { namespace pike { namespace logic {
 
-void Slicer::Read(const std::atomic_bool& cancel_token, const std::function<CallbackFunc>& callback)
+void SlicerImpl::Read(const std::atomic_bool& cancel_token, const std::function<CallbackFunc>& callback)
 {
     // поворот в крайнее левое положение
     pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CCW);

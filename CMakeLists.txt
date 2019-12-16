@@ -8,7 +8,7 @@ set(K3_ROSFLOAT "RosFloat_t=double_t")
 set(K3_L10N "RUS")
 
 add_subdirectory(_ext/RosMath RosMath)
-add_subdirectory(dc/lcard dc-lcard)
+add_subdirectory(dc)
 add_subdirectory(devices)
 add_subdirectory(logic)
 add_subdirectory(ui-modules)

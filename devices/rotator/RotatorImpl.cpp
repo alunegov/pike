@@ -1,11 +1,11 @@
-#include <Rotator.h>
+#include <RotatorImpl.h>
 
 #include <cassert>
 #include <thread>
 
 namespace ros { namespace devices {
 
-Rotator::~Rotator()
+RotatorImpl::~RotatorImpl()
 {
     if (rotate_thread_.joinable()) {
         rotate_cancel_token_ = true;
@@ -13,17 +13,17 @@ Rotator::~Rotator()
     }
 }
 
-void Rotator::SetDirection(RotatorDirection direction)
+void RotatorImpl::SetDirection(RotatorDirection direction)
 {
     direction_ = direction;
 }
 
-void Rotator::SetSpeed(RotatorSpeed speed)
+void RotatorImpl::SetSpeed(RotatorSpeed speed)
 {
     speed_ = speed;
 }
 
-void Rotator::Start()
+void RotatorImpl::Start()
 {
     assert(!rotate_thread_.joinable());
 
@@ -45,7 +45,7 @@ void Rotator::Start()
     }};
 }
 
-void Rotator::Stop()
+void RotatorImpl::Stop()
 {
     assert(rotate_thread_.joinable());
 
@@ -54,7 +54,7 @@ void Rotator::Stop()
     rotate_thread_.join();
 }
 
-void Rotator::Rotate(size_t steps_count)
+void RotatorImpl::Rotate(size_t steps_count)
 {
     assert(!rotate_thread_.joinable());
 
@@ -73,18 +73,18 @@ void Rotator::Rotate(size_t steps_count)
     // оставляем enable
 }
 
-void Rotator::Enable()
+void RotatorImpl::Enable()
 {
     daq_->TtlOut_ClrPin(enable_pin_);
     // delay MIN 650 nanosec to STEP
 }
 
-void Rotator::Disable()
+void RotatorImpl::Disable()
 {
     daq_->TtlOut_SetPin(enable_pin_);
 }
 
-void Rotator::Step()
+void RotatorImpl::Step()
 {
     daq_->TtlOut_SetPin(step_pin_);
     // delay MIN 1.9 microsec
@@ -93,7 +93,7 @@ void Rotator::Step()
     // delay MIN 1.9 microsec
 }
 
-void Rotator::applyDirection()
+void RotatorImpl::applyDirection()
 {
     switch (direction_) {
     case RotatorDirection::CW:
@@ -109,7 +109,7 @@ void Rotator::applyDirection()
     // delay MIN 650 nanosec
 }
 
-void Rotator::applySpeed()
+void RotatorImpl::applySpeed()
 {
     switch (speed_) {
     case RotatorSpeed::Low:

@@ -1,20 +1,20 @@
-#include <Mover.h>
+#include <MoverImpl.h>
 
 #include <cassert>
 
 namespace ros { namespace devices {
 
-Mover::~Mover()
+MoverImpl::~MoverImpl()
 {
     Stop();
 }
 
-void Mover::SetDirection(MoverDirection direction)
+void MoverImpl::SetDirection(MoverDirection direction)
 {
     direction_ = direction;
 }
 
-void Mover::Start()
+void MoverImpl::Start()
 {
     Stop();
     // TODO: delay?
@@ -24,12 +24,12 @@ void Mover::Start()
     daq_->TtlOut_SetPin(pwm_pin_);
 }
 
-void Mover::Stop()
+void MoverImpl::Stop()
 {
     daq_->TtlOut_ClrPin(pwm_pin_);
 }
 
-void Mover::applyDirection()
+void MoverImpl::applyDirection()
 {
     switch (direction_) {
     case MoverDirection::Forward:

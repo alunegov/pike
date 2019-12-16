@@ -6,6 +6,11 @@
 
 namespace ros { namespace devices {
 
+CD22::~CD22()
+{
+    transport_.Close();
+}
+
 int16_t CD22::Read()
 {
     const int16_t NoValue{INT16_MIN};

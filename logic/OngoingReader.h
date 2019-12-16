@@ -3,37 +3,20 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
-#include <thread>
-
-#include <Pike.h>
 
 namespace ros { namespace pike { namespace logic {
 
-// Р РµР¶РёРј РёР·РјРµСЂРµРЅРёСЏ РїСЂРѕР№РґРµРЅРЅРѕРіРѕ СЂР°СЃСЃС‚РѕСЏРЅРёСЏ, РїРѕР»РѕР¶РµРЅРёСЏ РІ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІРµ Рё РіР»СѓР±РёРЅС‹
-// РР·РјРµСЂРµРЅРёРµ РёРґС‘С‚ РїРѕСЃС‚РѕСЏРЅРЅРѕ, РєСЂРѕРјРµ РіР»СѓР±РёРЅС‹, РєРѕС‚РѕСЂР°СЏ "РїСЂРёРѕСЃС‚Р°РЅР°РІР»РёРІР°РµС‚СЃСЏ" РЅР° РІСЂРµРјСЏ РёР·РјРµСЂРµРЅРёСЏ СЃРµС‡РµРЅРёСЏ (Slicer).
+// Режим измерения пройденного расстояния, положения в пространстве и глубины
+// Измерение идёт постоянно, кроме глубины, которая "приостанавливается" на время измерения сечения (Slicer).
 class OngoingReader {
 public:
     using CallbackFunc = void(int32_t, double_t, int16_t);
 
-    OngoingReader() = delete;
+    virtual ~OngoingReader() = default;
 
-    explicit OngoingReader(ros::devices::Pike* pike) :
-        pike_{pike}
-    {}
+    virtual void Start(const std::function<CallbackFunc>& callback) = 0;
 
-    ~OngoingReader();
-
-    void Start(const std::function<CallbackFunc>& callback);
-
-    void IdleDepth(bool value);
-
-private:
-    ros::devices::Pike* pike_{nullptr};
-
-    std::thread thread_;
-    std::atomic_bool cancel_token_{false};
-
-    std::atomic_bool depth_idle_token_{false};
+    virtual void IdleDepth(bool value) = 0;
 };
 
 }}}
