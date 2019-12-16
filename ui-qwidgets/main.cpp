@@ -80,7 +80,7 @@ int main(int argc, char** argv)
 
     auto mover = new ros::devices::MoverImpl{daq, conf.mover.pwm_pin, conf.mover.dir_pin};
 
-    auto odometer = new ros::devices::OdometerImpl{conf.odometer.a_channel, conf.odometer.b_channel};
+    auto odometer = new ros::devices::OdometerImpl{conf.odometer.a_channel, conf.odometer.b_channel, conf.odometer.threshold};
 
     auto trans_table = ros::devices::InclinometerImplTransTableMapper::Load(conf.inclinometer.trans_table_file);
 

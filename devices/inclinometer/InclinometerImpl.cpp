@@ -21,14 +21,13 @@ InclinometerImpl::InclinometerImpl(uint16_t x_channel, uint16_t y_channel, const
     std::reverse(channels_trans_table_[1].begin(), channels_trans_table_[1].end());
 }
 
-void InclinometerImpl::FillChannels(std::vector<uint16_t>& channels)
+void InclinometerImpl::FillChannels(_Channels& channels)
 {
     channels.push_back(x_channel_);
     channels.push_back(y_channel_);
 }
 
-void InclinometerImpl::Update(const std::vector<uint16_t>& channels, const std::vector<int16_t>& values,
-        double_t adc_to_volt)
+void InclinometerImpl::Update(const _Channels& channels, const _Values& values, double_t adc_to_volt)
 {
     const auto channels_value = CalcChannelsValue(channels, values, adc_to_volt);
 
@@ -66,8 +65,8 @@ double_t InclinometerImpl::Get()
     return angle_;
 }
 
-std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const std::vector<uint16_t>& channels,
-        const std::vector<int16_t>& values, double_t adc_to_volt)
+std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const _Channels& channels, const _Values& values,
+        double_t adc_to_volt)
 {
     assert(!channels.empty());
     assert(values.size() >= channels.size());
