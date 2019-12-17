@@ -25,7 +25,7 @@ public:
 
     void FillChannels(_Channels& channels) override;
 
-    void Update(const _Channels& channels, const _Values& values, double_t adc_to_volt) override;
+    void Update(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt) override;
 
     double_t Get() override;
 

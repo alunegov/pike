@@ -18,7 +18,7 @@ public:
     virtual void FillChannels(_Channels& channels) = 0;
 
     // Обновляет пройденное расстояние по зарегистрированному сигналу с каналов
-    virtual void Update(const _Channels& channels, const _Values& values, double_t adc_to_volt) = 0;
+    virtual void Update(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt) = 0;
 
     // Возвращает пройденное расстояние, мм
     // Размерность задаётся размерностью Conf::odometer::distance_per_pulse.

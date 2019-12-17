@@ -14,14 +14,15 @@ void OdometerImpl::FillChannels(_Channels& channels)
     channels.push_back(b_channel_);
 }
 
-void OdometerImpl::Update(const _Channels& channels, const _Values& values, double_t adc_to_volt)
+void OdometerImpl::Update(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt)
 {
     assert(!channels.empty());
-    assert(values.size() >= channels.size());
-    assert((values.size() % channels.size()) == 0);
+    assert(values != nullptr);
+    assert(values_count >= channels.size());
+    assert((values_count % channels.size()) == 0);
 
     // выделяем наши каналы из по-кадрового формата
-    const size_t points_count{values.size() / channels.size()};
+    const size_t points_count{values_count / channels.size()};
     
     std::array<uint16_t, 2> channels_num{a_channel_, b_channel_};
     std::array<_Values, 2> channels_values;
@@ -34,7 +35,7 @@ void OdometerImpl::Update(const _Channels& channels, const _Values& values, doub
 
         _Values res(points_count);
 
-        ExtractChannelFromAdcFrames(values.data(), res.data(), points_count, channels.size(), channel_index);
+        ExtractChannelFromAdcFrames(values, res.data(), points_count, channels.size(), channel_index);
 
         return res;
     });

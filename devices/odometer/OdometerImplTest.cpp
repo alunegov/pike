@@ -30,7 +30,8 @@ TEST_CASE("usual workflow", "[odometer]") {
             // A _| |_| |_| |_| 
             //     _   _   _   _
             // B _| |_| |_| |_| 
-            sut.Update(channels, {0, 0, 3, 3, 0, 0, 3, 3, 0, 0, 3, 3, 0, 0, 3, 3}, adc_to_volt);
+            std::vector<int16_t> values1{0, 0, 3, 3, 0, 0, 3, 3, 0, 0, 3, 3, 0, 0, 3, 3};
+            sut.Update(channels, values1.data(), values1.size(), adc_to_volt);
 
             REQUIRE(sut.Get() == 4 * distance_per_pulse);
 
@@ -39,7 +40,8 @@ TEST_CASE("usual workflow", "[odometer]") {
                 // A  |_| |_| 
                 //     _   _  
                 // B _| |_| |_
-                sut.Update(channels, {3, 0, 0, 3, 3, 0, 0, 3, 3, 0}, adc_to_volt);
+                std::vector<int16_t> values2{3, 0, 0, 3, 3, 0, 0, 3, 3, 0};
+                sut.Update(channels, values2.data(), values2.size(), adc_to_volt);
 
                 REQUIRE(sut.Get() == 2 * distance_per_pulse);
 
@@ -65,7 +67,8 @@ TEST_CASE("ignore irrelevant adc channels", "[odometer]") {
         // A _| |_| |_| |_| 
         //     _   _   _   _
         // B _| |_| |_| |_| 
-        sut.Update(channels, {1, 0, 0, 1, 3, 3, 1, 0, 0, 1, 3, 3, 1, 0, 0, 1, 3, 3, 1, 0, 0, 1, 3, 3}, adc_to_volt);
+        std::vector<int16_t> values{1, 0, 0, 1, 3, 3, 1, 0, 0, 1, 3, 3, 1, 0, 0, 1, 3, 3, 1, 0, 0, 1, 3, 3};
+        sut.Update(channels, values.data(), values.size(), adc_to_volt);
 
         REQUIRE(sut.Get() == 4 * distance_per_pulse);
     }
@@ -83,7 +86,8 @@ TEST_CASE("account adc_to_volt coeff", "[odometer]") {
         // A _| |_ _ _ _ _
         //     _
         // B _| |_ _ _ _ _
-        sut.Update(channels, {0, 0, 30, 30, 0, 0, 3, 3, 0, 0, 3, 3, 0, 0, 3, 3}, 0.1);
+        std::vector<int16_t> values{0, 0, 30, 30, 0, 0, 3, 3, 0, 0, 3, 3, 0, 0, 3, 3};
+        sut.Update(channels, values.data(), values.size(), 0.1);
 
         REQUIRE(sut.Get() == 1 * distance_per_pulse);
     }

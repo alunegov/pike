@@ -120,74 +120,21 @@ uint16_t LCardDevice::TtlIn()
     return static_cast<uint16_t>(async_param.Data[0]);
 }
 
-void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const std::vector<uint16_t>& channels, int16_t* values)
+void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channels& channels, int16_t* values)
 {
     assert(device_ != nullptr);
-    assert((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154));  // adc_param.t1
 
-    assert(reg_freq > 0);
     assert(point_count > 0);
     assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
     assert(values != nullptr);
 
     ULONG status;
 
-    ULONG tm = 10000000;
-
-    status = device_->RequestBufferStream(&tm, L_STREAM_ADC);
-
-    const auto rate = GetRate(adc_rate_params_, reg_freq, channels.size(), 0.1);
-
-    ADC_PAR adc_param;
-
-    memset(&adc_param, 0, sizeof(adc_param));
-    adc_param.t1.s_Type = L_ADC_PARAM;
-    adc_param.t1.AutoInit = 1;
-    adc_param.t1.dRate = adc_rate_params_.FClock / rate.first;
-    adc_param.t1.dKadr = rate.second / adc_param.t1.dRate;
-    adc_param.t1.SynchroType = 3;
-    if ((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154)) {
-        adc_param.t1.SynchroType = 0;
-    }
-    adc_param.t1.NCh = static_cast<ULONG>(channels.size());
-    for (size_t i = 0; i < channels.size(); i++) {
-        adc_param.t1.Chn[i] = channels[i];
-    }
-    adc_param.t1.FIFO = 1024;
-    adc_param.t1.IrqStep = 1024;
-    adc_param.t1.Pages = 128;
-    if ((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154)) {
-        adc_param.t1.FIFO = 4096;
-        adc_param.t1.IrqStep = 4096;
-        adc_param.t1.Pages = 32;
-    }
-    adc_param.t1.IrqEna = 1;
-    adc_param.t1.AdcEna = 1;
-
-    status = device_->FillDAQparameters(&adc_param.t1);
-
-    // большой уход выставленной от запрошенной частоты регистрации (частоты кадров)
-    assert(abs(1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr) - reg_freq) < (0.02 * reg_freq));
-
-    reg_freq = 1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr);
-
+    size_t half_buffer{0};
     void* data{nullptr};
     ULONG* sync{nullptr};
 
-    status = device_->SetParametersStream(&adc_param.t1, &tm, &data, (void**)&sync, L_STREAM_ADC);
-
-    // SetParametersStream могла откорректировать параметры буфера
-    ULONG irq_step = adc_param.t1.IrqStep; 
-    ULONG pages = adc_param.t1.Pages;
-
-    ULONG point_size;
-
-    device_->GetParameter(L_POINT_SIZE, &point_size);
-
-    assert(point_size == sizeof(int16_t));
-
-    // размер половины буфера платы, в отсчётах
-    size_t half_buffer = irq_step * pages / 2;
+    status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
 
     // кол-во половинок, нужное для запрошенного количества точек
     size_t half_buffer_count = point_count * channels.size() / half_buffer;
@@ -230,6 +177,51 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const std::vec
         if ((i + 1) == half_buffer_count) {
             tmp_half_buffer = final_half_buffer;
         }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+    }
+
+    status = device_->StopLDevice();
+}
+
+void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const std::atomic_bool& cancel_token,
+        const std::function<AdcReadCallback>& callback)
+{
+    assert(device_ != nullptr);
+
+    assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
+
+    ULONG status;
+
+    size_t half_buffer{0};
+    void* data{nullptr};
+    ULONG* sync{nullptr};
+
+    status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
+    
+    status = device_->InitStartLDevice();
+
+    status = device_->StartLDevice();
+
+    //
+    size_t f1, f2;
+       
+    // какой смысл использовать InterlockedExchange(&s, *sync) (как в примере)? - ведь нужно синхронизировать доступ
+    // к sync, а не к s.
+    f1 = (*sync < half_buffer) ? 0 : 1;
+    f2 = (*sync < half_buffer) ? 0 : 1;
+
+    while (!cancel_token) {
+        // ожидание заполнения очередной половины буфера
+        while (f1 == f2) {
+            f2 = (*sync < half_buffer) ? 0 : 1;
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        }
+
+        const int16_t* const data_tmp = (int16_t*)data + half_buffer * f1;
+        callback(data_tmp, half_buffer);
+
+        f1 = (*sync < half_buffer) ? 0 : 1;
 
         std::this_thread::sleep_for(std::chrono::milliseconds{1});
     }
@@ -287,6 +279,73 @@ AdcRateParams LCardDevice::DetectAdcRateParams(ULONG board_type, const PLATA_DES
     }
 
     return res;
+}
+
+ULONG LCardDevice::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t* half_buffer, void** data, ULONG** sync)
+{
+    assert(device_ != nullptr);
+    assert((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154));  // adc_param.t1
+
+    assert(reg_freq > 0);
+    assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
+
+    ULONG status;
+
+    ULONG tm = 10000000;
+
+    status = device_->RequestBufferStream(&tm, L_STREAM_ADC);
+
+    const auto rate = GetRate(adc_rate_params_, reg_freq, channels.size(), 0.1);
+
+    ADC_PAR adc_param;
+
+    memset(&adc_param, 0, sizeof(adc_param));
+    adc_param.t1.s_Type = L_ADC_PARAM;
+    adc_param.t1.AutoInit = 1;
+    adc_param.t1.dRate = adc_rate_params_.FClock / rate.first;
+    adc_param.t1.dKadr = rate.second / adc_param.t1.dRate;
+    adc_param.t1.SynchroType = 3;
+    if ((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154)) {
+        adc_param.t1.SynchroType = 0;
+    }
+    adc_param.t1.NCh = static_cast<ULONG>(channels.size());
+    for (size_t i = 0; i < channels.size(); i++) {
+        adc_param.t1.Chn[i] = channels[i];
+    }
+    adc_param.t1.FIFO = 1024;
+    adc_param.t1.IrqStep = 1024;
+    adc_param.t1.Pages = 128;
+    if ((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154)) {
+        adc_param.t1.FIFO = 4096;
+        adc_param.t1.IrqStep = 4096;
+        adc_param.t1.Pages = 32;
+    }
+    adc_param.t1.IrqEna = 1;
+    adc_param.t1.AdcEna = 1;
+
+    status = device_->FillDAQparameters(&adc_param.t1);
+
+    // большой уход выставленной от запрошенной частоты регистрации (частоты кадров)
+    assert(abs(1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr) - reg_freq) < (0.02 * reg_freq));
+
+    reg_freq = 1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr);
+
+    status = device_->SetParametersStream(&adc_param.t1, &tm, data, (void**)sync, L_STREAM_ADC);
+
+    // SetParametersStream могла откорректировать параметры буфера
+    ULONG irq_step = adc_param.t1.IrqStep; 
+    ULONG pages = adc_param.t1.Pages;
+
+    ULONG point_size;
+
+    device_->GetParameter(L_POINT_SIZE, &point_size);
+
+    assert(point_size == sizeof(int16_t));
+
+    // размер половины буфера платы, в отсчётах
+    *half_buffer = irq_step * pages / 2;
+
+    return status;
 }
 
 std::pair<uint32_t, uint16_t> LCardDevice::GetRate(const AdcRateParams& rateParams, double_t channelRate,

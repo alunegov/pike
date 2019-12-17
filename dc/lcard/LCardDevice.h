@@ -47,12 +47,17 @@ public:
 
     uint16_t TtlIn() override;
 
-    void AdcRead(double_t& reg_freq, size_t point_count, const std::vector<uint16_t>& channels, int16_t* values) override;
+    void AdcRead(double_t& reg_freq, size_t point_count, const _Channels& channels, int16_t* values) override;
+
+    void AdcRead(double_t& reg_freq, const _Channels& channels, const std::atomic_bool& cancel_token,
+            const std::function<AdcReadCallback>& callback) override;
 
 private:
     static const char* DetectBiosName(ULONG board_type);
 
     static AdcRateParams DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr);
+
+    ULONG PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t* half_buffer, void** data, ULONG** sync);
 
     // копия функции ___GetRate из проекта UsbE_dll_v2
     std::pair<uint32_t, uint16_t> GetRate(const AdcRateParams& rateParams, double_t channelRate, size_t channelCount,

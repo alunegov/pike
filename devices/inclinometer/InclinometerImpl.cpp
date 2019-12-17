@@ -27,9 +27,9 @@ void InclinometerImpl::FillChannels(_Channels& channels)
     channels.push_back(y_channel_);
 }
 
-void InclinometerImpl::Update(const _Channels& channels, const _Values& values, double_t adc_to_volt)
+void InclinometerImpl::Update(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt)
 {
-    const auto channels_value = CalcChannelsValue(channels, values, adc_to_volt);
+    const auto channels_value = CalcChannelsValue(channels, values, values_count, adc_to_volt);
 
     const auto channels_fi = CalcChannelsFi(channels_value);
 
@@ -65,14 +65,15 @@ double_t InclinometerImpl::Get()
     return angle_;
 }
 
-std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const _Channels& channels, const _Values& values,
-        double_t adc_to_volt)
+std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const _Channels& channels, const int16_t* values,
+        size_t values_count, double_t adc_to_volt)
 {
     assert(!channels.empty());
-    assert(values.size() >= channels.size());
-    assert((values.size() % channels.size()) == 0);
+    assert(values != nullptr);
+    assert(values_count >= channels.size());
+    assert((values_count % channels.size()) == 0);
 
-    const size_t points_count{values.size() / channels.size()};
+    const size_t points_count{values_count / channels.size()};
 
     std::array<uint16_t, 2> channels_num{x_channel_, y_channel_};
     std::array<double_t, 2> res{0, 0};
@@ -83,8 +84,8 @@ std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const _Channels& cha
         assert(channel != channels.end());
         const auto channel_index = std::distance(channels.begin(), channel);
 
-        double_t rms = Rms_AdcRaw(values.data(), static_cast<uint32_t>(points_count),
-                static_cast<uint32_t>(channels.size()), static_cast<uint32_t>(channel_index), 0);
+        double_t rms = Rms_AdcRaw(values, static_cast<uint32_t>(points_count), static_cast<uint32_t>(channels.size()),
+                static_cast<uint32_t>(channel_index), 0);
         
         rms *= adc_to_volt;
 

@@ -10,7 +10,6 @@ namespace ros { namespace devices {
 class Inclinometer {
 public:
     using _Channels = std::vector<uint16_t>;
-    using _Values = std::vector<int16_t>;
 
     virtual ~Inclinometer() = default;
 
@@ -18,7 +17,7 @@ public:
     virtual void FillChannels(_Channels& channels) = 0;
 
     // Обновляет угол по зарегистрированному сигналу с каналов
-    virtual void Update(const _Channels& channels, const _Values& values, double_t adc_to_volt) = 0;
+    virtual void Update(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt) = 0;
 
     // Возвращает угол, °
     virtual double_t Get() = 0;

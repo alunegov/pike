@@ -45,13 +45,13 @@ public:
 
     void FillChannels(_Channels& channels) override;
 
-    void Update(const _Channels& channels, const _Values& values, double_t adc_to_volt) override;
+    void Update(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt) override;
 
     double_t Get() override;
 
 private:
     // Расчёт значения по каналам регистрации (считаем СКЗ)
-    std::array<double_t, 2> CalcChannelsValue(const _Channels& channels, const _Values& values, double_t adc_to_volt);
+    std::array<double_t, 2> CalcChannelsValue(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt);
 
     // Преобразование значения по каналам регистрации в SinFi (по настроечным таблицам)
     std::array<double_t, 2> CalcChannelsFi(const std::array<double_t, 2>& channels_value);
