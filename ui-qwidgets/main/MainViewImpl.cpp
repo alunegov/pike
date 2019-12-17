@@ -88,7 +88,7 @@ MainViewImpl::~MainViewImpl()
     }
 }
 
-void MainViewImpl::SetDistance(int32_t value)
+void MainViewImpl::SetDistance(double_t value)
 {
     distance_label_->setText(QString::number(value));
 }

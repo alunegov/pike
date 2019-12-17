@@ -27,7 +27,7 @@ void MainPresenterImpl::SetView(ros::pike::modules::MainView* view)
 
 void MainPresenterImpl::OnShow()
 {
-    ongoingReader_->Start([this](int32_t distance, double_t angle, int16_t depth) {
+    ongoingReader_->Start([this](double_t distance, double_t angle, int16_t depth) {
         if (view_ != nullptr) {
             view_->SetDistance(distance);
             view_->SetAngle(angle);

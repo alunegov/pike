@@ -23,6 +23,8 @@ public:
 
     ~MoverImpl() override;
 
+    // Mover
+
     void SetDirection(MoverDirection direction);
 
     void Start();

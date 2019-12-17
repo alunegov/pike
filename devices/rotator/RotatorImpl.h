@@ -25,6 +25,8 @@ public:
 
     ~RotatorImpl() override;
 
+    // Rotator
+
     void SetDirection(RotatorDirection direction) override;
 
     void SetSpeed(RotatorSpeed speed) override;

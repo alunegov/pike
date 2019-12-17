@@ -18,6 +18,8 @@ public:
         pin_{pin}
     {}
 
+    // Ender
+
     bool Read() override;
 
 private:

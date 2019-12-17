@@ -20,6 +20,8 @@ public:
         pike_{pike}
     {}
 
+    // Slicer
+
     void Read(const std::atomic_bool& cancel_token, const std::function<CallbackFunc>& callback) override;
 
 private:

@@ -19,6 +19,8 @@ public:
 
     ~CD22() override;
 
+    // Depthometer
+
     int16_t Read() override;
 
 private:

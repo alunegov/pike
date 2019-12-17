@@ -39,7 +39,7 @@ void OngoingReaderImpl::Start(const std::function<CallbackFunc>& callback)
             const double_t angle = pike_->inclinometer()->Get();
 
             pike_->odometer()->Update(channels, values, AdcToVolt);
-            const int32_t distance = pike_->odometer()->Get();
+            const double_t distance = pike_->odometer()->Get();
 
             int16_t depth{INT16_MIN};
             if (!depth_idle_token_) {

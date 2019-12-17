@@ -34,28 +34,22 @@ public:
 
     ~PikeImpl() override;
 
-    // Плата АЦП/ЦАП/ТТЛ
+    // Pike
+
     ros::dc::DAQ* daq() const override { return daq_; }
 
-    // "Концевой" датчик 1
     ros::devices::Ender* ender1() const override { return ender1_; }
 
-    // "Концевой" датчик 2
     ros::devices::Ender* ender2() const override { return ender2_; }
 
-    // Вращатель измерительного блока с глубинометром и камерами
     ros::devices::Rotator* rotator() const override { return rotator_; }
 
-    // Перемещатель
     ros::devices::Mover* mover() const override { return mover_; }
 
-    // Одометр
     ros::devices::Odometer* odometer() const override { return odometer_; }
 
-    // Инклинометр
     ros::devices::Inclinometer* inclinometer() const override { return inclinometer_; }
 
-    // Глубинометр
     ros::devices::Depthometer* depthometer() const override { return depthometer_; }
 
 private:

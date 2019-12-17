@@ -10,7 +10,7 @@ namespace ros { namespace pike { namespace logic {
 // »змерение идЄт посто€нно, кроме глубины, котора€ "приостанавливаетс€" на врем€ измерени€ сечени€ (Slicer).
 class OngoingReader {
 public:
-    using CallbackFunc = void(int32_t, double_t, int16_t);
+    using CallbackFunc = void(double_t distance, double_t angle, int16_t depth);
 
     virtual ~OngoingReader() = default;
 

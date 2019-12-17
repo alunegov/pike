@@ -10,7 +10,7 @@ namespace ros { namespace pike { namespace logic {
 // Режим измерения сечения
 class Slicer {
 public:
-    using CallbackFunc = void(double_t, int16_t);
+    using CallbackFunc = void(double_t angle, int16_t depth);
 
     virtual ~Slicer() = default;
 

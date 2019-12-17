@@ -31,6 +31,8 @@ public:
 
     ~LCardDevice() override;
 
+    // DAQ
+
     void Init(size_t slot_num) override;
 
     void Deinit() override;

@@ -41,6 +41,8 @@ public:
     // InclinometerImplTransTableEntry.Y - по возрастанию.
     InclinometerImpl(uint16_t x_channel, uint16_t y_channel, const std::vector<_Entry>& trans_table);
 
+    // Inclinometer
+
     void FillChannels(_Channels& channels) override;
 
     void Update(const _Channels& channels, const _Values& values, double_t adc_to_volt) override;

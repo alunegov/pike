@@ -13,3 +13,7 @@ add_subdirectory(devices)
 add_subdirectory(logic)
 add_subdirectory(ui-modules)
 add_subdirectory(ui-qwidgets)
+
+if(BUILD_TESTING)
+    enable_testing()
+endif()

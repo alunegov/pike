@@ -7,3 +7,6 @@
 [submodule "_ext/rapidjson"]
 	path = _ext/rapidjson
 	url = https://github.com/Tencent/rapidjson/
+[submodule "_ext/Catch2"]
+	path = _ext/Catch2
+	url = https://github.com/catchorg/Catch2.git

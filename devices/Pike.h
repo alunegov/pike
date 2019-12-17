@@ -17,27 +17,28 @@ class Pike {
 public:
     virtual ~Pike() = default;
 
+    // Возвращает плату АЦП/ЦАП/ТТЛ
     virtual ros::dc::DAQ* daq() const = 0;
 
-    // "Концевой" датчик 1
+    // Возвращает "концевой" датчик 1
     virtual ros::devices::Ender* ender1() const = 0;
 
-    // "Концевой" датчик 2
+    // Возвращает "концевой" датчик 2
     virtual ros::devices::Ender* ender2() const = 0;
 
-    // Вращатель измерительного блока с глубинометром и камерами
+    // Возвращает вращатель измерительного блока с глубинометром и камерами
     virtual ros::devices::Rotator* rotator() const = 0;
 
-    // Перемещатель
+    // Возвращает перемещатель
     virtual ros::devices::Mover* mover() const = 0;
 
-    // Одометр
+    // Возвращает одометр
     virtual ros::devices::Odometer* odometer() const = 0;
 
-    // Инклинометр
+    // Возвращает инклинометр
     virtual ros::devices::Inclinometer* inclinometer() const = 0;
 
-    // Глубинометр
+    // Возвращает глубинометр
     virtual ros::devices::Depthometer* depthometer() const = 0;
 };
 

@@ -78,9 +78,9 @@ std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const _Channels& cha
     std::array<double_t, 2> res{0, 0};
 
     std::transform(channels_num.begin(), channels_num.end(), res.begin(), [=](uint16_t channel_num) -> double_t {
+        // поиск индекса канала в кадре по его номеру
         const auto channel = std::find(channels.begin(), channels.end(), channel_num);
         assert(channel != channels.end());
-
         const auto channel_index = std::distance(channels.begin(), channel);
 
         double_t rms = Rms_AdcRaw(values.data(), static_cast<uint32_t>(points_count),

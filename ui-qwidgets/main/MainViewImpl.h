@@ -28,7 +28,7 @@ public:
 
     // MainView
 
-    void SetDistance(int32_t value) override;
+    void SetDistance(double_t value) override;
 
     void SetAngle(double_t value) override;
 

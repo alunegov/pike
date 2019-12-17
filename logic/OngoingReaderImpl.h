@@ -24,6 +24,8 @@ public:
 
     ~OngoingReaderImpl() override;
 
+    // OngoingReader
+
     void Start(const std::function<CallbackFunc>& callback) override;
 
     void IdleDepth(bool value) override;

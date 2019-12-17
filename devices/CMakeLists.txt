@@ -66,3 +66,19 @@ target_link_libraries(${PROJECT_NAME}
     PUBLIC RosMath
     PUBLIC dc
 )
+
+if(BUILD_TESTING)
+    add_executable(${PROJECT_NAME}-test
+        "../_misc/catch2/catch2-main.cpp"
+        "odometer/OdometerImplTest.cpp"
+    )
+    target_include_directories(${PROJECT_NAME}-test
+        PRIVATE "."
+        PRIVATE "odometer"
+        PRIVATE "../_ext/Catch2/single_include"
+    )
+    target_link_libraries(${PROJECT_NAME}-test
+        PRIVATE ${PROJECT_NAME}
+    )
+    add_test(${PROJECT_NAME}-test ${PROJECT_NAME}-test)
+endif()

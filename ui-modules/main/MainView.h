@@ -10,7 +10,7 @@ class MainView {
 public:
     virtual ~MainView() = default;
 
-    virtual void SetDistance(int32_t value) = 0;
+    virtual void SetDistance(double_t value) = 0;
 
     virtual void SetAngle(double_t value) = 0;
 

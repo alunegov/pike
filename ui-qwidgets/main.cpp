@@ -76,15 +76,18 @@ int main(int argc, char** argv)
 
     auto ender2 = new ros::devices::EnderImpl{daq, conf.ender2.pin};
 
-    auto rotator = new ros::devices::RotatorImpl{daq, conf.rotator.en_pin, conf.rotator.step_pin, conf.rotator.dir_pin, conf.rotator.mx_pin};
+    auto rotator = new ros::devices::RotatorImpl{daq, conf.rotator.en_pin, conf.rotator.step_pin, conf.rotator.dir_pin,
+            conf.rotator.mx_pin};
 
     auto mover = new ros::devices::MoverImpl{daq, conf.mover.pwm_pin, conf.mover.dir_pin};
 
-    auto odometer = new ros::devices::OdometerImpl{conf.odometer.a_channel, conf.odometer.b_channel, conf.odometer.threshold};
+    auto odometer = new ros::devices::OdometerImpl{conf.odometer.a_channel, conf.odometer.b_channel,
+            conf.odometer.threshold, conf.odometer.distance_per_pulse};
 
     auto trans_table = ros::devices::InclinometerImplTransTableMapper::Load(conf.inclinometer.trans_table_file);
 
-    auto inclinometer = new ros::devices::InclinometerImpl{conf.inclinometer.x_channel, conf.inclinometer.y_channel, trans_table};
+    auto inclinometer = new ros::devices::InclinometerImpl{conf.inclinometer.x_channel, conf.inclinometer.y_channel,
+            trans_table};
 
     ce::ceSerial depthometer_transport{conf.depthometer.port_name, conf.depthometer.baud_rate, 8, 'N', 1};
     depthometer_transport.Open();
