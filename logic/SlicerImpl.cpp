@@ -8,6 +8,7 @@ void SlicerImpl::Read(const std::atomic_bool& cancel_token, const std::function<
     pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CCW);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
 
+    // TODO: что возвращает датчик в "активном" состоянии - предполагаем, что 1
     // TODO: не более числа шагов, нужного на полный оборот (вдруг ender не работает)
     // TODO: "дожимать" несколько шагов после срабатывания ender
     while (!pike_->ender1()->Read()) {
@@ -19,16 +20,17 @@ void SlicerImpl::Read(const std::atomic_bool& cancel_token, const std::function<
     }
 
     // получение положения в пространстве
-    const auto angle = pike_->inclinometer()->Get();
+    const double_t angle = pike_->inclinometer()->Get();
 
     // измерение, поворачивая в крайнее правое положение
     pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CW);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::Low);
 
+    // TODO: что возвращает датчик в "активном" состоянии - предполагаем, что 1
     // TODO: не более числа шагов, нужного на полный оборот (вдруг ender не работает)
     // TODO: "дожимать" несколько шагов после срабатывания ender
     while (!pike_->ender2()->Read()) {
-        const auto depth = pike_->depthometer()->Read();
+        const int16_t depth = pike_->depthometer()->Read();
 
         callback(0, depth);
 

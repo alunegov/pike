@@ -7,6 +7,7 @@ class Ender {
 public:
     virtual ~Ender() = default;
 
+    // ¬озвращает true, если на пин приходит 1, иначе false
     virtual bool Read() = 0;
 };
 
