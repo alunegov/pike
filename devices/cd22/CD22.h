@@ -9,7 +9,8 @@
 namespace ros { namespace devices {
 
 // Датчик расстояния/глубины (FASTUS CD22)
-struct CD22 : public Depthometer {
+struct CD22 : public Depthometer
+{
 public:
     CD22() = delete;
 

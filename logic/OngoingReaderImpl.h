@@ -12,7 +12,8 @@
 namespace ros { namespace pike { namespace logic {
 
 // Режим измерения пройденного расстояния, положения в пространстве и глубины
-class OngoingReaderImpl : public OngoingReader {
+class OngoingReaderImpl : public OngoingReader
+{
 public:
     OngoingReaderImpl() = delete;
 

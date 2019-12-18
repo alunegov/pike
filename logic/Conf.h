@@ -7,45 +7,54 @@
 namespace ros { namespace pike { namespace logic {
 
 // Настройки
-struct Conf {
-    struct {
+struct Conf
+{
+    struct
+    {
         size_t slot;
         bool common_gnd;
         double_t adc_rate;
     } daq;
 
-    struct {
+    struct
+    {
         std::string port_name;
         int32_t baud_rate;
     } depthometer;
 
-    struct {
+    struct
+    {
         uint16_t pin;
     } ender1;
 
-    struct {
+    struct
+    {
         uint16_t pin;
     } ender2;
 
-    struct {
+    struct
+    {
         uint16_t x_channel;
         uint16_t y_channel;
         std::string trans_table_file;
     } inclinometer;
 
-    struct {
+    struct
+    {
         uint16_t pwm_pin;
         uint16_t dir_pin;
     } mover;
 
-    struct {
+    struct
+    {
         uint16_t a_channel;
         uint16_t b_channel;
         double_t threshold;
         double_t distance_per_pulse;
     } odometer;
 
-    struct {
+    struct
+    {
         uint16_t en_pin;
         uint16_t step_pin;
         uint16_t dir_pin;

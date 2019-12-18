@@ -14,7 +14,8 @@ namespace ros { namespace devices {
 
 // Строка в настроечной таблице инклинометра для преобразования значений канала (X или Y) в значение SinFi
 // Это InclinometerImplTransTableEntry, разделённая на отдельные каналы для удобства обработки.
-struct InclinometerImplChannelTransTableEntry {
+struct InclinometerImplChannelTransTableEntry
+{
     // Значение SinFi
     double_t SinFi;
     // Значение канала, В
@@ -30,7 +31,8 @@ struct InclinometerImplChannelTransTableEntry {
 // С датчика приходят два PWM-сигнала. Для упрощения считаем по ним СКЗ и используем таблицы пересчёта (вместо расчёта
 // коэффициента заполнения).
 // В классе повсеместно используется std::array<_Ty, 2>: первый элемент - канал X, второй элемент - канал Y.
-class InclinometerImpl : public Inclinometer {
+class InclinometerImpl : public Inclinometer
+{
 public:
     using _Entry = InclinometerImplTransTableEntry;
     using _ChannelEntry = InclinometerImplChannelTransTableEntry;

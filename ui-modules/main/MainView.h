@@ -7,7 +7,8 @@
 namespace ros { namespace pike { namespace modules {
 
 // Вид главного окна
-class MainView {
+class MainView
+{
 public:
     virtual ~MainView() = default;
 

@@ -7,7 +7,8 @@
 namespace ros { namespace pike { namespace logic {
 
 // Маппер настроек
-class ConfMapper {
+class ConfMapper
+{
 public:
     // Загружает настройки из json-файла
     static Conf Load(const std::string& filename);

@@ -17,7 +17,8 @@ namespace ros { namespace pike { namespace modules {
 class MainPresenterImpl :
     public MainPresenter,
     public ros::pike::logic::OngoingReaderOutput,
-    public ros::pike::logic::SlicerReadOutput {
+    public ros::pike::logic::SlicerReadOutput
+{
 public:
     MainPresenterImpl() = delete;
 

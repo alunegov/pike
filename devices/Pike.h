@@ -13,7 +13,8 @@
 namespace ros { namespace devices {
 
 // "Пика"
-class Pike {
+class Pike
+{
 public:
     virtual ~Pike() = default;
 

@@ -16,7 +16,8 @@
 namespace ros { namespace dc { namespace lcard {
 
 // Параметры платы Л-Кард, используемые для настройки частоты АЦП (межкадровой и межканальной задержек)
-struct AdcRateParams {
+struct AdcRateParams
+{
     double_t FClock;
     uint32_t FClock_MinDiv;
     uint32_t FClock_MaxDiv;
@@ -25,7 +26,8 @@ struct AdcRateParams {
 };
 
 // Плата АЦП/ЦАП/ТТЛ от Л-Кард (через lcomp)
-class LCardDevice : public DAQ {
+class LCardDevice : public DAQ
+{
 public:
     LCardDevice() = default;
 

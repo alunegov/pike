@@ -10,7 +10,8 @@
 namespace ros { namespace devices {
 
 // Одометр/курвиметр/датчик пройденного расстояния (ЛИР-119)
-class OdometerImpl : public Odometer {
+class OdometerImpl : public Odometer
+{
 public:
     OdometerImpl() = delete;
 

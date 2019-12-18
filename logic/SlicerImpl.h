@@ -12,7 +12,8 @@
 namespace ros { namespace pike { namespace logic {
 
 // Режим измерения сечения
-class SlicerImpl : public Slicer {
+class SlicerImpl : public Slicer
+{
 public:
     SlicerImpl() = delete;
 

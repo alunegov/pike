@@ -3,19 +3,22 @@
 namespace ros { namespace devices {
 
 // Направление вращения
-enum class RotatorDirection {
+enum class RotatorDirection
+{
     CW,   // по часовой стрелке (по направлению движения)
     CCW,  // против часовой стрелки (по направлению движения)
 };
 
 // Скорость вращения
-enum class RotatorSpeed {
+enum class RotatorSpeed
+{
     Low,   // 1/32 step
     High,  // 1/2 step
 };
 
 // Вращение измерительного блока
-class Rotator {
+class Rotator
+{
 public:
     virtual ~Rotator() = default;
 

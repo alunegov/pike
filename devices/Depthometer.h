@@ -5,7 +5,8 @@
 namespace ros { namespace devices {
 
 // Датчик расстояния/глубины
-class Depthometer {
+class Depthometer
+{
 public:
     virtual ~Depthometer() = default;
 

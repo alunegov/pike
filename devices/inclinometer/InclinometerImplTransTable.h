@@ -5,7 +5,8 @@
 namespace ros { namespace devices {
 
 // Строка в настроечной таблице инклинометра для преобразования значений каналов (X и Y) в значение SinFi
-struct InclinometerImplTransTableEntry {
+struct InclinometerImplTransTableEntry
+{
     // Значение SinFi
     double_t SinFi;
     // Значение канала X, В

@@ -11,7 +11,8 @@
 namespace ros { namespace devices {
 
 // Вращение измерительного блока с помощью шагового двигателя (TI DRV8825)
-class RotatorImpl : public Rotator {
+class RotatorImpl : public Rotator
+{
 public:
     RotatorImpl() = delete;
 

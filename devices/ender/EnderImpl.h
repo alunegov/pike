@@ -9,7 +9,8 @@
 namespace ros { namespace devices {
 
 // "Концевой" датчик
-class EnderImpl : public Ender {
+class EnderImpl : public Ender
+{
 public:
     EnderImpl() = delete;
 

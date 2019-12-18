@@ -9,7 +9,8 @@
 namespace ros { namespace dc {
 
 // œÎ‡Ú‡ ¿÷œ/÷¿œ/““À
-class DAQ {
+class DAQ
+{
 public:
     using _Channels = std::vector<uint16_t>;
     using AdcReadCallback = void(const int16_t* values, size_t values_count);

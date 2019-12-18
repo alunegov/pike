@@ -7,7 +7,8 @@
 
 namespace ros { namespace pike { namespace logic {
 
-class SlicerReadOutput {
+class SlicerReadOutput
+{
 public:
     virtual void SliceTick(double_t angle, int16_t depth) = 0;
 
@@ -15,7 +16,8 @@ public:
 };
 
 // Режим измерения сечения
-class Slicer {
+class Slicer
+{
 public:
     virtual ~Slicer() = default;
 

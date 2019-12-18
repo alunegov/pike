@@ -9,7 +9,8 @@ enum class MoverDirection {
 };
 
 // Перемещение вперёд-назад
-class Mover {
+class Mover
+{
 public:
     virtual ~Mover() = default;
 

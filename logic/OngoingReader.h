@@ -6,7 +6,8 @@
 
 namespace ros { namespace pike { namespace logic {
 
-class OngoingReaderOutput {
+class OngoingReaderOutput
+{
 public:
     virtual void AdcTick(double_t distance, double_t angle, int16_t depth) = 0;
 
@@ -18,7 +19,8 @@ public:
 
 // Режим измерения пройденного расстояния, положения в пространстве и глубины
 // Измерение идёт постоянно, кроме глубины, которая "приостанавливается" на время измерения сечения (Slicer).
-class OngoingReader {
+class OngoingReader
+{
 public:
     virtual ~OngoingReader() = default;
 

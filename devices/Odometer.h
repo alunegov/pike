@@ -7,7 +7,8 @@
 namespace ros { namespace devices {
 
 // Одометр/курвиметр/датчик пройденного расстояния
-class Odometer {
+class Odometer
+{
 public:
     virtual ~Odometer() = default;
 

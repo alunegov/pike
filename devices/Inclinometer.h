@@ -7,7 +7,8 @@
 namespace ros { namespace devices {
 
 // Инклинометр
-class Inclinometer {
+class Inclinometer
+{
 public:
     virtual ~Inclinometer() = default;
 

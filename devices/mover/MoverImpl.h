@@ -11,7 +11,8 @@ namespace ros { namespace devices {
 // Перемещение вперёд-назад с помощью коллекторного двигателя
 // Частота импульсов PWM 10кГц. Мы используем режим максимальной скорости (единичный коэфф. заполнения). Перед сменой
 // направления нужно обязательно останавливать двигатель.
-class MoverImpl : public Mover {
+class MoverImpl : public Mover
+{
 public:
     MoverImpl() = delete;
 

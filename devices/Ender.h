@@ -3,7 +3,8 @@
 namespace ros { namespace devices {
 
 // "Концевой" датчик
-class Ender {
+class Ender
+{
 public:
     virtual ~Ender() = default;
 

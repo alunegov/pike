@@ -15,7 +15,8 @@
 namespace ros { namespace devices {
 
 // "Пика"
-class PikeImpl : public Pike {
+class PikeImpl : public Pike
+{
 public:
     PikeImpl() = delete;
 
