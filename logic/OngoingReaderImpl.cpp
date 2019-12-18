@@ -8,19 +8,27 @@ namespace ros { namespace pike { namespace logic {
 
 OngoingReaderImpl::~OngoingReaderImpl()
 {
-    if (thread_.joinable()) {
+    if (adc_thread_.joinable() || ttl_in_thread_.joinable()) {
         cancel_token_ = true;
-        thread_.join();
+        adc_thread_.join();
+        ttl_in_thread_.join();
+
     }
 }
 
-void OngoingReaderImpl::Start(const std::function<CallbackFunc>& callback)
+void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
 {
-    assert(!thread_.joinable());
+    assert(output != nullptr);
+    output_ = output;
+}
+
+void OngoingReaderImpl::Start()
+{
+    assert(!adc_thread_.joinable() && !ttl_in_thread_.joinable());
 
     cancel_token_ = false;
 
-    thread_ = std::thread{[this, callback]() {
+    adc_thread_ = std::thread{[this]() {
         const double_t AdcToVolt{10.0 / 8000.0};  // TODO: get AdcToVolt from daq
 
         double_t regFreq{adc_rate_};
@@ -29,7 +37,7 @@ void OngoingReaderImpl::Start(const std::function<CallbackFunc>& callback)
         pike_->inclinometer()->FillChannels(channels);
         pike_->odometer()->FillChannels(channels);
 
-        const auto adc_read_callback = [this, callback, AdcToVolt, &channels](const int16_t* values, size_t values_count) {
+        const auto adc_read_callback = [this, AdcToVolt, &channels](const int16_t* values, size_t values_count) {
             pike_->inclinometer()->Update(channels, values, values_count, AdcToVolt);
             const double_t angle = pike_->inclinometer()->Get();
 
@@ -41,10 +49,24 @@ void OngoingReaderImpl::Start(const std::function<CallbackFunc>& callback)
                 depth = pike_->depthometer()->Read();
             }
 
-            callback(distance, angle, depth);
+            output_->AdcTick(distance, angle, depth);
+            output_->AdcTick_Values(channels, values, values_count, AdcToVolt);
         };
 
         pike_->daq()->AdcRead(regFreq, channels, cancel_token_, adc_read_callback);
+    }};
+
+    ttl_in_thread_ = std::thread{[this]() {
+        while (!cancel_token_) {
+            if (!depth_idle_token_) {
+                const bool ender1 = pike_->ender1()->Read();
+                const bool ender2 = pike_->ender2()->Read();
+
+                output_->TtlInTick(ender1, ender2);
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        }
     }};
 }
 

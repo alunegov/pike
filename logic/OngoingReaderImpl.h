@@ -3,7 +3,6 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
-#include <functional>
 #include <thread>
 
 #include <OngoingReader.h>
@@ -26,7 +25,9 @@ public:
 
     // OngoingReader
 
-    void Start(const std::function<CallbackFunc>& callback) override;
+    void SetOutput(OngoingReaderOutput* output) override;
+
+    void Start() override;
 
     void IdleDepth(bool value) override;
 
@@ -35,7 +36,10 @@ private:
 
     double_t adc_rate_{0};
 
-    std::thread thread_;
+    OngoingReaderOutput* output_{nullptr};
+
+    std::thread adc_thread_;
+    std::thread ttl_in_thread_;
     std::atomic_bool cancel_token_{false};
 
     std::atomic_bool depth_idle_token_{false};

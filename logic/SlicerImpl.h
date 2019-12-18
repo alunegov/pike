@@ -22,7 +22,7 @@ public:
 
     // Slicer
 
-    void Read(const std::atomic_bool& cancel_token, const std::function<CallbackFunc>& callback) override;
+    void Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) override;
 
 private:
     ros::devices::Pike* pike_{nullptr};

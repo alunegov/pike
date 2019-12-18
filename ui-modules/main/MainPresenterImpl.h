@@ -14,16 +14,15 @@
 namespace ros { namespace pike { namespace modules {
 
 // Реализация презентера главного окна
-class MainPresenterImpl : public MainPresenter {
+class MainPresenterImpl :
+    public MainPresenter,
+    public ros::pike::logic::OngoingReaderOutput,
+    public ros::pike::logic::SlicerReadOutput {
 public:
     MainPresenterImpl() = delete;
 
     MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
-            ros::pike::logic::Slicer* slicer) :
-        pike_{pike},
-        ongoingReader_{ongoingReader},
-        slicer_(slicer)
-    {}
+            ros::pike::logic::Slicer* slicer);
 
     ~MainPresenterImpl() override;
 
@@ -44,6 +43,21 @@ public:
     void SliceClicked() override;
 
     void ResetDistance() override;
+
+    // OngoingReaderOutput
+
+    void AdcTick(double_t distance, double_t angle, int16_t depth) override;
+
+    void AdcTick_Values(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
+            double_t adc_to_volt) override;
+
+    void TtlInTick(bool ender1, bool ender2) override;
+
+    // SlicerReadOutput
+
+    void SliceTick(double_t angle, int16_t depth) override;
+
+    //void TtlInTick(bool ender1, bool ender2) override;
 
 private:
     ros::pike::modules::MainView* view_{nullptr};

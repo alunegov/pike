@@ -19,6 +19,12 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     depth_label_ = new QLabel;
     depth_label_->setText("depth");
 
+    ender1_label_ = new QLabel;
+    ender1_label_->setText("ender1");
+
+    ender2_label_ = new QLabel;
+    ender2_label_->setText("ender2");
+
     move_forward_button_ = new QPushButton;
     move_forward_button_->setText("Fwd");
     QObject::connect(move_forward_button_, &QPushButton::pressed, this, [=]() {
@@ -66,6 +72,8 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     verticalLayout->addWidget(distance_label_);
     verticalLayout->addWidget(angle_label_);
     verticalLayout->addWidget(depth_label_);
+    verticalLayout->addWidget(ender1_label_);
+    verticalLayout->addWidget(ender2_label_);
     verticalLayout->addWidget(move_forward_button_);
     verticalLayout->addWidget(move_backward_button_);
     verticalLayout->addWidget(rotate_ccw_button_);
@@ -106,6 +114,18 @@ void MainViewImpl::SetDepth(int16_t value)
 void MainViewImpl::UpdateSliceDepth(double_t angle, int16_t depth)
 {
     depth_label_->setText(QString{"%1 at %2"}.arg(depth).arg(angle));
+}
+
+void MainViewImpl::SetEnders(bool ender1, bool ender2)
+{
+    ender1_label_->setText(QString::number(ender1));
+    ender2_label_->setText(QString::number(ender2));
+}
+
+void MainViewImpl::SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
+        double_t adc_to_volt)
+{
+
 }
 
 }}}
