@@ -21,41 +21,20 @@ InclinometerImpl::InclinometerImpl(uint16_t x_channel, uint16_t y_channel, const
     std::reverse(channels_trans_table_[1].begin(), channels_trans_table_[1].end());
 }
 
-void InclinometerImpl::FillChannels(_Channels& channels)
+void InclinometerImpl::FillChannels(std::vector<uint16_t>& channels)
 {
     channels.push_back(x_channel_);
     channels.push_back(y_channel_);
 }
 
-void InclinometerImpl::Update(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt)
+void InclinometerImpl::Update(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
+        double_t adc_to_volt)
 {
     const auto channels_value = CalcChannelsValue(channels, values, values_count, adc_to_volt);
 
     const auto channels_fi = CalcChannelsFi(channels_value);
 
-    const double_t sin_fi_x{channels_fi[0]};
-    const double_t sin_fi_y{channels_fi[1]};
-
-    double_t new_angle;
-
-    if (sin_fi_x < (sqrt(2) / 2)) {
-        if (sin_fi_y > 0) {
-            new_angle = asin(sin_fi_x) * 180 / M_PI;
-        } else {
-            if (sin_fi_x > 0) {
-                new_angle = 180 - asin(sin_fi_x) * 180 / M_PI;
-            } else {
-                // TODO: на блок-схеме этот кусок не влез
-                new_angle = 0;
-            }
-        }
-    } else {
-        if (sin_fi_x > 0) {
-            new_angle = 90 - asin(sin_fi_y) * 180 / M_PI;
-        } else {
-            new_angle = -90 + asin(sin_fi_y) * 180 / M_PI;
-        }
-    }
+    const double_t new_angle = CalcAngle(channels_fi);
 
     angle_ = new_angle;
 }
@@ -65,7 +44,7 @@ double_t InclinometerImpl::Get()
     return angle_;
 }
 
-std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const _Channels& channels, const int16_t* values,
+std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const std::vector<uint16_t>& channels, const int16_t* values,
         size_t values_count, double_t adc_to_volt)
 {
     assert(!channels.empty());
@@ -124,6 +103,35 @@ std::array<double_t, 2> InclinometerImpl::CalcChannelsFi(const std::array<double
     );
 
     return res;
+}
+
+double_t InclinometerImpl::CalcAngle(std::array<double_t, 2> channels_fi)
+{
+    const double_t sin_fi_x{channels_fi[0]};
+    const double_t sin_fi_y{channels_fi[1]};
+
+    double_t angle{0};
+
+    if (sin_fi_x < (sqrt(2) / 2)) {
+        if (sin_fi_y > 0) {
+            angle = asin(sin_fi_x) * 180 / M_PI;
+        } else {
+            if (sin_fi_x > 0) {
+                angle = 180 - asin(sin_fi_x) * 180 / M_PI;
+            } else {
+                // TODO: на блок-схеме этот кусок не влез
+                angle = 0;
+            }
+        }
+    } else {
+        if (sin_fi_x > 0) {
+            angle = 90 - asin(sin_fi_y) * 180 / M_PI;
+        } else {
+            angle = -90 + asin(sin_fi_y) * 180 / M_PI;
+        }
+    }
+
+    return angle;
 }
 
 }}

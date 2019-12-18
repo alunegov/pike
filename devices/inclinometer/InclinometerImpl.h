@@ -43,18 +43,22 @@ public:
 
     // Inclinometer
 
-    void FillChannels(_Channels& channels) override;
+    void FillChannels(std::vector<uint16_t>& channels) override;
 
-    void Update(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt) override;
+    void Update(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
+            double_t adc_to_volt) override;
 
     double_t Get() override;
 
 private:
     // Расчёт значения по каналам регистрации (считаем СКЗ)
-    std::array<double_t, 2> CalcChannelsValue(const _Channels& channels, const int16_t* values, size_t values_count, double_t adc_to_volt);
+    std::array<double_t, 2> CalcChannelsValue(const std::vector<uint16_t>& channels, const int16_t* values,
+            size_t values_count, double_t adc_to_volt);
 
     // Преобразование значения по каналам регистрации в SinFi (по настроечным таблицам)
     std::array<double_t, 2> CalcChannelsFi(const std::array<double_t, 2>& channels_value);
+
+    double_t CalcAngle(std::array<double_t, 2> channels_fi);
 
     uint16_t x_channel_{0};
     uint16_t y_channel_{0};
