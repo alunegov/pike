@@ -1,7 +1,7 @@
-#include "catch2/catch.hpp"
-
 #include <cmath>
 #include <cstdint>
+
+#include "catch2/catch.hpp"
 
 #include <OdometerImpl.h>
 

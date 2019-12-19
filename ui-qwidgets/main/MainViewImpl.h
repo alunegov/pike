@@ -11,6 +11,11 @@
 #include <MainPresenter.h>
 #include <MainView.h>
 
+#include <InclioWidget.h>
+#include <SliceWidget.h>
+
+class MainViewImplTest;
+
 namespace ros { namespace pike { namespace ui {
 
 // Реализация вида главного окна
@@ -19,6 +24,8 @@ class MainViewImpl :
     public ros::pike::modules::MainView
 {
     Q_OBJECT
+
+    friend class ::MainViewImplTest;
 
 public:
     MainViewImpl() = delete;
@@ -49,9 +56,9 @@ private:
 
     QLabel* distance_label_{nullptr};
 
-    QLabel* angle_label_{nullptr};
+    InclioWidget* inclio_viewport_{nullptr};
 
-    QLabel* slice_viewport_label_{nullptr};
+    SliceWidget* slice_viewport_{nullptr};
     QLabel* depth_label_{nullptr};
     QLabel* ender1_label_{nullptr};
     QLabel* ender2_label_{nullptr};

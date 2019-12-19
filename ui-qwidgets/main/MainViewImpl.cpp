@@ -14,18 +14,19 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
 {
     camera_viewport_label_ = new QLabel;
     camera_viewport_label_->setText("camera_viewport");
+    //camera_viewport_label_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     distance_label_ = new QLabel;
     distance_label_->setText("distance");
 
-    angle_label_ = new QLabel;
-    angle_label_->setText("angle");
-    //angle_label_->setMinimumWidth(100);
-    angle_label_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    inclio_viewport_ = new InclioWidget;
+    //inclio_viewport_->setMinimumWidth(100);
+    //inclio_viewport_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
 
-    slice_viewport_label_ = new QLabel;
-    slice_viewport_label_->setText("slice_viewport");
-    slice_viewport_label_->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+    slice_viewport_ = new SliceWidget;
+    //slice_viewport_->setText("slice_viewport");
+    //slice_viewport_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    slice_viewport_->SetDummySlice();
 
     depth_label_ = new QLabel;
     depth_label_->setText("depth");
@@ -107,7 +108,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
 
     // layout
     auto slice_layout = new QVBoxLayout;
-    slice_layout->addWidget(slice_viewport_label_);
+    slice_layout->addWidget(slice_viewport_);
     auto slice_bottom_layout = new QHBoxLayout;
     slice_bottom_layout->addWidget(ender1_label_);
     slice_bottom_layout->addWidget(depth_label_);
@@ -125,7 +126,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     move_buttons_layout->addWidget(rotate_cw_button_, 1, 3);
 
     auto inclio_and_move_buttons_layout = new QHBoxLayout;
-    inclio_and_move_buttons_layout->addWidget(angle_label_);
+    inclio_and_move_buttons_layout->addWidget(inclio_viewport_);
     inclio_and_move_buttons_layout->addLayout(move_buttons_layout);
 
     auto distance_and_inclio_and_move_buttons_layout = new QVBoxLayout;
@@ -165,7 +166,7 @@ MainViewImpl::~MainViewImpl()
 {
     if (presenter_ != nullptr) {
         presenter_->SetView(nullptr);
-        delete presenter_;
+        //delete presenter_;
     }
 }
 
@@ -176,7 +177,7 @@ void MainViewImpl::SetDistance(double_t value)
 
 void MainViewImpl::SetAngle(double_t value)
 {
-    angle_label_->setText(QString::number(value));
+    inclio_viewport_->SetAngle(value);
 }
 
 void MainViewImpl::SetDepth(int16_t value)

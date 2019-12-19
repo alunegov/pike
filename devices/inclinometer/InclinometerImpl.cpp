@@ -92,7 +92,7 @@ std::array<double_t, 2> InclinometerImpl::CalcChannelsFi(const std::array<double
                 return channel_trans_table.back().SinFi;
             } else {
                 const auto entry = std::find_if(channel_trans_table.begin(), channel_trans_table.end(), [=](const _ChannelEntry& it) {
-                    return channel_value <= it.V;
+                    return channel_value >= it.V;
                 });
                 assert(entry != channel_trans_table.begin());
                 assert(entry != channel_trans_table.end());

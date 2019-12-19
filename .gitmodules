@@ -10,3 +10,6 @@
 [submodule "_ext/Catch2"]
 	path = _ext/Catch2
 	url = https://github.com/catchorg/Catch2.git
+[submodule "_ext/FakeIt"]
+	path = _ext/FakeIt
+	url = https://github.com/eranpeer/FakeIt.git
