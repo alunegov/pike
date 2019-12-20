@@ -17,10 +17,10 @@ InclioWidget::InclioWidget()
 
     angle_view_ = new QLabel;
     angle_view_->setText("angle_view");
-    //angle_view_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    angle_view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
 
-    pen1_.setStyle(Qt::DotLine);
-    pen2_.setStyle(Qt::SolidLine);
+    pen1_.setStyle(Qt::SolidLine);
+    pen2_.setStyle(Qt::DotLine);
 
     // layout
     auto rootLayout = new QVBoxLayout;
@@ -32,9 +32,21 @@ InclioWidget::InclioWidget()
 
 void InclioWidget::SetAngle(double_t angle)
 {
-    angle_text_->setText(QString{"%1°"}.arg(angle));
+    angle_ = angle;
 
-    //
+    angle_text_->setText(QString{"%1°"}.arg(angle_));
+    update_view();
+}
+
+void InclioWidget::resizeEvent(QResizeEvent* event)
+{
+    (void)event;
+
+    update_view();
+}
+
+void InclioWidget::update_view()
+{
     const auto rect = angle_view_->rect();
 
     QPixmap pixmap{rect.width(), rect.height()};
@@ -49,12 +61,12 @@ void InclioWidget::SetAngle(double_t angle)
     const auto r = std::min(rect.width(), rect.height()) / 2 - 5;
     const auto c = rect.center();
 
-    painter.setPen(pen1_);
+    painter.setPen(pen2_);
     painter.drawEllipse(c, r, r);
 
-    painter.setPen(pen2_);
-    const auto x = c.x() + r * std::cos(angle * M_PI / 180);
-    const auto y = c.y() + r * std::sin(angle * M_PI / 180);
+    const auto x = c.x() + r * std::cos(angle_ * M_PI / 180);
+    const auto y = c.y() + r * std::sin(angle_ * M_PI / 180);
+    painter.setPen(pen1_);
     painter.drawLine(c, QPoint{(int)x, (int)y});
 
     angle_view_->setPixmap(pixmap);

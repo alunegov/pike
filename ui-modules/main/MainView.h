@@ -12,11 +12,11 @@ class MainView
 public:
     virtual ~MainView() = default;
 
-    virtual void SetDistance(double_t value) = 0;
+    virtual void SetDistance(double_t distance) = 0;
 
-    virtual void SetAngle(double_t value) = 0;
+    virtual void SetAngle(double_t angle) = 0;
 
-    virtual void SetDepth(int16_t value) = 0;
+    virtual void SetDepth(int16_t depth) = 0;
 
     virtual void UpdateSliceDepth(double_t angle, int16_t depth) = 0;
 

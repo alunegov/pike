@@ -12,30 +12,33 @@ namespace ros { namespace pike { namespace ui {
 MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     presenter_{presenter}
 {
-    camera_viewport_label_ = new QLabel;
-    camera_viewport_label_->setText("camera_viewport");
-    //camera_viewport_label_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    camera_viewport_ = new CameraWidget;
+    camera_viewport_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
-    distance_label_ = new QLabel;
-    distance_label_->setText("distance");
+    distance_viewport_ = new DistanceWidget;
+    distance_viewport_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
     inclio_viewport_ = new InclioWidget;
-    //inclio_viewport_->setMinimumWidth(100);
-    //inclio_viewport_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Ignored);
+    inclio_viewport_->setMinimumSize(100, 100);
+    inclio_viewport_->setMaximumHeight(200);
+    inclio_viewport_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 
     slice_viewport_ = new SliceWidget;
-    //slice_viewport_->setText("slice_viewport");
-    //slice_viewport_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    slice_viewport_->setMinimumSize(50, 50);
+    slice_viewport_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
     slice_viewport_->SetDummySlice();
 
     depth_label_ = new QLabel;
     depth_label_->setText("depth");
+    depth_label_->setAlignment(Qt::AlignCenter);
 
     ender1_label_ = new QLabel;
     ender1_label_->setText("ender1");
+    ender1_label_->setAlignment(Qt::AlignLeft);
 
     ender2_label_ = new QLabel;
     ender2_label_->setText("ender2");
+    ender2_label_->setAlignment(Qt::AlignRight);
 
     move_forward_button_ = new QPushButton;
     move_forward_button_->setText("fwd");
@@ -116,7 +119,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     slice_layout->addLayout(slice_bottom_layout);
 
     auto camera_and_slice_layout = new QHBoxLayout;
-    camera_and_slice_layout->addWidget(camera_viewport_label_);
+    camera_and_slice_layout->addWidget(camera_viewport_);
     camera_and_slice_layout->addLayout(slice_layout);
 
     auto move_buttons_layout = new QGridLayout;
@@ -130,10 +133,11 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     inclio_and_move_buttons_layout->addLayout(move_buttons_layout);
 
     auto distance_and_inclio_and_move_buttons_layout = new QVBoxLayout;
-    distance_and_inclio_and_move_buttons_layout->addWidget(distance_label_);
+    distance_and_inclio_and_move_buttons_layout->addWidget(distance_viewport_);
     distance_and_inclio_and_move_buttons_layout->addLayout(inclio_and_move_buttons_layout);
 
     auto buttons_layout = new QVBoxLayout;
+    buttons_layout->addStretch(2);
     buttons_layout->addWidget(slice_button_);
     auto l21  = new QHBoxLayout;
     l21->addWidget(camera1_button_);
@@ -144,10 +148,11 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     l22->addWidget(photo_button_);
     buttons_layout->addLayout(l22);
     buttons_layout->addWidget(dest_path_edit_);
+    buttons_layout->addStretch(1);
 
     auto bottom_layout = new QHBoxLayout;
     bottom_layout->addLayout(distance_and_inclio_and_move_buttons_layout);
-    //bottom_layout->addStretch();
+    bottom_layout->addStretch();
     bottom_layout->addLayout(buttons_layout);
 
     auto rootLayout = new QVBoxLayout;
@@ -170,19 +175,25 @@ MainViewImpl::~MainViewImpl()
     }
 }
 
-void MainViewImpl::SetDistance(double_t value)
+void MainViewImpl::SetDistance(double_t distance)
 {
-    distance_label_->setText(QString::number(value));
+    //distance_viewport_->SetDistance(distance);
+
+    std::uniform_real_distribution<> dis{0, 100};
+    distance_viewport_->SetDistance(dis(gen));
 }
 
-void MainViewImpl::SetAngle(double_t value)
+void MainViewImpl::SetAngle(double_t angle)
 {
-    inclio_viewport_->SetAngle(value);
+    //inclio_viewport_->SetAngle(angle);
+
+    std::uniform_real_distribution<> dis{0, 359};
+    inclio_viewport_->SetAngle(dis(gen));
 }
 
-void MainViewImpl::SetDepth(int16_t value)
+void MainViewImpl::SetDepth(int16_t depth)
 {
-    depth_label_->setText(QString::number(value));
+    depth_label_->setText(QString::number(depth));
 }
 
 void MainViewImpl::UpdateSliceDepth(double_t angle, int16_t depth)
@@ -198,8 +209,6 @@ void MainViewImpl::SetEnders(bool ender1, bool ender2)
 
 void MainViewImpl::SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
         double_t adc_to_volt)
-{
-
-}
+{}
 
 }}}

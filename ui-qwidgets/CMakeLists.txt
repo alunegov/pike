@@ -9,6 +9,10 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Test)
 
 set(source_list
     "main.cpp"
+    "_widgets/CameraWidget.cpp"
+    "_widgets/CameraWidget.h"
+    "_widgets/DistanceWidget.cpp"
+    "_widgets/DistanceWidget.h"
     "_widgets/InclioWidget.cpp"
     "_widgets/InclioWidget.h"
     "_widgets/SliceWidget.cpp"
@@ -59,6 +63,8 @@ if(BUILD_TESTING)
     #find_package(Qt5Test)
 
     add_executable(${PROJECT_NAME}-test
+        "_widgets/CameraWidget.cpp"
+        "_widgets/DistanceWidget.cpp"
         "_widgets/InclioWidget.cpp"
         "_widgets/SliceWidget.cpp"
         "main/MainViewImpl.cpp"

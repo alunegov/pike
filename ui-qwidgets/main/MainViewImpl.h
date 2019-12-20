@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <random>
 
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
@@ -11,6 +12,8 @@
 #include <MainPresenter.h>
 #include <MainView.h>
 
+#include <CameraWidget.h>
+#include <DistanceWidget.h>
 #include <InclioWidget.h>
 #include <SliceWidget.h>
 
@@ -36,11 +39,11 @@ public:
 
     // MainView
 
-    void SetDistance(double_t value) override;
+    void SetDistance(double_t distance) override;
 
-    void SetAngle(double_t value) override;
+    void SetAngle(double_t angle) override;
 
-    void SetDepth(int16_t value) override;
+    void SetDepth(int16_t depth) override;
 
     void UpdateSliceDepth(double_t angle, int16_t depth) override;
 
@@ -52,9 +55,9 @@ public:
 private:
     ros::pike::modules::MainPresenter* presenter_{nullptr};
 
-    QLabel* camera_viewport_label_{nullptr};
+    CameraWidget* camera_viewport_{nullptr};
 
-    QLabel* distance_label_{nullptr};
+    DistanceWidget* distance_viewport_{nullptr};
 
     InclioWidget* inclio_viewport_{nullptr};
 
@@ -74,6 +77,9 @@ private:
     QPushButton* rec_button_{nullptr};
     QPushButton* photo_button_{nullptr};
     QLineEdit* dest_path_edit_{nullptr};
+
+    std::random_device rd;
+    std::mt19937 gen{rd()};
 };
 
 }}}

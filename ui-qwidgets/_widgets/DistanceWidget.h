@@ -3,20 +3,19 @@
 #include <cmath>
 
 #include <QtGui/qevent.h>
-#include <QtGui/QPen>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QWidget>
 
 namespace ros { namespace pike { namespace ui {
 
-class InclioWidget : public QWidget
+class DistanceWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    InclioWidget();
+    DistanceWidget();
 
-    void SetAngle(double_t angle);
+    void SetDistance(double_t distance);
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -24,13 +23,10 @@ protected:
 private:
     void update_view();
 
-    QLabel* angle_text_{nullptr};
-    QLabel* angle_view_{nullptr};
-
-    QPen pen1_;
-    QPen pen2_;
-
-    double_t angle_{0};
+    QLabel* distance_view_{nullptr};
+    
+    double_t max_distance_{100};
+    double_t distance_{0};
 };
 
 }}}

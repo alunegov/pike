@@ -35,6 +35,16 @@ int main(int argc, char** argv)
 
     QApplication app(argc, argv);
 
+    // стиль для всего приложения
+    const auto style = QString{R"(
+        QPushButton {
+            min-height: %1px;
+            font-size: %2px;
+        }
+    )"}.arg(24).arg(14);
+
+    app.setStyleSheet(style);
+
     QMainWindow win;
     win.show();
 
