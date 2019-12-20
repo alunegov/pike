@@ -112,10 +112,8 @@ void MainPresenterImpl::AdcTick(double_t distance, double_t angle, int16_t depth
         view_->SetDistance(distance);
         view_->SetAngle(angle);
 
-        // не идёт оцифровка сечения?
-        if (depth != INT16_MIN) {
-            view_->SetDepth(depth);
-        }
+        // TODO: при оцифровке сечения здесь будет INT16_MIN
+        view_->SetDepth(depth);
     }
 }
 

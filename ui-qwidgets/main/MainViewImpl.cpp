@@ -9,23 +9,29 @@
 
 namespace ros { namespace pike { namespace ui {
 
+const size_t distance_viewport_height{40};
+const size_t min_viewport_size{100};
+
 MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     presenter_{presenter}
 {
     camera_viewport_ = new CameraWidget;
+    camera_viewport_->setMinimumSize(min_viewport_size, min_viewport_size);
     camera_viewport_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
     distance_viewport_ = new DistanceWidget;
-    distance_viewport_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+    distance_viewport_->setMinimumSize(min_viewport_size, distance_viewport_height);
+    distance_viewport_->setMaximumSize(width() * 6 / 10, distance_viewport_height);
+    distance_viewport_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
     inclio_viewport_ = new InclioWidget;
-    inclio_viewport_->setMinimumSize(100, 100);
-    inclio_viewport_->setMaximumHeight(200);
-    inclio_viewport_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    inclio_viewport_->setMinimumSize(min_viewport_size, min_viewport_size);
+    //inclio_viewport_->setMaximumHeight(200);
+    //inclio_viewport_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
 
     slice_viewport_ = new SliceWidget;
-    slice_viewport_->setMinimumSize(50, 50);
-    slice_viewport_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+    slice_viewport_->setMinimumSize(min_viewport_size, min_viewport_size);
+    //slice_viewport_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     slice_viewport_->SetDummySlice();
 
     depth_label_ = new QLabel;
@@ -34,11 +40,11 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
 
     ender1_label_ = new QLabel;
     ender1_label_->setText("ender1");
-    ender1_label_->setAlignment(Qt::AlignLeft);
+    ender1_label_->setAlignment(Qt::AlignCenter);
 
     ender2_label_ = new QLabel;
     ender2_label_->setText("ender2");
-    ender2_label_->setAlignment(Qt::AlignRight);
+    ender2_label_->setAlignment(Qt::AlignCenter);
 
     move_forward_button_ = new QPushButton;
     move_forward_button_->setText("fwd");
@@ -110,7 +116,44 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     dest_path_edit_->setText("dest_path");
 
     // layout
-    auto slice_layout = new QVBoxLayout;
+    auto camera_and_slice_layout = new QHBoxLayout;
+    camera_and_slice_layout->addWidget(camera_viewport_);
+    camera_and_slice_layout->addWidget(slice_viewport_);
+
+    auto distance_and_depth_layout = new QHBoxLayout;
+    distance_and_depth_layout->addWidget(distance_viewport_);
+    distance_and_depth_layout->addWidget(ender1_label_);
+    distance_and_depth_layout->addWidget(depth_label_);
+    distance_and_depth_layout->addWidget(ender2_label_);
+
+    auto move_buttons_layout = new QGridLayout;
+    move_buttons_layout->addWidget(move_forward_button_, 0, 1);
+    move_buttons_layout->addWidget(move_backward_button_, 2, 1);
+    move_buttons_layout->addWidget(rotate_ccw_button_, 1, 0);
+    move_buttons_layout->addWidget(rotate_cw_button_, 1, 3);
+
+    auto buttons_layout = new QVBoxLayout;
+    //buttons_layout->addStretch(2);
+    buttons_layout->addWidget(slice_button_);
+    auto l21  = new QHBoxLayout;
+    l21->addWidget(camera1_button_);
+    l21->addWidget(camera2_button_);
+    buttons_layout->addLayout(l21);
+    auto l22  = new QHBoxLayout;
+    l22->addWidget(rec_button_);
+    l22->addWidget(photo_button_);
+    buttons_layout->addLayout(l22);
+    buttons_layout->addWidget(dest_path_edit_);
+    //buttons_layout->addStretch(1);
+
+    auto bottom_layout = new QHBoxLayout;
+    bottom_layout->addWidget(inclio_viewport_);
+    bottom_layout->addStretch();
+    bottom_layout->addLayout(move_buttons_layout);
+    bottom_layout->addStretch();
+    bottom_layout->addLayout(buttons_layout);
+
+    /*auto slice_layout = new QVBoxLayout;
     slice_layout->addWidget(slice_viewport_);
     auto slice_bottom_layout = new QHBoxLayout;
     slice_bottom_layout->addWidget(ender1_label_);
@@ -153,17 +196,17 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     auto bottom_layout = new QHBoxLayout;
     bottom_layout->addLayout(distance_and_inclio_and_move_buttons_layout);
     bottom_layout->addStretch();
-    bottom_layout->addLayout(buttons_layout);
+    bottom_layout->addLayout(buttons_layout);*/
 
     auto rootLayout = new QVBoxLayout;
     rootLayout->addLayout(camera_and_slice_layout);
+    rootLayout->addLayout(distance_and_depth_layout);
     rootLayout->addLayout(bottom_layout);
 
     setLayout(rootLayout);
 
     //
     presenter_->SetView(this);
-
     presenter_->OnShow();
 }
 
@@ -177,38 +220,59 @@ MainViewImpl::~MainViewImpl()
 
 void MainViewImpl::SetDistance(double_t distance)
 {
-    //distance_viewport_->SetDistance(distance);
+    RunOnUiThread(this, [=]() {
+        //distance_viewport_->SetDistance(distance);
 
-    std::uniform_real_distribution<> dis{0, 100};
-    distance_viewport_->SetDistance(dis(gen));
+        std::uniform_real_distribution<> dis{0, 100};
+        distance_viewport_->SetDistance(dis(gen));
+    });
 }
 
 void MainViewImpl::SetAngle(double_t angle)
 {
-    //inclio_viewport_->SetAngle(angle);
+    RunOnUiThread(this, [=]() {
+        //inclio_viewport_->SetAngle(angle);
 
-    std::uniform_real_distribution<> dis{0, 359};
-    inclio_viewport_->SetAngle(dis(gen));
+        std::uniform_real_distribution<> dis{0, 360};
+        inclio_viewport_->SetAngle(dis(gen));
+    });
 }
 
 void MainViewImpl::SetDepth(int16_t depth)
 {
-    depth_label_->setText(QString::number(depth));
+    RunOnUiThread(this, [=]() {
+        depth_label_->setText(QString::number(depth));
+
+        slice_viewport_->SetDummySlice();
+    });
 }
 
 void MainViewImpl::UpdateSliceDepth(double_t angle, int16_t depth)
 {
-    depth_label_->setText(QString{"%1 at %2"}.arg(depth).arg(angle));
+    RunOnUiThread(this, [=]() {
+        depth_label_->setText(QString{"%1 at %2"}.arg(depth).arg(angle));
+    });
 }
 
 void MainViewImpl::SetEnders(bool ender1, bool ender2)
 {
-    ender1_label_->setText(QString::number(ender1));
-    ender2_label_->setText(QString::number(ender2));
+    RunOnUiThread(this, [=]() {
+        ender1_label_->setText(QString::number(ender1));
+        ender2_label_->setText(QString::number(ender2));
+    });
 }
 
 void MainViewImpl::SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
         double_t adc_to_volt)
-{}
+{
+    //RunOnUiThread(this, [=]() {});
+}
+
+void MainViewImpl::resizeEvent(QResizeEvent* event)
+{
+    (void)event;
+
+    distance_viewport_->setMaximumSize(width() * 6 / 10, distance_viewport_height);
+}
 
 }}}

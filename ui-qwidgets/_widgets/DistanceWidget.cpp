@@ -44,7 +44,7 @@ void DistanceWidget::update_view()
 
     QPixmap pixmap{rect.width(), rect.height()};
 
-    pixmap.fill(QColor{"transparent"});
+    //pixmap.fill(QColor{"transparent"});
 
     QPainter painter{&pixmap};
 
@@ -52,11 +52,17 @@ void DistanceWidget::update_view()
     //painter.setPen(QColor{"blue"});
 
     const auto w = rect.width();
+    const auto rw = rect.height();
 
     const auto distance_coeff = w / max_distance_;
 
+    //QImage img{"devicesetups.svg"};
+    //img.rec
+    //painter.drawImage(rect, img);
+
     painter.drawText(distance_ * distance_coeff, rect.height(), QString::number(distance_));
-    painter.drawRect(distance_ * distance_coeff, 0, 10, rect.height());
+
+    painter.drawRect(distance_ * distance_coeff, 0, rw, rect.height());
 
     distance_view_->setPixmap(pixmap);
 }

@@ -1,7 +1,6 @@
 #include <InclioWidget.h>
 
 #include <cmath>
-
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -14,10 +13,11 @@ InclioWidget::InclioWidget()
 {
     angle_text_ = new QLabel;
     angle_text_->setText("angle_text");
+    angle_text_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
 
     angle_view_ = new QLabel;
     angle_view_->setText("angle_view");
-    angle_view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+    //angle_view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     pen1_.setStyle(Qt::SolidLine);
     pen2_.setStyle(Qt::DotLine);

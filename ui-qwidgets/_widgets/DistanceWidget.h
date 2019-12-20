@@ -25,7 +25,7 @@ private:
 
     QLabel* distance_view_{nullptr};
     
-    double_t max_distance_{100};
+    double_t max_distance_{110};
     double_t distance_{0};
 };
 

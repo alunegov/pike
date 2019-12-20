@@ -1,9 +1,13 @@
 #pragma once
 
+#include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <functional>
 #include <random>
 
+#include <QtCore/QThread>
+#include <QtGui/qevent.h>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QLineEdit>
 #include <QtWidgets/QPushButton>
@@ -52,7 +56,24 @@ public:
     void SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
             double_t adc_to_volt) override;
 
+protected:
+    void resizeEvent(QResizeEvent* event) override;
+
 private:
+    static void RunOnUiThread(QWidget* target, const std::function<void()>& f)
+    {
+        assert(target != nullptr);
+
+        if (target->thread() == QThread::currentThread()) {
+            f();
+        } else {
+            QObject dummy;
+            QObject::connect(&dummy, &QObject::destroyed, target, f, Qt::BlockingQueuedConnection);
+            // Из-за BlockingQueuedConnection функция f будет вызвана в GUI-потоке и мы дождёмся её завершения в этом
+            // потоке. Разрушение dummy заблокирует текущий поток до завершения f в GUI-потоке.
+        }
+    }
+
     ros::pike::modules::MainPresenter* presenter_{nullptr};
 
     CameraWidget* camera_viewport_{nullptr};

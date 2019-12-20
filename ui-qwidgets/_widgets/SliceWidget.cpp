@@ -2,10 +2,9 @@
 
 #include <algorithm>
 #include <cmath>
-#include <random>
-
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <random>
 
 #include <QtGui/QPainter>
 #include <QtWidgets/QVBoxLayout>
@@ -97,10 +96,10 @@ void SliceWidget::update_view()
 
     const auto c = rect.center();
 
-    painter.setPen(pen2_);
+    /*painter.setPen(pen2_);
     painter.drawEllipse(c, r1, r1);  // линия мин
     painter.drawEllipse(c, dr, dr);  // линия среднего
-    painter.drawEllipse(c, r1 + r2, r1 + r2);  // линия макс
+    painter.drawEllipse(c, r1 + r2, r1 + r2);  // линия макс*/
 
     const auto minmax_depth = std::minmax_element(depths_.begin(), depths_.end());
     const auto mean_depth = Mean_AdcRaw(depths_.data(), (uint32_t)depths_.size());
@@ -123,7 +122,6 @@ void SliceWidget::update_view()
         const auto y = c.y() + (dr + (depths_[i] - mean_depth) * depth_coeff) * std::sin(angles_[i] * M_PI / 180);
         polygon.append(QPoint{(int)x, (int)y});
     }
-    //polygon.append(polygon.at(0));
     
     painter.setPen(pen1_);
     painter.drawPolyline(polygon);
