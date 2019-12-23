@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <thread>
 
 #include <Pike.h>
@@ -41,9 +42,21 @@ public:
 
     void StopRotation() override;
 
-    void SliceClicked() override;
+    void ResetDistanceClicked() override;
 
-    void ResetDistance() override;
+    void StartSlice() override;
+
+    void StopSlice() override;
+
+    void Camera1Clicked() override;
+
+    void Camera2Clicked() override;
+
+    void StartRec() override;
+
+    void StopRec() override;
+
+    void PhotoClicked() override;
 
     // OngoingReaderOutput
 
@@ -61,6 +74,10 @@ public:
     //void TtlInTick(bool ender1, bool ender2) override;
 
 private:
+    void SetMotionEnabled(bool enabled);
+
+    void SetMotionEnabled(bool forward_enabled, bool backward_enabled, bool ccw_enabled, bool cw_enabled);
+
     ros::pike::modules::MainView* view_{nullptr};
 
     ros::devices::Pike* pike_{nullptr};
@@ -70,6 +87,12 @@ private:
 
     std::thread slice_thread_;
     std::atomic_bool slice_cancel_token_{false};
+
+    uint8_t selected_camera_{1};
+
+    std::chrono::time_point<std::chrono::steady_clock> rec_start_time_;
+    double_t rec_start_distance_{0};
+    double_t rec_start_angle_{0};
 };
 
 }}}

@@ -24,10 +24,22 @@ public:
     virtual void StartRotation(ros::devices::RotatorDirection dir) = 0;
 
     virtual void StopRotation() = 0;
+    
+    virtual void ResetDistanceClicked() = 0;
 
-    virtual void SliceClicked() = 0;
+    virtual void StartSlice() = 0;
 
-    virtual void ResetDistance() = 0;
+    virtual void StopSlice() = 0;
+
+    virtual void Camera1Clicked() = 0;
+
+    virtual void Camera2Clicked() = 0;
+
+    virtual void StartRec() = 0;
+
+    virtual void StopRec() = 0;
+
+    virtual void PhotoClicked() = 0;
 };
 
 }}}

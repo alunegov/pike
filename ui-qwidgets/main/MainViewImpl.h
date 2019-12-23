@@ -43,6 +43,8 @@ public:
 
     // MainView
 
+    void RunOnUiThread(const std::function<void()>& f) override;
+
     void SetDistance(double_t distance) override;
 
     void SetAngle(double_t angle) override;
@@ -55,6 +57,30 @@ public:
 
     void SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
             double_t adc_to_volt) override;
+
+    std::string GetDestPath() override;
+
+    void SetMoveForwardEnabled(bool enabled) override;
+
+    void SetMoveBackwardEnabled(bool enabled) override;
+
+    void SetRotateCcwEnabled(bool enabled) override;
+
+    void SetRotateCwEnabled(bool enabled) override;
+
+    void SetSliceEnabled(bool enabled) override;
+
+    void SliceCompleted() override;
+
+    void SetCamera1Enabled(bool enabled) override;
+
+    void SetCamera2Enabled(bool enabled) override;
+
+    void SetRecEnabled(bool enabled) override;
+
+    void SetPhotoEnabled(bool enabled) override;
+
+    void SetDestPathEnabled(bool enabled) override;
 
 protected:
     void resizeEvent(QResizeEvent* event) override;

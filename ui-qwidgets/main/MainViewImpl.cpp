@@ -48,6 +48,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
 
     move_forward_button_ = new QPushButton;
     move_forward_button_->setText("fwd");
+    move_forward_button_->setObjectName("motion");
     QObject::connect(move_forward_button_, &QPushButton::pressed, this, [=]() {
         presenter_->StartMoving(ros::devices::MoverDirection::Forward);
     });
@@ -57,6 +58,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
 
     move_backward_button_ = new QPushButton;
     move_backward_button_->setText("back");
+    move_backward_button_->setObjectName("motion");
     QObject::connect(move_backward_button_, &QPushButton::pressed, this, [=]() {
         presenter_->StartMoving(ros::devices::MoverDirection::Backward);
     });
@@ -66,6 +68,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
 
     rotate_ccw_button_ = new QPushButton;
     rotate_ccw_button_->setText("ccw");
+    rotate_ccw_button_->setObjectName("motion");
     QObject::connect(rotate_ccw_button_, &QPushButton::pressed, this, [=]() {
         presenter_->StartRotation(ros::devices::RotatorDirection::CCW);
     });
@@ -75,6 +78,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
 
     rotate_cw_button_ = new QPushButton;
     rotate_cw_button_->setText("cw");
+    rotate_cw_button_->setObjectName("motion");
     QObject::connect(rotate_cw_button_, &QPushButton::pressed, this, [=]() {
         presenter_->StartRotation(ros::devices::RotatorDirection::CW);
     });
@@ -84,32 +88,44 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
 
     slice_button_ = new QPushButton;
     slice_button_->setText("slice");
-    QObject::connect(slice_button_, &QPushButton::clicked, this, [=]() {
-        presenter_->SliceClicked();
+    slice_button_->setCheckable(true);
+    slice_button_->setObjectName("record");
+    QObject::connect(slice_button_, &QPushButton::toggled, this, [=](bool checked) {
+        if (checked) {
+            presenter_->StartSlice();
+        } else {
+            presenter_->StopSlice();
+        }
     });
 
     camera1_button_ = new QPushButton;
     camera1_button_->setText("camera1");
     QObject::connect(camera1_button_, &QPushButton::clicked, this, [=]() {
-        
+        presenter_->Camera1Clicked();
     });
 
     camera2_button_ = new QPushButton;
     camera2_button_->setText("camera2");
     QObject::connect(camera2_button_, &QPushButton::clicked, this, [=]() {
-        
+        presenter_->Camera2Clicked();
     });
 
     rec_button_ = new QPushButton;
     rec_button_->setText("rec");
-    QObject::connect(rec_button_, &QPushButton::clicked, this, [=]() {
-        
+    rec_button_->setCheckable(true);
+    rec_button_->setObjectName("record");
+    QObject::connect(rec_button_, &QPushButton::toggled, this, [=](bool checked) {
+        if (checked) {
+            presenter_->StartRec();
+        } else {
+            presenter_->StopRec();
+        }
     });
 
     photo_button_ = new QPushButton;
     photo_button_->setText("photo");
     QObject::connect(photo_button_, &QPushButton::clicked, this, [=]() {
-        
+        presenter_->PhotoClicked();
     });
 
     dest_path_edit_ = new QLineEdit;
@@ -214,58 +230,111 @@ MainViewImpl::~MainViewImpl()
 {
     if (presenter_ != nullptr) {
         presenter_->SetView(nullptr);
-        //delete presenter_;
+        delete presenter_;
     }
+}
+
+void MainViewImpl::RunOnUiThread(const std::function<void()>& f)
+{
+    RunOnUiThread(this, f);
 }
 
 void MainViewImpl::SetDistance(double_t distance)
 {
-    RunOnUiThread(this, [=]() {
-        //distance_viewport_->SetDistance(distance);
+    //distance_viewport_->SetDistance(distance);
 
-        std::uniform_real_distribution<> dis{0, 100};
-        distance_viewport_->SetDistance(dis(gen));
-    });
+    std::uniform_real_distribution<> dis{0, 100};
+    distance_viewport_->SetDistance(dis(gen));
 }
 
 void MainViewImpl::SetAngle(double_t angle)
 {
-    RunOnUiThread(this, [=]() {
-        //inclio_viewport_->SetAngle(angle);
+    //inclio_viewport_->SetAngle(angle);
 
-        std::uniform_real_distribution<> dis{0, 360};
-        inclio_viewport_->SetAngle(dis(gen));
-    });
+    std::uniform_real_distribution<> dis{0, 360};
+    inclio_viewport_->SetAngle(dis(gen));
 }
 
 void MainViewImpl::SetDepth(int16_t depth)
 {
-    RunOnUiThread(this, [=]() {
-        depth_label_->setText(QString::number(depth));
+    depth_label_->setText(QString::number(depth));
 
-        slice_viewport_->SetDummySlice();
-    });
+    slice_viewport_->SetDummySlice();
 }
 
 void MainViewImpl::UpdateSliceDepth(double_t angle, int16_t depth)
 {
-    RunOnUiThread(this, [=]() {
-        depth_label_->setText(QString{"%1 at %2"}.arg(depth).arg(angle));
-    });
+    depth_label_->setText(QString{"%1 at %2"}.arg(depth).arg(angle));
 }
 
 void MainViewImpl::SetEnders(bool ender1, bool ender2)
 {
-    RunOnUiThread(this, [=]() {
-        ender1_label_->setText(QString::number(ender1));
-        ender2_label_->setText(QString::number(ender2));
-    });
+    ender1_label_->setText(QString::number(ender1));
+    ender2_label_->setText(QString::number(ender2));
 }
 
 void MainViewImpl::SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
         double_t adc_to_volt)
+{}
+
+std::string MainViewImpl::GetDestPath()
 {
-    //RunOnUiThread(this, [=]() {});
+    return dest_path_edit_->text().toStdString();
+}
+
+void MainViewImpl::SetMoveForwardEnabled(bool enabled)
+{
+    move_forward_button_->setEnabled(enabled);
+}
+
+void MainViewImpl::SetMoveBackwardEnabled(bool enabled)
+{
+    move_backward_button_->setEnabled(enabled);
+}
+
+void MainViewImpl::SetRotateCcwEnabled(bool enabled)
+{
+    rotate_ccw_button_->setEnabled(enabled);
+}
+
+void MainViewImpl::SetRotateCwEnabled(bool enabled)
+{
+    rotate_cw_button_->setEnabled(enabled);
+}
+
+void MainViewImpl::SetSliceEnabled(bool enabled)
+{
+    slice_button_->setEnabled(enabled);
+}
+
+void MainViewImpl::SliceCompleted()
+{
+    slice_button_->setChecked(false);
+}
+
+void MainViewImpl::SetCamera1Enabled(bool enabled)
+{
+    camera1_button_->setEnabled(enabled);
+}
+
+void MainViewImpl::SetCamera2Enabled(bool enabled)
+{
+    camera2_button_->setEnabled(enabled);
+}
+
+void MainViewImpl::SetRecEnabled(bool enabled)
+{
+    rec_button_->setEnabled(enabled);
+}
+
+void MainViewImpl::SetPhotoEnabled(bool enabled)
+{
+    photo_button_->setEnabled(enabled);
+}
+
+void MainViewImpl::SetDestPathEnabled(bool enabled)
+{
+    dest_path_edit_->setEnabled(enabled);
 }
 
 void MainViewImpl::resizeEvent(QResizeEvent* event)

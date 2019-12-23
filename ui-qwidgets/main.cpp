@@ -41,6 +41,10 @@ int main(int argc, char** argv)
             min-height: %1px;
             font-size: %2px;
         }
+
+        QPushButton#record:checked, QPushButton#motion:pressed {
+            background-color: red;
+        }
     )"}.arg(24).arg(14);
 
     app.setStyleSheet(style);
