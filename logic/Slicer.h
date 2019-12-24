@@ -3,9 +3,17 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
-#include <functional>
+#include <vector>
 
 namespace ros { namespace pike { namespace logic {
+
+struct SliceMsr
+{
+    bool ok{false};
+    double_t inclio_angle{0};
+    std::vector<double_t> angles;
+    std::vector<int16_t> depths;
+};
 
 class SlicerReadOutput
 {
@@ -21,7 +29,7 @@ class Slicer
 public:
     virtual ~Slicer() = default;
 
-    virtual void Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) = 0;
+    virtual SliceMsr Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) = 0;
 };
 
 }}}

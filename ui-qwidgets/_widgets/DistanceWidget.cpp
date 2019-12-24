@@ -7,8 +7,11 @@
 
 namespace ros { namespace pike { namespace ui {
 
-DistanceWidget::DistanceWidget()
+DistanceWidget::DistanceWidget(double_t max_distance) :
+    max_distance_{max_distance}
 {
+    assert(max_distance > 0);
+
     distance_view_ = new QLabel;
     distance_view_->setText("distance");
     distance_view_->setAlignment(Qt::AlignCenter);
@@ -25,7 +28,7 @@ void DistanceWidget::SetDistance(double_t distance)
 {
     distance_ = distance;
 
-    distance_view_->setText(QString::number(distance_));
+    distance_view_->setText(QString{"%1 мм"}.arg(distance_));
     update_view();
 }
 
@@ -48,7 +51,8 @@ void DistanceWidget::update_view()
 
     QPainter painter{&pixmap};
 
-    painter.setRenderHint(QPainter::Antialiasing);
+    // пока выводим прямоугольники и текст Antialiasing не особо и нужен
+    //painter.setRenderHint(QPainter::Antialiasing);
     //painter.setPen(QColor{"blue"});
 
     const auto w = rect.width();

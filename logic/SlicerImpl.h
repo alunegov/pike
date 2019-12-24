@@ -3,7 +3,6 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
-#include <functional>
 
 #include <Slicer.h>
 
@@ -23,7 +22,7 @@ public:
 
     // Slicer
 
-    void Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) override;
+    SliceMsr Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) override;
 
 private:
     ros::devices::Pike* pike_{nullptr};

@@ -22,6 +22,7 @@
 
 #include <ConfMapper.h>
 #include <OngoingReaderImpl.h>
+#include <SliceMsrMapperImpl.h>
 #include <SlicerImpl.h>
 
 #include <MainPresenterImpl.h>
@@ -58,27 +59,22 @@ int main(int argc, char** argv)
     conf.ender1.pin -= 1;
     conf.ender2.pin -= 1;
     conf.inclinometer.x_channel -= 1;
-    if (conf.daq.common_gnd) {
-        conf.inclinometer.x_channel |= AdcCommonGnd;
-    }
     conf.inclinometer.y_channel -= 1;
-    if (conf.daq.common_gnd) {
-        conf.inclinometer.y_channel |= AdcCommonGnd;
-    }
     conf.mover.pwm_pin -= 1;
     conf.mover.dir_pin -= 1;
     conf.odometer.a_channel -= 1;
-    if (conf.daq.common_gnd) {
-        conf.odometer.a_channel |= AdcCommonGnd;
-    }
     conf.odometer.b_channel -= 1;
-    if (conf.daq.common_gnd) {
-        conf.odometer.b_channel |= AdcCommonGnd;
-    }
     conf.rotator.en_pin -= 1;
     conf.rotator.step_pin -= 1;
     conf.rotator.dir_pin -= 1;
     conf.rotator.mx_pin -= 1;
+    if (conf.daq.common_gnd) {
+        conf.inclinometer.x_channel |= AdcCommonGnd;
+        conf.inclinometer.y_channel |= AdcCommonGnd;
+
+        conf.odometer.a_channel |= AdcCommonGnd;
+        conf.odometer.b_channel |= AdcCommonGnd;
+    }
 
     // dc and devices
     auto daq = new ros::dc::lcard::LCardDevice;
@@ -91,7 +87,7 @@ int main(int argc, char** argv)
     auto ender2 = new ros::devices::EnderImpl{daq, conf.ender2.pin};
 
     auto rotator = new ros::devices::RotatorImpl{daq, conf.rotator.en_pin, conf.rotator.step_pin, conf.rotator.dir_pin,
-            conf.rotator.mx_pin};
+            conf.rotator.mx_pin, conf.rotator.steps_per_msr, conf.rotator.steps_per_view};
 
     auto mover = new ros::devices::MoverImpl{daq, conf.mover.pwm_pin, conf.mover.dir_pin};
 
@@ -111,15 +107,17 @@ int main(int argc, char** argv)
 
     auto pike = new ros::devices::PikeImpl{daq, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
 
-    // logic/interactors
+    // logic/interactors/save-mappers
     auto ongoingReader = new ros::pike::logic::OngoingReaderImpl{pike, conf.daq.adc_rate};
 
     auto slicer = new ros::pike::logic::SlicerImpl{pike};
 
-    // presenter and view
-    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer};
+    auto sliceMsrMapper = new ros::pike::logic::SliceMsrMapperImpl;
 
-    auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl};
+    // presenter and view
+    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper};
+
+    auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl, conf.object_length};
 
     // set view as center widget
     win.setCentralWidget(mainViewImpl);

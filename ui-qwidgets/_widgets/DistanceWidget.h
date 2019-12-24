@@ -13,7 +13,7 @@ class DistanceWidget : public QWidget
     Q_OBJECT
 
 public:
-    DistanceWidget();
+    explicit DistanceWidget(double_t max_distance);
 
     void SetDistance(double_t distance);
 
@@ -25,7 +25,7 @@ private:
 
     QLabel* distance_view_{nullptr};
     
-    double_t max_distance_{110};
+    double_t max_distance_{0};
     double_t distance_{0};
 };
 

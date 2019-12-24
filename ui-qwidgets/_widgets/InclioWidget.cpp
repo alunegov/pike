@@ -20,6 +20,7 @@ InclioWidget::InclioWidget()
     //angle_view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 
     pen1_.setStyle(Qt::SolidLine);
+    pen1_.setColor(QColor{"blue"});
     pen2_.setStyle(Qt::DotLine);
 
     // layout
@@ -56,7 +57,6 @@ void InclioWidget::update_view()
     QPainter painter{&pixmap};
 
     painter.setRenderHint(QPainter::Antialiasing);
-    //painter.setPen(QColor{"blue"});
 
     const auto r = std::min(rect.width(), rect.height()) / 2 - 5;
     const auto c = rect.center();

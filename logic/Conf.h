@@ -9,6 +9,8 @@ namespace ros { namespace pike { namespace logic {
 // Настройки
 struct Conf
 {
+    double_t object_length;
+
     struct
     {
         size_t slot;
@@ -59,6 +61,8 @@ struct Conf
         uint16_t step_pin;
         uint16_t dir_pin;
         uint16_t mx_pin;
+        uint32_t steps_per_msr;
+        uint32_t steps_per_view;
     } rotator;
 };
 

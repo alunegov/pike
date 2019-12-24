@@ -37,7 +37,7 @@ class MainViewImpl :
 public:
     MainViewImpl() = delete;
 
-    explicit MainViewImpl(ros::pike::modules::MainPresenter* presenter);
+    MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_t object_length);
 
     ~MainViewImpl() override;
 
@@ -53,12 +53,12 @@ public:
 
     void UpdateSliceDepth(double_t angle, int16_t depth) override;
 
+    void SetSliceMsr(const std::vector<double_t>& angles, const std::vector<int16_t>& depths) override;
+
     void SetEnders(bool ender1, bool ender2) override;
 
     void SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
             double_t adc_to_volt) override;
-
-    std::string GetDestPath() override;
 
     void SetMoveForwardEnabled(bool enabled) override;
 

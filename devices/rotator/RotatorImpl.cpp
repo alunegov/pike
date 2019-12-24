@@ -23,6 +23,20 @@ void RotatorImpl::SetSpeed(RotatorSpeed speed)
     speed_ = speed;
 }
 
+uint32_t RotatorImpl::StepsIn360()
+{
+    // определяем по заданной, а не выставленной скорости
+    switch (speed_) {
+    case RotatorSpeed::Low:
+        return steps_per_msr_;
+    case RotatorSpeed::High:
+        return steps_per_view_;
+    default:
+        assert(false);
+        return 1;
+    }
+}
+
 void RotatorImpl::Start()
 {
     assert(!rotate_thread_.joinable());

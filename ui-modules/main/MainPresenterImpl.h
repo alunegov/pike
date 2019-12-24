@@ -7,6 +7,7 @@
 #include <Pike.h>
 
 #include <OngoingReader.h>
+#include <SliceMsrMapper.h>
 #include <Slicer.h>
 
 #include <MainPresenter.h>
@@ -24,7 +25,7 @@ public:
     MainPresenterImpl() = delete;
 
     MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
-            ros::pike::logic::Slicer* slicer);
+            ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper);
 
     ~MainPresenterImpl() override;
 
@@ -44,7 +45,7 @@ public:
 
     void ResetDistanceClicked() override;
 
-    void StartSlice() override;
+    void StartSlice(std::string dest_path) override;
 
     void StopSlice() override;
 
@@ -52,11 +53,11 @@ public:
 
     void Camera2Clicked() override;
 
-    void StartRec() override;
+    void StartRec(std::string dest_path) override;
 
     void StopRec() override;
 
-    void PhotoClicked() override;
+    void PhotoClicked(std::string dest_path) override;
 
     // OngoingReaderOutput
 
@@ -84,13 +85,17 @@ private:
 
     ros::pike::logic::OngoingReader* ongoingReader_{nullptr};
     ros::pike::logic::Slicer* slicer_{nullptr};
+    ros::pike::logic::SliceMsrMapper* sliceMsrMapper_{nullptr};
 
     std::thread slice_thread_;
     std::atomic_bool slice_cancel_token_{false};
 
     uint8_t selected_camera_{1};
 
-    std::chrono::time_point<std::chrono::steady_clock> rec_start_time_;
+    std::string slice_dest_path_;
+
+    std::string rec_dest_path_;
+    std::chrono::system_clock::time_point rec_start_time_;
     double_t rec_start_distance_{0};
     double_t rec_start_angle_{0};
 };

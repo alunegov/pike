@@ -12,14 +12,14 @@ namespace ros { namespace pike { namespace ui {
 const size_t distance_viewport_height{40};
 const size_t min_viewport_size{100};
 
-MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
+MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_t object_length) :
     presenter_{presenter}
 {
     camera_viewport_ = new CameraWidget;
     camera_viewport_->setMinimumSize(min_viewport_size, min_viewport_size);
     camera_viewport_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
-    distance_viewport_ = new DistanceWidget;
+    distance_viewport_ = new DistanceWidget{object_length};
     distance_viewport_->setMinimumSize(min_viewport_size, distance_viewport_height);
     distance_viewport_->setMaximumSize(width() * 6 / 10, distance_viewport_height);
     distance_viewport_->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
@@ -47,7 +47,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     ender2_label_->setAlignment(Qt::AlignCenter);
 
     move_forward_button_ = new QPushButton;
-    move_forward_button_->setText("fwd");
+    move_forward_button_->setText("Вперёд");
     move_forward_button_->setObjectName("motion");
     QObject::connect(move_forward_button_, &QPushButton::pressed, this, [=]() {
         presenter_->StartMoving(ros::devices::MoverDirection::Forward);
@@ -57,7 +57,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     });
 
     move_backward_button_ = new QPushButton;
-    move_backward_button_->setText("back");
+    move_backward_button_->setText("Назад");
     move_backward_button_->setObjectName("motion");
     QObject::connect(move_backward_button_, &QPushButton::pressed, this, [=]() {
         presenter_->StartMoving(ros::devices::MoverDirection::Backward);
@@ -67,7 +67,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     });
 
     rotate_ccw_button_ = new QPushButton;
-    rotate_ccw_button_->setText("ccw");
+    rotate_ccw_button_->setText("Вращ.\nвлево");
     rotate_ccw_button_->setObjectName("motion");
     QObject::connect(rotate_ccw_button_, &QPushButton::pressed, this, [=]() {
         presenter_->StartRotation(ros::devices::RotatorDirection::CCW);
@@ -77,7 +77,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     });
 
     rotate_cw_button_ = new QPushButton;
-    rotate_cw_button_->setText("cw");
+    rotate_cw_button_->setText("Вращ.\nвправо");
     rotate_cw_button_->setObjectName("motion");
     QObject::connect(rotate_cw_button_, &QPushButton::pressed, this, [=]() {
         presenter_->StartRotation(ros::devices::RotatorDirection::CW);
@@ -87,49 +87,49 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter) :
     });
 
     slice_button_ = new QPushButton;
-    slice_button_->setText("slice");
+    slice_button_->setText("Запись/отобр. диаметра");
     slice_button_->setCheckable(true);
     slice_button_->setObjectName("record");
     QObject::connect(slice_button_, &QPushButton::toggled, this, [=](bool checked) {
         if (checked) {
-            presenter_->StartSlice();
+            presenter_->StartSlice(std::move(dest_path_edit_->text().toStdString()));
         } else {
             presenter_->StopSlice();
         }
     });
 
     camera1_button_ = new QPushButton;
-    camera1_button_->setText("camera1");
+    camera1_button_->setText("Камера 1");
     QObject::connect(camera1_button_, &QPushButton::clicked, this, [=]() {
         presenter_->Camera1Clicked();
     });
 
     camera2_button_ = new QPushButton;
-    camera2_button_->setText("camera2");
+    camera2_button_->setText("Камера 2");
     QObject::connect(camera2_button_, &QPushButton::clicked, this, [=]() {
         presenter_->Camera2Clicked();
     });
 
     rec_button_ = new QPushButton;
-    rec_button_->setText("rec");
+    rec_button_->setText("Камера/Запись");
     rec_button_->setCheckable(true);
     rec_button_->setObjectName("record");
     QObject::connect(rec_button_, &QPushButton::toggled, this, [=](bool checked) {
         if (checked) {
-            presenter_->StartRec();
+            presenter_->StartRec(std::move(dest_path_edit_->text().toStdString()));
         } else {
             presenter_->StopRec();
         }
     });
 
     photo_button_ = new QPushButton;
-    photo_button_->setText("photo");
+    photo_button_->setText("Камера/Фото");
     QObject::connect(photo_button_, &QPushButton::clicked, this, [=]() {
-        presenter_->PhotoClicked();
+        presenter_->PhotoClicked(std::move(dest_path_edit_->text().toStdString()));
     });
 
     dest_path_edit_ = new QLineEdit;
-    dest_path_edit_->setText("dest_path");
+    dest_path_edit_->setText("путь для записи");
 
     // layout
     auto camera_and_slice_layout = new QHBoxLayout;
@@ -243,6 +243,7 @@ void MainViewImpl::SetDistance(double_t distance)
 {
     //distance_viewport_->SetDistance(distance);
 
+    // debug
     std::uniform_real_distribution<> dis{0, 100};
     distance_viewport_->SetDistance(dis(gen));
 }
@@ -251,20 +252,27 @@ void MainViewImpl::SetAngle(double_t angle)
 {
     //inclio_viewport_->SetAngle(angle);
 
+    // debug
     std::uniform_real_distribution<> dis{0, 360};
     inclio_viewport_->SetAngle(dis(gen));
 }
 
 void MainViewImpl::SetDepth(int16_t depth)
 {
-    depth_label_->setText(QString::number(depth));
+    depth_label_->setText(QString{"%1 мкм"}.arg(depth));
 
+    // debug
     slice_viewport_->SetDummySlice();
 }
 
 void MainViewImpl::UpdateSliceDepth(double_t angle, int16_t depth)
 {
-    depth_label_->setText(QString{"%1 at %2"}.arg(depth).arg(angle));
+    depth_label_->setText(QString{"%1° - %2 мкм"}.arg(angle).arg(depth));
+}
+
+void MainViewImpl::SetSliceMsr(const std::vector<double_t>& angles, const std::vector<int16_t>& depths)
+{
+    slice_viewport_->SetSlice(angles, depths);
 }
 
 void MainViewImpl::SetEnders(bool ender1, bool ender2)
@@ -276,11 +284,6 @@ void MainViewImpl::SetEnders(bool ender1, bool ender2)
 void MainViewImpl::SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
         double_t adc_to_volt)
 {}
-
-std::string MainViewImpl::GetDestPath()
-{
-    return dest_path_edit_->text().toStdString();
-}
 
 void MainViewImpl::SetMoveForwardEnabled(bool enabled)
 {

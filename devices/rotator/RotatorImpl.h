@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cmath>
 #include <thread>
 
 #include <Rotator.h>
@@ -16,12 +17,15 @@ class RotatorImpl : public Rotator
 public:
     RotatorImpl() = delete;
 
-    RotatorImpl(ros::dc::DAQ* daq, uint16_t enable_pin, uint16_t step_pin, uint16_t direction_pin, uint16_t m0_pin) :
+    RotatorImpl(ros::dc::DAQ* daq, uint16_t enable_pin, uint16_t step_pin, uint16_t direction_pin, uint16_t m0_pin,
+            uint32_t steps_per_msr, uint32_t steps_per_view) :
         daq_{daq},
         enable_pin_{enable_pin},
         step_pin_{step_pin},
         direction_pin_{direction_pin},
-        m0_pin_{m0_pin}
+        m0_pin_{m0_pin},
+        steps_per_msr_{steps_per_msr},
+        steps_per_view_{steps_per_view}
     {}
 
     ~RotatorImpl() override;
@@ -31,6 +35,8 @@ public:
     void SetDirection(RotatorDirection direction) override;
 
     void SetSpeed(RotatorSpeed speed) override;
+
+    uint32_t StepsIn360() override;
 
     void Start() override;
 
@@ -54,6 +60,8 @@ private:
     uint16_t step_pin_{0};
     uint16_t direction_pin_{0};
     uint16_t m0_pin_{0};
+    uint32_t steps_per_msr_{0};
+    uint32_t steps_per_view_{0};
 
     RotatorDirection direction_{RotatorDirection::CW};
     RotatorSpeed speed_{RotatorSpeed::Low};

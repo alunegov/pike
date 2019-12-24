@@ -4,11 +4,13 @@
 
 namespace ros { namespace pike { namespace logic {
 
-void SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output)
+SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output)
 {
     assert(output != nullptr);
 
     const size_t MaxStepInEnder{1};
+
+    SliceMsr res;
 
     // поворот в крайнее левое положение
     pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CCW);
@@ -27,22 +29,26 @@ void SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput* ou
             break;
         }
 
+        // TODO: use Step
         pike_->rotator()->Rotate();
 
         if (cancel_token) {
-            return;
+            return res;
         }
     }
 
     // получение положения в пространстве
-    const double_t angle = pike_->inclinometer()->Get();
+    res.inclio_angle = pike_->inclinometer()->Get();
 
     // измерение, поворачивая в крайнее правое положение
     pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CW);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::Low);
 
+    assert(pike_->rotator()->StepsIn360() > 0);
+    const double_t angle_per_step = 360.0 / pike_->rotator()->StepsIn360();
+
     // TODO: не более числа шагов, нужного на полный оборот (вдруг ender не работает)
-    size_t i{0};
+    double_t angle{0};  // TODO: начинаем с нулевого угла?
     size_t steps_in_ender2{0};
     while (true) {
         const bool ender1 = pike_->ender1()->Read();
@@ -57,21 +63,31 @@ void SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput* ou
                 break;
             }
         } else {
-            assert(steps_in_ender2 == 0);
+            assert(steps_in_ender2 == 0);  // ender выставился, а потом сбросился
         }
 
         const int16_t depth = pike_->depthometer()->Read();
 
-        output->SliceTick(i++, depth);
+        res.angles.emplace_back(angle);
+        res.depths.emplace_back(depth);
 
+        output->SliceTick(angle, depth);
+
+        // TODO: use Step
         pike_->rotator()->Rotate();
 
+        angle += angle_per_step;
+
         if (cancel_token) {
-            return;
+            return res;
         }
     }
 
     //pike_->rotator()->Disable();
+
+    res.ok = true;
+
+    return res;
 }
 
 }}}

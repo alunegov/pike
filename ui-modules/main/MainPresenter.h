@@ -27,7 +27,7 @@ public:
     
     virtual void ResetDistanceClicked() = 0;
 
-    virtual void StartSlice() = 0;
+    virtual void StartSlice(std::string dest_path) = 0;
 
     virtual void StopSlice() = 0;
 
@@ -35,11 +35,11 @@ public:
 
     virtual void Camera2Clicked() = 0;
 
-    virtual void StartRec() = 0;
+    virtual void StartRec(std::string dest_path) = 0;
 
     virtual void StopRec() = 0;
 
-    virtual void PhotoClicked() = 0;
+    virtual void PhotoClicked(std::string dest_path) = 0;
 };
 
 }}}

@@ -17,6 +17,8 @@ Conf ConfMapper::Load(const std::string& filename)
     doc.ParseStream(json_file);
 
     Conf res;
+    
+    res.object_length = doc["object_length"].GetDouble();
 
     const auto& daq = doc["daq"];
     res.daq.slot = daq["slot"].GetInt();
@@ -53,6 +55,8 @@ Conf ConfMapper::Load(const std::string& filename)
     res.rotator.step_pin = static_cast<uint16_t>(rotator["step_pin"].GetInt());
     res.rotator.dir_pin = static_cast<uint16_t>(rotator["dir_pin"].GetInt());
     res.rotator.mx_pin = static_cast<uint16_t>(rotator["mx_pin"].GetInt());
+    res.rotator.steps_per_msr = static_cast<uint32_t>(rotator["steps_per_msr"].GetInt());
+    res.rotator.steps_per_view = static_cast<uint32_t>(rotator["steps_per_view"].GetInt());
 
     return res;
 }

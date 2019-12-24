@@ -2,18 +2,25 @@
 
 #include <cassert>
 #include <chrono>
+#include <ctime>
+#include <iomanip>
 #include <sstream>
 #include <thread>
 
 namespace ros { namespace pike { namespace modules {
 
 MainPresenterImpl::MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
-        ros::pike::logic::Slicer* slicer) :
+        ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper) :
     pike_{pike},
     ongoingReader_{ongoingReader},
-    slicer_(slicer)
+    slicer_(slicer),
+    sliceMsrMapper_{sliceMsrMapper}
 {
+    assert(pike != nullptr);
     assert(ongoingReader != nullptr);
+    assert(slicer != nullptr);
+    assert(sliceMsrMapper != nullptr);
+
     ongoingReader_->SetOutput(this);
 }
 
@@ -21,7 +28,7 @@ MainPresenterImpl::~MainPresenterImpl()
 {
     if (slice_thread_.joinable()) {
         slice_cancel_token_ = true;
-        // TODO: при вызове из ui-потока возможен deadlock?
+        // TODO: при вызове из ui-потока возможен deadlock? (пока не возникал - видимо закрытие идёт как-то по другому)
         slice_thread_.join();
     }
 
@@ -99,48 +106,48 @@ void MainPresenterImpl::ResetDistanceClicked()
     }
 }
 
-void MainPresenterImpl::StartSlice()
+void MainPresenterImpl::StartSlice(std::string dest_path)
 {
+    // при остановке не вызываем явно join - joinable не сбрасывается
     if (slice_thread_.joinable()) {
         slice_cancel_token_ = true;
         slice_thread_.join();
     }
 
     if (view_ != nullptr) {
+        view_->SetSliceMsr({}, {});
         SetMotionEnabled(false);
     }
+
+    slice_dest_path_ = std::move(dest_path);
 
     ongoingReader_->IdleDepth(true);
 
     slice_cancel_token_ = false;
 
     slice_thread_ = std::thread{[this]() {
-        // TODO: consume slice msr result from Read
-        slicer_->Read(slice_cancel_token_, this);
+        const auto slice_msr = std::move(slicer_->Read(slice_cancel_token_, this));
+
+        // чтобы не зависеть от возможных будущих изменений slice_cancel_token_
+        const bool not_canceled = !slice_cancel_token_;
+
+        if (not_canceled && slice_msr.ok) {
+            sliceMsrMapper_->Save(slice_msr);
+        }
 
         //std::this_thread::sleep_for(std::chrono::seconds{4});
         
         ongoingReader_->IdleDepth(false);
 
         if (view_ != nullptr) {
-            view_->RunOnUiThread([this]() {
+            view_->RunOnUiThread([this, not_canceled, &slice_msr]() {
                 if (view_ != nullptr) {
+                    if (not_canceled && slice_msr.ok) {
+                        view_->SetSliceMsr(slice_msr.angles, slice_msr.depths);
+                    }
                     view_->SetSliceEnabled(true);
                     view_->SliceCompleted();
                     SetMotionEnabled(true);
-                }
-            });
-        }
-
-        if (slice_cancel_token_) {
-            return;
-        }
-        
-        // TODO: отобразить и сохранить результат
-        if (view_ != nullptr) {
-            view_->RunOnUiThread([this]() {
-                if (view_ != nullptr) {
-                    SetMotionEnabled(false);
                 }
             });
         }
@@ -152,7 +159,6 @@ void MainPresenterImpl::StopSlice()
     assert(slice_thread_.joinable());
 
     slice_cancel_token_ = true;
-    //slice_thread_.join();
 
     // выполнение всех остальных действий выполняется в потоке (типа reactive), на это время блокируем кнопку
     view_->SetSliceEnabled(false);
@@ -168,11 +174,14 @@ void MainPresenterImpl::Camera2Clicked()
     selected_camera_ = 2;
 }
 
-void MainPresenterImpl::StartRec()
+void MainPresenterImpl::StartRec(std::string dest_path)
 {
-    rec_start_time_ = std::chrono::steady_clock::now();
+    rec_dest_path_ = std::move(dest_path);
+    rec_start_time_ = std::chrono::system_clock::now();
     rec_start_distance_ = pike_->odometer()->Get();
     rec_start_angle_ = pike_->inclinometer()->Get();
+
+    // TODO: start recording from selected_camera_
 
     view_->SetCamera1Enabled(false);
     view_->SetCamera2Enabled(false);
@@ -180,29 +189,42 @@ void MainPresenterImpl::StartRec()
 
 void MainPresenterImpl::StopRec()
 {
-    const auto stop_time = std::chrono::steady_clock::now();
+    const auto start_time_t = std::chrono::system_clock::to_time_t(rec_start_time_);
+
+    const auto stop_time = std::chrono::system_clock::now();
+    const auto stop_time_t = std::chrono::system_clock::to_time_t(stop_time);
 
     std::stringstream ss;
-    ss << rec_start_distance_ << "-" << selected_camera_ << "-" << "rec_start_time_" << "-" << "stop_time" << "-" << rec_start_angle_;
+    ss << rec_dest_path_ << (rec_dest_path_.empty() ? "./" : "/")
+            << rec_start_distance_ << "-"
+            << static_cast<int>(selected_camera_) << "-"
+            << std::put_time(localtime(&start_time_t), "%c") << "-"
+            << std::put_time(localtime(&stop_time_t), "%c") << "-"
+            << rec_start_angle_ << ".video";
     const std::string file_name = ss.str();
+
+    // TODO: stop recording and save recorded as video (encoded? h264/vc-1?)
 
     view_->SetCamera1Enabled(true);
     view_->SetCamera2Enabled(true);
 }
 
-void MainPresenterImpl::PhotoClicked()
+void MainPresenterImpl::PhotoClicked(std::string dest_path)
 {
-    if (view_ != nullptr) {
-        const std::string dest_path = std::move(view_->GetDestPath());
-    }
-
-    const auto start_time = std::chrono::steady_clock::now();
+    const auto start_time = std::chrono::system_clock::now();
+    const auto start_time_t = std::chrono::system_clock::to_time_t(start_time);
     const double_t start_distance = pike_->odometer()->Get();
     const double_t start_angle = pike_->inclinometer()->Get();
 
     std::stringstream ss;
-    ss << start_distance << "-" << selected_camera_ << "-" << "start_time" << "-" << start_angle;
+    ss << dest_path << (dest_path.empty() ? "./" : "/")
+            << start_distance << "-"
+            << static_cast<int>(selected_camera_) << "-"
+            << std::put_time(localtime(&start_time_t), "%c") << "-"
+            << start_angle << ".photo";
     const std::string file_name = ss.str();
+
+    // TODO: save buffer from selected_camera_ as image
 }
 
 void MainPresenterImpl::AdcTick(double_t distance, double_t angle, int16_t depth)
