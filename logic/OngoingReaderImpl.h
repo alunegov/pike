@@ -30,6 +30,8 @@ public:
 
     void Start() override;
 
+    void Stop() override;
+
     void IdleDepth(bool value) override;
 
 private:

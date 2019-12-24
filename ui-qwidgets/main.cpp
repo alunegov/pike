@@ -122,5 +122,32 @@ int main(int argc, char** argv)
     // set view as center widget
     win.setCentralWidget(mainViewImpl);
 
-    return QApplication::exec();
+    const auto app_res = QApplication::exec();
+
+    win.setCentralWidget(nullptr);
+
+    // TODO: убедиться, что setCentralWidget не приводит к удалению mainViewImpl
+    delete mainViewImpl;
+
+    delete mainPresenterImpl;
+
+    delete ongoingReader;
+    delete slicer;
+    delete sliceMsrMapper;
+
+    // удаляемые выше зависят от pike
+    delete pike;
+
+    delete ender1;
+    delete ender2;
+    delete rotator;
+    delete mover;
+    delete odometer;
+    delete inclinometer;
+    delete depthometer;
+
+    // удаляемые выше зависят от daq
+    delete daq;
+
+    return app_res;
 }

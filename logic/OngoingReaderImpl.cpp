@@ -9,10 +9,7 @@ namespace ros { namespace pike { namespace logic {
 OngoingReaderImpl::~OngoingReaderImpl()
 {
     if (adc_thread_.joinable() || ttl_in_thread_.joinable()) {
-        cancel_token_ = true;
-        adc_thread_.join();
-        ttl_in_thread_.join();
-
+        Stop();
     }
 }
 
@@ -68,6 +65,15 @@ void OngoingReaderImpl::Start()
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
         }
     }};
+}
+
+void OngoingReaderImpl::Stop()
+{
+    assert(adc_thread_.joinable() && ttl_in_thread_.joinable());
+
+    cancel_token_ = true;
+    adc_thread_.join();
+    ttl_in_thread_.join();
 }
 
 void OngoingReaderImpl::IdleDepth(bool value)

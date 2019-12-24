@@ -230,7 +230,7 @@ MainViewImpl::~MainViewImpl()
 {
     if (presenter_ != nullptr) {
         presenter_->SetView(nullptr);
-        delete presenter_;
+        //delete presenter_;
     }
 }
 

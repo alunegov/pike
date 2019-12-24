@@ -26,17 +26,20 @@ MainPresenterImpl::MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic:
 
 MainPresenterImpl::~MainPresenterImpl()
 {
+    ongoingReader_->Stop();
+
     if (slice_thread_.joinable()) {
         slice_cancel_token_ = true;
         // TODO: при вызове из ui-потока возможен deadlock? (пока не возникал - видимо закрытие идёт как-то по другому)
         slice_thread_.join();
     }
 
-    delete ongoingReader_;
-    delete slicer_;
+    //delete ongoingReader_;
+    //delete slicer_;
+    //delete sliceMsrMapper_;
 
     // удаляемые выше зависят от pike_
-    delete pike_;
+    //delete pike_;
 }
 
 void MainPresenterImpl::SetView(ros::pike::modules::MainView* view)
@@ -161,7 +164,9 @@ void MainPresenterImpl::StopSlice()
     slice_cancel_token_ = true;
 
     // выполнение всех остальных действий выполняется в потоке (типа reactive), на это время блокируем кнопку
-    view_->SetSliceEnabled(false);
+    if (view_ != nullptr) {
+        view_->SetSliceEnabled(false);
+    }
 }
 
 void MainPresenterImpl::Camera1Clicked()
@@ -183,8 +188,10 @@ void MainPresenterImpl::StartRec(std::string dest_path)
 
     // TODO: start recording from selected_camera_
 
-    view_->SetCamera1Enabled(false);
-    view_->SetCamera2Enabled(false);
+    if (view_ != nullptr) {
+        view_->SetCamera1Enabled(false);
+        view_->SetCamera2Enabled(false);
+    }
 }
 
 void MainPresenterImpl::StopRec()
@@ -205,8 +212,10 @@ void MainPresenterImpl::StopRec()
 
     // TODO: stop recording and save recorded as video (encoded? h264/vc-1?)
 
-    view_->SetCamera1Enabled(true);
-    view_->SetCamera2Enabled(true);
+    if (view_ != nullptr) {
+        view_->SetCamera1Enabled(true);
+        view_->SetCamera2Enabled(true);
+    }
 }
 
 void MainPresenterImpl::PhotoClicked(std::string dest_path)
