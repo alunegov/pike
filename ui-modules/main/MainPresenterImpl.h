@@ -7,6 +7,7 @@
 #include <Pike.h>
 
 #include <OngoingReader.h>
+#include <Remote.h>
 #include <SliceMsrMapper.h>
 #include <Slicer.h>
 
@@ -19,13 +20,15 @@ namespace ros { namespace pike { namespace modules {
 class MainPresenterImpl :
     public MainPresenter,
     public ros::pike::logic::OngoingReaderOutput,
-    public ros::pike::logic::SlicerReadOutput
+    public ros::pike::logic::SlicerReadOutput,
+    public ros::pike::logic::RemoteOutput
 {
 public:
     MainPresenterImpl() = delete;
 
     MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
-            ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper);
+            ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper,
+            ros::pike::logic::Remote* remote);
 
     ~MainPresenterImpl() override;
 
@@ -74,6 +77,8 @@ public:
 
     //void TtlInTick(bool ender1, bool ender2) override;
 
+    // RemoteOutput
+
 private:
     void SetMotionEnabled(bool enabled);
 
@@ -86,6 +91,7 @@ private:
     ros::pike::logic::OngoingReader* ongoingReader_{nullptr};
     ros::pike::logic::Slicer* slicer_{nullptr};
     ros::pike::logic::SliceMsrMapper* sliceMsrMapper_{nullptr};
+    ros::pike::logic::Remote* remote_{nullptr};
 
     std::thread slice_thread_;
     std::atomic_bool slice_cancel_token_{false};

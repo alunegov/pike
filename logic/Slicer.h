@@ -18,6 +18,8 @@ struct SliceMsr
 class SlicerReadOutput
 {
 public:
+    virtual ~SlicerReadOutput() = default;
+
     virtual void SliceTick(double_t angle, int16_t depth) = 0;
 
     virtual void TtlInTick(bool ender1, bool ender2) = 0;

@@ -9,6 +9,8 @@ namespace ros { namespace pike { namespace logic {
 class OngoingReaderOutput
 {
 public:
+    virtual ~OngoingReaderOutput() = default;
+
     virtual void AdcTick(double_t distance, double_t angle, int16_t depth) = 0;
 
     virtual void AdcTick_Values(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,

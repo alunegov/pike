@@ -10,24 +10,31 @@
 namespace ros { namespace pike { namespace modules {
 
 MainPresenterImpl::MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
-        ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper) :
+        ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper,
+        ros::pike::logic::Remote* remote) :
     pike_{pike},
     ongoingReader_{ongoingReader},
     slicer_(slicer),
-    sliceMsrMapper_{sliceMsrMapper}
+    sliceMsrMapper_{sliceMsrMapper},
+    remote_{remote}
 {
     assert(pike != nullptr);
     assert(ongoingReader != nullptr);
     assert(slicer != nullptr);
     assert(sliceMsrMapper != nullptr);
+    assert(remote != nullptr);
 
     ongoingReader_->SetOutput(this);
+    remote_->SetOutput(this);
 }
 
 MainPresenterImpl::~MainPresenterImpl()
 {
     if (ongoingReader_ != nullptr) {
         ongoingReader_->Stop();
+    }
+    if (remote_ != nullptr) {
+        remote_->Stop();
     }
 
     if (slice_thread_.joinable()) {
@@ -45,6 +52,7 @@ void MainPresenterImpl::SetView(ros::pike::modules::MainView* view)
 void MainPresenterImpl::OnShow()
 {
     ongoingReader_->Start();
+    remote_->Start();
 }
 
 void MainPresenterImpl::StartMoving(ros::devices::MoverDirection dir)
@@ -248,7 +256,7 @@ void MainPresenterImpl::AdcTick_Values(const std::vector<uint16_t>& channels, co
     // TODO: lock view_
     if (view_ != nullptr) {
         view_->RunOnUiThread([this, channels, values, values_count, adc_to_volt]() {
-            // TODO: копия values для асинхронного отображения в виде
+            // TODO: копия values для асинхронного отображения в виде, можно через кольцевой буфер
             if (view_ != nullptr) {
                 view_->SetAdcChannels(channels, values, values_count, adc_to_volt);
             }

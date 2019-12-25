@@ -22,6 +22,7 @@
 
 #include <ConfMapper.h>
 #include <OngoingReaderImpl.h>
+#include <RemoteImpl.h>
 #include <SliceMsrMapperImpl.h>
 #include <SlicerImpl.h>
 
@@ -101,7 +102,9 @@ int main(int argc, char** argv)
             trans_table};
 
     ce::ceSerial depthometer_transport{conf.depthometer.port_name, conf.depthometer.baud_rate, 8, 'N', 1};
-    depthometer_transport.Open();
+    const auto open_res = depthometer_transport.Open();
+    if (open_res != 0) {
+    }
     // порт закроется в depthometer, или автоматически при удалении depthometer_transport (в конце main)
 
     auto depthometer = new ros::devices::CD22{depthometer_transport};
@@ -115,8 +118,11 @@ int main(int argc, char** argv)
 
     auto sliceMsrMapper = new ros::pike::logic::SliceMsrMapperImpl;
 
+    auto remote = new ros::pike::logic::RemoteImpl;
+
     // presenter and view
-    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper};
+    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper,
+            remote};
 
     auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl, conf.object_length};
     // выставляем mainview как центральный виджет QMainWindow
@@ -133,6 +139,7 @@ int main(int argc, char** argv)
     delete ongoingReader;
     delete slicer;
     delete sliceMsrMapper;
+    delete remote;
 
     // удаляемые выше зависят от pike
     delete pike;

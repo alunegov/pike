@@ -23,41 +23,68 @@ void LCardDevice::Init(size_t slot_num)
     ULONG status;
 
     lcomp_handle_ = LoadLibrary(LCompName);
-    if (lcomp_handle_ == nullptr) {}
+    if (lcomp_handle_ == nullptr) {
+        Deinit();
+        return;
+    }
 
     const auto create_instance = (CREATEFUNCPTR)GetProcAddress(lcomp_handle_, "CreateInstance");
-    if (create_instance == nullptr) {}
+    if (create_instance == nullptr) {
+        Deinit();
+        return;
+    }
     
-    IDaqLDevice* device_instance = create_instance(static_cast<ULONG>(slot_num));
-    if (device_instance == nullptr) {}
+    IDaqLDevice* const device_instance = create_instance(static_cast<ULONG>(slot_num));
+    if (device_instance == nullptr) {
+        Deinit();
+        return;
+    }
 
     const HRESULT query_res = device_instance->QueryInterface(IID_ILDEV, (void**)&device_);
-    if (!SUCCEEDED(query_res)) {}
+    if (!SUCCEEDED(query_res)) {
+        Deinit();
+        return;
+    }
 
     status = device_instance->Release();
     //device_instance = nullptr;
 
     const HANDLE device_handle = device_->OpenLDevice();
-    if (device_handle == INVALID_HANDLE_VALUE) {}
+    if (device_handle == INVALID_HANDLE_VALUE) {
+        Deinit();
+        return;
+    }
 
     SLOT_PAR slot_param;
 
     status = device_->GetSlotParam(&slot_param);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        Deinit();
+        return;
+    }
 
     board_type_ = slot_param.BoardType;
 
     const char* const biosName = DetectBiosName(board_type_);
     status = device_->LoadBios(const_cast<char*>(biosName));
-    if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) {}
+    if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) {
+        Deinit();
+        return;
+    }
 
     PLATA_DESCR_U2 plata_descr;
 
     status = device_->ReadPlataDescr(&plata_descr);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        Deinit();
+        return;
+    }
 
     adc_rate_params_ = DetectAdcRateParams(board_type_, plata_descr);
-    if (adc_rate_params_.FClock == 0) {}
+    if (adc_rate_params_.FClock == 0) {
+        Deinit();
+        return;
+    }
 }
 
 void LCardDevice::Deinit()
@@ -74,6 +101,7 @@ void LCardDevice::Deinit()
 
     if (lcomp_handle_ != nullptr) {
         const auto free_res = FreeLibrary(lcomp_handle_);
+        if (!free_res) {}
         lcomp_handle_ = nullptr;
     }
 }
@@ -101,7 +129,9 @@ void LCardDevice::TtlOut(uint16_t value)
     async_param.Data[0] = value;
 
     const ULONG status = device_->IoAsync(&async_param);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return;
+    }
 
     ttl_out_value = value;
 }
@@ -149,7 +179,9 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
     ULONG* sync{nullptr};
 
     status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return;
+    }
 
     // кол-во половинок, нужное для запрошенного количества точек
     size_t half_buffer_count = point_count * channels.size() / half_buffer;
@@ -163,10 +195,14 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
     const size_t final_half_buffer = point_count * channels.size() - (half_buffer_count - 1) * half_buffer;
 
     status = device_->InitStartLDevice();
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return;
+    }
 
     status = device_->StartLDevice();
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return;
+    }
 
     //
     size_t f1, f2;
@@ -216,13 +252,19 @@ void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const s
     ULONG* sync{nullptr};
 
     status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return;
+    }
 
     status = device_->InitStartLDevice();
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return;
+    }
 
     status = device_->StartLDevice();
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return;
+    }
 
     //
     size_t f1, f2;
@@ -235,9 +277,9 @@ void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const s
     while (true) {
         // ожидание заполнения очередной половины буфера или отмены чтения
         while ((f1 == f2) && !cancel_token) {
-            f2 = (*sync < half_buffer) ? 0 : 1;
-
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
+
+            f2 = (*sync < half_buffer) ? 0 : 1;
         }
 
         if (cancel_token) {
@@ -321,7 +363,9 @@ ULONG LCardDevice::PrepareAdc(double_t& reg_freq, const _Channels& channels, siz
     ULONG tm = 10000000;
 
     status = device_->RequestBufferStream(&tm, L_STREAM_ADC);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return status;
+    }
 
     const auto rate = GetRate(adc_rate_params_, reg_freq, channels.size(), 0.1);
 
@@ -360,7 +404,9 @@ ULONG LCardDevice::PrepareAdc(double_t& reg_freq, const _Channels& channels, siz
     reg_freq = 1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr);
 
     status = device_->SetParametersStream(&adc_param.t1, &tm, data, (void**)sync, L_STREAM_ADC);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return status;
+    }
 
     // SetParametersStream могла откорректировать параметры буфера
     const ULONG irq_step = adc_param.t1.IrqStep; 
@@ -369,7 +415,9 @@ ULONG LCardDevice::PrepareAdc(double_t& reg_freq, const _Channels& channels, siz
     ULONG point_size;
 
     status = device_->GetParameter(L_POINT_SIZE, &point_size);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return status;
+    }
 
     assert(point_size == sizeof(int16_t));
 
