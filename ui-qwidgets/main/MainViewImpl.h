@@ -94,9 +94,8 @@ private:
             f();
         } else {
             QObject dummy;
-            QObject::connect(&dummy, &QObject::destroyed, target, f, Qt::BlockingQueuedConnection);
-            // Из-за BlockingQueuedConnection функция f будет вызвана в GUI-потоке и мы дождёмся её завершения в этом
-            // потоке. Разрушение dummy заблокирует текущий поток до завершения f в GUI-потоке.
+            QObject::connect(&dummy, &QObject::destroyed, target, f, Qt::QueuedConnection);
+            // Разрушение dummy выполнит f в потоке target (GUI-поток), текущий поток заблокирован не будет.
         }
     }
 

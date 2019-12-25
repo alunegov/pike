@@ -65,7 +65,7 @@ private:
     std::pair<uint32_t, uint16_t> GetRate(const AdcRateParams& rateParams, double_t channelRate, size_t channelCount,
             double_t eps);
 
-    HINSTANCE lcomp_handle_{0};
+    HINSTANCE lcomp_handle_{nullptr};
     IDaqLDevice* device_{nullptr};
     ULONG board_type_{NONE};
     AdcRateParams adc_rate_params_{};

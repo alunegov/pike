@@ -1,5 +1,7 @@
 #include <MainViewImpl.h>
 
+#include <cassert>
+
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QVBoxLayout>
@@ -9,12 +11,14 @@
 
 namespace ros { namespace pike { namespace ui {
 
-const size_t distance_viewport_height{40};
+const size_t distance_viewport_height{50};
 const size_t min_viewport_size{100};
 
 MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_t object_length) :
     presenter_{presenter}
 {
+    assert(presenter != nullptr);
+
     camera_viewport_ = new CameraWidget;
     camera_viewport_->setMinimumSize(min_viewport_size, min_viewport_size);
     camera_viewport_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
@@ -230,7 +234,6 @@ MainViewImpl::~MainViewImpl()
 {
     if (presenter_ != nullptr) {
         presenter_->SetView(nullptr);
-        //delete presenter_;
     }
 }
 

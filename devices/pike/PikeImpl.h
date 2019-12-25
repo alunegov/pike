@@ -33,8 +33,6 @@ public:
         depthometer_{depthometer}
     {}
 
-    ~PikeImpl() override;
-
     // Pike
 
     ros::dc::DAQ* daq() const override { return daq_; }

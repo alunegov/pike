@@ -17,7 +17,7 @@ class OngoingReaderImpl : public OngoingReader
 public:
     OngoingReaderImpl() = delete;
 
-    explicit OngoingReaderImpl(ros::devices::Pike* pike, double_t adc_rate) :
+    OngoingReaderImpl(ros::devices::Pike* pike, double_t adc_rate) :
         pike_{pike},
         adc_rate_{adc_rate}
     {}

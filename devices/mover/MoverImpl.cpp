@@ -6,7 +6,9 @@ namespace ros { namespace devices {
 
 MoverImpl::~MoverImpl()
 {
-    Stop();
+    if (daq_ != nullptr) {
+        Stop();
+    }
 }
 
 void MoverImpl::SetDirection(MoverDirection direction)

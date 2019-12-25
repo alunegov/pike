@@ -26,24 +26,19 @@ MainPresenterImpl::MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic:
 
 MainPresenterImpl::~MainPresenterImpl()
 {
-    ongoingReader_->Stop();
+    if (ongoingReader_ != nullptr) {
+        ongoingReader_->Stop();
+    }
 
     if (slice_thread_.joinable()) {
         slice_cancel_token_ = true;
-        // TODO: при вызове из ui-потока возможен deadlock? (пока не возникал - видимо закрытие идёт как-то по другому)
         slice_thread_.join();
     }
-
-    //delete ongoingReader_;
-    //delete slicer_;
-    //delete sliceMsrMapper_;
-
-    // удаляемые выше зависят от pike_
-    //delete pike_;
 }
 
 void MainPresenterImpl::SetView(ros::pike::modules::MainView* view)
 {
+    // TODO: lock view_
     view_ = view;
 }
 
@@ -111,14 +106,10 @@ void MainPresenterImpl::ResetDistanceClicked()
 
 void MainPresenterImpl::StartSlice(std::string dest_path)
 {
-    // при остановке не вызываем явно join - joinable не сбрасывается
-    if (slice_thread_.joinable()) {
-        slice_cancel_token_ = true;
-        slice_thread_.join();
-    }
+    assert(!slice_thread_.joinable());
 
     if (view_ != nullptr) {
-        view_->SetSliceMsr({}, {});
+        view_->SetSliceMsr({0}, {1});
         SetMotionEnabled(false);
     }
 
@@ -142,9 +133,11 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
         
         ongoingReader_->IdleDepth(false);
 
+        // TODO: lock view_
         if (view_ != nullptr) {
-            view_->RunOnUiThread([this, not_canceled, &slice_msr]() {
+            view_->RunOnUiThread([this, not_canceled, slice_msr]() {
                 if (view_ != nullptr) {
+                    // slice_msr - глубокая копия захваченного значения снаружи
                     if (not_canceled && slice_msr.ok) {
                         view_->SetSliceMsr(slice_msr.angles, slice_msr.depths);
                     }
@@ -162,11 +155,8 @@ void MainPresenterImpl::StopSlice()
     assert(slice_thread_.joinable());
 
     slice_cancel_token_ = true;
-
-    // выполнение всех остальных действий выполняется в потоке (типа reactive), на это время блокируем кнопку
-    if (view_ != nullptr) {
-        view_->SetSliceEnabled(false);
-    }
+    slice_thread_.join();  // gui поток заблокируется на время остановки slice_thread_
+    // выполнение всех действий по завершению slice выполняется в потоке (типа reactive)
 }
 
 void MainPresenterImpl::Camera1Clicked()
@@ -238,6 +228,7 @@ void MainPresenterImpl::PhotoClicked(std::string dest_path)
 
 void MainPresenterImpl::AdcTick(double_t distance, double_t angle, int16_t depth)
 {
+    // TODO: lock view_
     if (view_ != nullptr) {
         view_->RunOnUiThread([this, distance, angle, depth]() {
             if (view_ != nullptr) {
@@ -254,8 +245,10 @@ void MainPresenterImpl::AdcTick(double_t distance, double_t angle, int16_t depth
 void MainPresenterImpl::AdcTick_Values(const std::vector<uint16_t>& channels, const int16_t* values,
         size_t values_count, double_t adc_to_volt)
 {
+    // TODO: lock view_
     if (view_ != nullptr) {
         view_->RunOnUiThread([this, channels, values, values_count, adc_to_volt]() {
+            // TODO: копия values для асинхронного отображения в виде
             if (view_ != nullptr) {
                 view_->SetAdcChannels(channels, values, values_count, adc_to_volt);
             }
@@ -265,6 +258,7 @@ void MainPresenterImpl::AdcTick_Values(const std::vector<uint16_t>& channels, co
 
 void MainPresenterImpl::TtlInTick(bool ender1, bool ender2)
 {
+    // TODO: lock view_
     if (view_ != nullptr) {
         view_->RunOnUiThread([this, ender1, ender2]() {
             if (view_ != nullptr) {
@@ -276,6 +270,7 @@ void MainPresenterImpl::TtlInTick(bool ender1, bool ender2)
 
 void MainPresenterImpl::SliceTick(double_t angle, int16_t depth)
 {
+    // TODO: lock view_
     if (view_ != nullptr) {
         view_->RunOnUiThread([this, angle, depth]() {
             if (view_ != nullptr) {

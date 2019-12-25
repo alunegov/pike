@@ -1,5 +1,5 @@
 #ifdef _MSC_VER
-//#include <vld.h>
+#include <vld.h>
 #endif
 
 #include <cstdint>
@@ -51,6 +51,7 @@ int main(int argc, char** argv)
     app.setStyleSheet(style);
 
     QMainWindow win;
+    win.setMinimumSize(640, 480);
     win.show();
 
     auto conf = ros::pike::logic::ConfMapper::Load("conf.json");
@@ -118,15 +119,13 @@ int main(int argc, char** argv)
     auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper};
 
     auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl, conf.object_length};
-
-    // set view as center widget
+    // выставляем mainview как центральный виджет QMainWindow
     win.setCentralWidget(mainViewImpl);
 
     const auto app_res = QApplication::exec();
 
-    win.setCentralWidget(nullptr);
-
-    // TODO: убедиться, что setCentralWidget не приводит к удалению mainViewImpl
+    // забираем управление mainview и сами удаляем его (иначе он удалится через DeleteLater)
+    win.takeCentralWidget();
     delete mainViewImpl;
 
     delete mainPresenterImpl;

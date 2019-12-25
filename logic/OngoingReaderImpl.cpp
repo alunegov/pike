@@ -9,12 +9,19 @@ namespace ros { namespace pike { namespace logic {
 OngoingReaderImpl::~OngoingReaderImpl()
 {
     if (adc_thread_.joinable() || ttl_in_thread_.joinable()) {
-        Stop();
+        cancel_token_ = true;
+        if (adc_thread_.joinable()) {
+            adc_thread_.join();
+        }
+        if (ttl_in_thread_.joinable()) {
+            ttl_in_thread_.join();
+        }
     }
 }
 
 void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
 {
+    assert(!adc_thread_.joinable() && !ttl_in_thread_.joinable());  // можно задавать только в выключенном состо€нии
     assert(output != nullptr);
     output_ = output;
 }
