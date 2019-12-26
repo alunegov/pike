@@ -173,51 +173,6 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_
     bottom_layout->addStretch();
     bottom_layout->addLayout(buttons_layout);
 
-    /*auto slice_layout = new QVBoxLayout;
-    slice_layout->addWidget(slice_viewport_);
-    auto slice_bottom_layout = new QHBoxLayout;
-    slice_bottom_layout->addWidget(ender1_label_);
-    slice_bottom_layout->addWidget(depth_label_);
-    slice_bottom_layout->addWidget(ender2_label_);
-    slice_layout->addLayout(slice_bottom_layout);
-
-    auto camera_and_slice_layout = new QHBoxLayout;
-    camera_and_slice_layout->addWidget(camera_viewport_);
-    camera_and_slice_layout->addLayout(slice_layout);
-
-    auto move_buttons_layout = new QGridLayout;
-    move_buttons_layout->addWidget(move_forward_button_, 0, 1);
-    move_buttons_layout->addWidget(move_backward_button_, 2, 1);
-    move_buttons_layout->addWidget(rotate_ccw_button_, 1, 0);
-    move_buttons_layout->addWidget(rotate_cw_button_, 1, 3);
-
-    auto inclio_and_move_buttons_layout = new QHBoxLayout;
-    inclio_and_move_buttons_layout->addWidget(inclio_viewport_);
-    inclio_and_move_buttons_layout->addLayout(move_buttons_layout);
-
-    auto distance_and_inclio_and_move_buttons_layout = new QVBoxLayout;
-    distance_and_inclio_and_move_buttons_layout->addWidget(distance_viewport_);
-    distance_and_inclio_and_move_buttons_layout->addLayout(inclio_and_move_buttons_layout);
-
-    auto buttons_layout = new QVBoxLayout;
-    buttons_layout->addStretch(2);
-    buttons_layout->addWidget(slice_button_);
-    auto l21  = new QHBoxLayout;
-    l21->addWidget(camera1_button_);
-    l21->addWidget(camera2_button_);
-    buttons_layout->addLayout(l21);
-    auto l22  = new QHBoxLayout;
-    l22->addWidget(rec_button_);
-    l22->addWidget(photo_button_);
-    buttons_layout->addLayout(l22);
-    buttons_layout->addWidget(dest_path_edit_);
-    buttons_layout->addStretch(1);
-
-    auto bottom_layout = new QHBoxLayout;
-    bottom_layout->addLayout(distance_and_inclio_and_move_buttons_layout);
-    bottom_layout->addStretch();
-    bottom_layout->addLayout(buttons_layout);*/
-
     auto rootLayout = new QVBoxLayout;
     rootLayout->addLayout(camera_and_slice_layout);
     rootLayout->addLayout(distance_and_depth_layout);
@@ -293,6 +248,12 @@ void MainViewImpl::SetMoveForwardEnabled(bool enabled)
     move_forward_button_->setEnabled(enabled);
 }
 
+void MainViewImpl::SetMoveForward(bool checked)
+{
+    move_forward_button_->setCheckable(true);
+    move_forward_button_->setChecked(checked);
+}
+
 void MainViewImpl::SetMoveBackwardEnabled(bool enabled)
 {
     move_backward_button_->setEnabled(enabled);
@@ -341,6 +302,12 @@ void MainViewImpl::SetPhotoEnabled(bool enabled)
 void MainViewImpl::SetDestPathEnabled(bool enabled)
 {
     dest_path_edit_->setEnabled(enabled);
+}
+
+void MainViewImpl::keyPressEvent(QKeyEvent* event)
+{
+    //event->key()
+    presenter_->StartMoving(ros::devices::MoverDirection::Forward);
 }
 
 void MainViewImpl::resizeEvent(QResizeEvent* event)

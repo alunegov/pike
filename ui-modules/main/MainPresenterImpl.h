@@ -7,7 +7,7 @@
 #include <Pike.h>
 
 #include <OngoingReader.h>
-#include <Remote.h>
+#include <RemoteServer.h>
 #include <SliceMsrMapper.h>
 #include <Slicer.h>
 
@@ -21,14 +21,14 @@ class MainPresenterImpl :
     public MainPresenter,
     public ros::pike::logic::OngoingReaderOutput,
     public ros::pike::logic::SlicerReadOutput,
-    public ros::pike::logic::RemoteOutput
+    public ros::pike::logic::RemoteServerOutput
 {
 public:
     MainPresenterImpl() = delete;
 
     MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
             ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper,
-            ros::pike::logic::Remote* remote);
+            ros::pike::logic::RemoteServer* remote);
 
     ~MainPresenterImpl() override;
 
@@ -69,6 +69,7 @@ public:
     void AdcTick_Values(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
             double_t adc_to_volt) override;
 
+    // also for SlicerReadOutput
     void TtlInTick(bool ender1, bool ender2) override;
 
     // SlicerReadOutput
@@ -78,6 +79,14 @@ public:
     //void TtlInTick(bool ender1, bool ender2) override;
 
     // RemoteOutput
+
+    void RemoteStartMoving(ros::pike::logic::MotionDirection dir) override;
+
+    void RemoteStopMoving() override;
+
+    void RemoteStartRotation(ros::pike::logic::MotionDirection dir) override;
+
+    void RemoteStopRotation() override;
 
 private:
     void SetMotionEnabled(bool enabled);
@@ -91,7 +100,7 @@ private:
     ros::pike::logic::OngoingReader* ongoingReader_{nullptr};
     ros::pike::logic::Slicer* slicer_{nullptr};
     ros::pike::logic::SliceMsrMapper* sliceMsrMapper_{nullptr};
-    ros::pike::logic::Remote* remote_{nullptr};
+    ros::pike::logic::RemoteServer* remote_{nullptr};
 
     std::thread slice_thread_;
     std::atomic_bool slice_cancel_token_{false};

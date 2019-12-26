@@ -23,43 +23,53 @@ public:
     PikeImpl(ros::dc::DAQ* daq, ros::devices::Ender* ender1, ros::devices::Ender* ender2, ros::devices::Rotator* rotator,
             ros::devices::Mover* mover, ros::devices::Odometer* odometer, ros::devices::Inclinometer* inclinometer,
             ros::devices::Depthometer* depthometer) :
-        daq_{daq},
-        ender1_{ender1},
-        ender2_{ender2},
-        rotator_{rotator},
-        mover_{mover},
-        odometer_{odometer},
-        inclinometer_{inclinometer},
-        depthometer_{depthometer}
+        _daq{daq},
+        _ender1{ender1},
+        _ender2{ender2},
+        _rotator{rotator},
+        _mover{mover},
+        _odometer{odometer},
+        _inclinometer{inclinometer},
+        _depthometer{depthometer}
     {}
 
     // Pike
 
-    ros::dc::DAQ* daq() const override { return daq_; }
+    ros::dc::DAQ* daq() const override { return _daq; }
 
-    ros::devices::Ender* ender1() const override { return ender1_; }
+    ros::devices::Ender* ender1() const override { return _ender1; }
 
-    ros::devices::Ender* ender2() const override { return ender2_; }
+    ros::devices::Ender* ender2() const override { return _ender2; }
 
-    ros::devices::Rotator* rotator() const override { return rotator_; }
+    ros::devices::Rotator* rotator() const override { return _rotator; }
 
-    ros::devices::Mover* mover() const override { return mover_; }
+    ros::devices::Mover* mover() const override { return _mover; }
 
-    ros::devices::Odometer* odometer() const override { return odometer_; }
+    ros::devices::Odometer* odometer() const override { return _odometer; }
 
-    ros::devices::Inclinometer* inclinometer() const override { return inclinometer_; }
+    ros::devices::Inclinometer* inclinometer() const override { return _inclinometer; }
 
-    ros::devices::Depthometer* depthometer() const override { return depthometer_; }
+    ros::devices::Depthometer* depthometer() const override { return _depthometer; }
+
+    bool InMotion() const override { return _in_motion; }
+
+    void SetInMotion(bool in_motion) override { _in_motion = in_motion; }
+
+    bool IsSlicing() const override { return _is_slicing; }
+
+    void SetIsSlicing(bool is_slicing) override { _is_slicing = is_slicing; }
 
 private:
-    ros::dc::DAQ* daq_{nullptr};
-    ros::devices::Ender* ender1_{nullptr};
-    ros::devices::Ender* ender2_{nullptr};
-    ros::devices::Rotator* rotator_{nullptr};
-    ros::devices::Mover* mover_{nullptr};
-    ros::devices::Odometer* odometer_{nullptr};
-    ros::devices::Inclinometer* inclinometer_{nullptr};
-    ros::devices::Depthometer* depthometer_{nullptr};
+    ros::dc::DAQ* _daq{nullptr};
+    ros::devices::Ender* _ender1{nullptr};
+    ros::devices::Ender* _ender2{nullptr};
+    ros::devices::Rotator* _rotator{nullptr};
+    ros::devices::Mover* _mover{nullptr};
+    ros::devices::Odometer* _odometer{nullptr};
+    ros::devices::Inclinometer* _inclinometer{nullptr};
+    ros::devices::Depthometer* _depthometer{nullptr};
+    bool _in_motion{false};
+    bool _is_slicing{false};
 };
 
 }}

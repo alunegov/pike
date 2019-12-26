@@ -62,6 +62,8 @@ public:
 
     void SetMoveForwardEnabled(bool enabled) override;
 
+    void SetMoveForward(bool checked) override;
+
     void SetMoveBackwardEnabled(bool enabled) override;
 
     void SetRotateCcwEnabled(bool enabled) override;
@@ -83,6 +85,8 @@ public:
     void SetDestPathEnabled(bool enabled) override;
 
 protected:
+    void keyPressEvent(QKeyEvent* event) override;
+    //void keyReleaseEvent(QKeyEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
 private:

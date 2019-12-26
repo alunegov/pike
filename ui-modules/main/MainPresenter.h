@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <Mover.h>
 #include <Rotator.h>
 

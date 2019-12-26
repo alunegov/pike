@@ -55,6 +55,8 @@ public:
             const std::function<AdcReadCallback>& callback) override;
 
 private:
+    void NonVirtualDeinit();
+
     static const char* DetectBiosName(ULONG board_type);
 
     static AdcRateParams DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr);

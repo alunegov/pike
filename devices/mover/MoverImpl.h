@@ -33,6 +33,8 @@ public:
     void Stop();
 
 private:
+    void NonVirtualStop();
+
     void applyDirection();
 
     ros::dc::DAQ* daq_{nullptr};

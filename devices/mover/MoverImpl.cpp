@@ -7,7 +7,7 @@ namespace ros { namespace devices {
 MoverImpl::~MoverImpl()
 {
     if (daq_ != nullptr) {
-        Stop();
+        NonVirtualStop();
     }
 }
 
@@ -27,6 +27,11 @@ void MoverImpl::Start()
 }
 
 void MoverImpl::Stop()
+{
+    NonVirtualStop();
+}
+
+void MoverImpl::NonVirtualStop()
 {
     daq_->TtlOut_ClrPin(pwm_pin_);
 }

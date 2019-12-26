@@ -41,6 +41,14 @@ public:
 
     // Возвращает глубинометр
     virtual ros::devices::Depthometer* depthometer() const = 0;
+
+    virtual bool InMotion() const = 0;
+
+    virtual void SetInMotion(bool in_motion) = 0;
+
+    virtual bool IsSlicing() const = 0;
+
+    virtual void SetIsSlicing(bool is_slicing) = 0;
 };
 
 }}

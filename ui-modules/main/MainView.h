@@ -32,6 +32,8 @@ public:
 
     virtual void SetMoveForwardEnabled(bool enabled) = 0;
 
+    virtual void SetMoveForward(bool checked) = 0;
+
     virtual void SetMoveBackwardEnabled(bool enabled) = 0;
 
     virtual void SetRotateCcwEnabled(bool enabled) = 0;

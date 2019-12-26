@@ -11,7 +11,7 @@ const char* const LCompName{"lcomp64.dll"};
 
 LCardDevice::~LCardDevice()
 {
-    Deinit();
+    NonVirtualDeinit();
 }
 
 void LCardDevice::Init(size_t slot_num)
@@ -89,21 +89,7 @@ void LCardDevice::Init(size_t slot_num)
 
 void LCardDevice::Deinit()
 {
-    if (device_ != nullptr) {
-        ULONG status;
-
-        status = device_->CloseLDevice();
-        if (status != L_SUCCESS) {}
-
-        status = device_->Release();
-        device_ = nullptr;  // по факту device_ уже удалён
-    }
-
-    if (lcomp_handle_ != nullptr) {
-        const auto free_res = FreeLibrary(lcomp_handle_);
-        if (!free_res) {}
-        lcomp_handle_ = nullptr;
-    }
+    NonVirtualDeinit();
 }
 
 void LCardDevice::TtlEnable(bool enable)
@@ -205,8 +191,10 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
     }
 
     //
+    // с момента запуска, пока мы спим - *sync увеличивается
+
     size_t f1, f2;
-       
+
     // какой смысл использовать InterlockedExchange(&s, *sync) (как в примере)? - ведь нужно синхронизировать доступ
     // к sync, а не к s.
     f1 = (*sync < half_buffer) ? 0 : 1;
@@ -216,15 +204,14 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
     for (size_t i = 0; i < half_buffer_count; i++) {
         // ожидание заполнения очередной половины буфера
         while (f1 == f2) {
-            f2 = (*sync < tmp_half_buffer) ? 0 : 1;
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
+
+            f2 = (*sync < tmp_half_buffer) ? 0 : 1;
         }
 
         int16_t* const values_tmp = values + half_buffer * i;
         const int16_t* const data_tmp = (int16_t*)data + half_buffer * f1;
         memmove(values_tmp, data_tmp, tmp_half_buffer * sizeof(int16_t));
-
-        f1 = (*sync < half_buffer) ? 0 : 1;
 
         // для "последней половины" корректируем ожидаемое кол-во точек
         if ((i + 1) == half_buffer_count) {
@@ -232,6 +219,8 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds{1});
+
+        f1 = (*sync < half_buffer) ? 0 : 1;
     }
 
     status = device_->StopLDevice();
@@ -267,8 +256,10 @@ void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const s
     }
 
     //
+    // с момента запуска, пока мы спим - *sync увеличивается
+
     size_t f1, f2;
-       
+
     // какой смысл использовать InterlockedExchange(&s, *sync) (как в примере)? - ведь нужно синхронизировать доступ
     // к sync, а не к s.
     f1 = (*sync < half_buffer) ? 0 : 1;
@@ -289,13 +280,32 @@ void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const s
         const int16_t* const data_tmp = (int16_t*)data + half_buffer * f1;
         callback(data_tmp, half_buffer);
 
-        f1 = (*sync < half_buffer) ? 0 : 1;
-
         std::this_thread::sleep_for(std::chrono::milliseconds{1});
+
+        f1 = (*sync < half_buffer) ? 0 : 1;
     }
 
     status = device_->StopLDevice();
     if (status != L_SUCCESS) {}
+}
+
+void LCardDevice::NonVirtualDeinit()
+{
+    if (device_ != nullptr) {
+        ULONG status;
+
+        status = device_->CloseLDevice();
+        if (status != L_SUCCESS) {}
+
+        status = device_->Release();
+        device_ = nullptr;  // по факту device_ уже удалён
+    }
+
+    if (lcomp_handle_ != nullptr) {
+        const auto free_res = FreeLibrary(lcomp_handle_);
+        if (!free_res) {}
+        lcomp_handle_ = nullptr;
+    }
 }
 
 const char* LCardDevice::DetectBiosName(ULONG board_type)

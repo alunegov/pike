@@ -11,7 +11,7 @@ namespace ros { namespace pike { namespace modules {
 
 MainPresenterImpl::MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
         ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper,
-        ros::pike::logic::Remote* remote) :
+        ros::pike::logic::RemoteServer* remote) :
     pike_{pike},
     ongoingReader_{ongoingReader},
     slicer_(slicer),
@@ -57,11 +57,20 @@ void MainPresenterImpl::OnShow()
 
 void MainPresenterImpl::StartMoving(ros::devices::MoverDirection dir)
 {
+    if (pike_->InMotion()) {
+        // TODO: ui notify on reject?
+        return;
+    }
+    assert(!pike_->IsSlicing());
+
     pike_->mover()->SetDirection(dir);
 
     pike_->mover()->Start();
 
+    pike_->SetInMotion(true);
+
     if (view_ != nullptr) {
+        // TODO: ui notify on start from remote
         SetMotionEnabled(dir == ros::devices::MoverDirection::Forward, dir == ros::devices::MoverDirection::Backward,
                 false, false);
         view_->SetSliceEnabled(false);
@@ -72,7 +81,10 @@ void MainPresenterImpl::StopMoving()
 {
     pike_->mover()->Stop();
 
+    pike_->SetInMotion(false);
+
     if (view_ != nullptr) {
+        // TODO: ui notify on stop from remote
         SetMotionEnabled(true);
         view_->SetSliceEnabled(true);
     }
@@ -80,12 +92,21 @@ void MainPresenterImpl::StopMoving()
 
 void MainPresenterImpl::StartRotation(ros::devices::RotatorDirection dir)
 {
+    if (pike_->InMotion()) {
+        // TODO: ui notify on reject?
+        return;
+    }
+    assert(!pike_->IsSlicing());
+
     pike_->rotator()->SetDirection(dir);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
 
     pike_->rotator()->Start();
 
+    pike_->SetInMotion(true);
+
     if (view_ != nullptr) {
+        // TODO: ui notify on start from remote
         SetMotionEnabled(false, false, dir == ros::devices::RotatorDirection::CCW,
                 dir == ros::devices::RotatorDirection::CW);
         view_->SetSliceEnabled(false);
@@ -96,7 +117,10 @@ void MainPresenterImpl::StopRotation()
 {
     pike_->rotator()->Stop();
 
+    pike_->SetInMotion(false);
+
     if (view_ != nullptr) {
+        // TODO: ui notify on stop from remote
         SetMotionEnabled(true);
         view_->SetSliceEnabled(true);
     }
@@ -114,6 +138,8 @@ void MainPresenterImpl::ResetDistanceClicked()
 
 void MainPresenterImpl::StartSlice(std::string dest_path)
 {
+    assert(!pike_->InMotion());
+    assert(!pike_->IsSlicing());
     assert(!slice_thread_.joinable());
 
     if (view_ != nullptr) {
@@ -128,7 +154,7 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
     slice_cancel_token_ = false;
 
     slice_thread_ = std::thread{[this]() {
-        const auto slice_msr = std::move(slicer_->Read(slice_cancel_token_, this));
+        auto slice_msr = std::move(slicer_->Read(slice_cancel_token_, this));
 
         // чтобы не зависеть от возможных будущих изменений slice_cancel_token_
         const bool not_canceled = !slice_cancel_token_;
@@ -141,9 +167,11 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
         
         ongoingReader_->IdleDepth(false);
 
+        pike_->SetIsSlicing(false);
+
         // TODO: lock view_
         if (view_ != nullptr) {
-            view_->RunOnUiThread([this, not_canceled, slice_msr]() {
+            view_->RunOnUiThread([this, not_canceled, slice_msr = std::move(slice_msr)]() {
                 if (view_ != nullptr) {
                     // slice_msr - глубокая копия захваченного значения снаружи
                     if (not_canceled && slice_msr.ok) {
@@ -156,10 +184,13 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
             });
         }
     }};
+
+    pike_->SetIsSlicing(true);
 }
 
 void MainPresenterImpl::StopSlice()
 {
+    assert(pike_->IsSlicing());
     assert(slice_thread_.joinable());
 
     slice_cancel_token_ = true;
@@ -233,6 +264,28 @@ void MainPresenterImpl::PhotoClicked(std::string dest_path)
 
     // TODO: save buffer from selected_camera_ as image
 }
+
+void MainPresenterImpl::RemoteStartMoving(ros::pike::logic::MotionDirection dir)
+{
+    // TODO: lock view_
+    if (view_ != nullptr) {
+        view_->RunOnUiThread([this] {
+            if (view_ != nullptr) {
+                view_->SetMoveForward(true);
+                StartMoving(ros::devices::MoverDirection::Forward);
+            }
+        });
+    }
+}
+
+void MainPresenterImpl::RemoteStopMoving()
+{}
+
+void MainPresenterImpl::RemoteStartRotation(ros::pike::logic::MotionDirection dir)
+{}
+
+void MainPresenterImpl::RemoteStopRotation()
+{}
 
 void MainPresenterImpl::AdcTick(double_t distance, double_t angle, int16_t depth)
 {

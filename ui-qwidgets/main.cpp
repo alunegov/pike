@@ -22,7 +22,7 @@
 
 #include <ConfMapper.h>
 #include <OngoingReaderImpl.h>
-#include <RemoteImpl.h>
+#include <RemoteServerImpl.h>
 #include <SliceMsrMapperImpl.h>
 #include <SlicerImpl.h>
 
@@ -36,8 +36,7 @@ int main(int argc, char** argv)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     QApplication app(argc, argv);
-
-    // стиль для всего приложения
+    // СЃС‚РёР»СЊ РґР»СЏ РІСЃРµРіРѕ РїСЂРёР»РѕР¶РµРЅРёСЏ
     const auto style = QString{R"(
         QPushButton {
             min-height: %1px;
@@ -48,7 +47,6 @@ int main(int argc, char** argv)
             background-color: red;
         }
     )"}.arg(24).arg(14);
-
     app.setStyleSheet(style);
 
     QMainWindow win;
@@ -57,7 +55,7 @@ int main(int argc, char** argv)
 
     auto conf = ros::pike::logic::ConfMapper::Load("conf.json");
 
-    // адаптация настроек под Л-Кард (нумерация каналов/пинов с нуля и флаг общей земли)
+    // Р°РґР°РїС‚Р°С†РёСЏ РЅР°СЃС‚СЂРѕРµРє РїРѕРґ Р›-РљР°СЂРґ (РЅСѓРјРµСЂР°С†РёСЏ РєР°РЅР°Р»РѕРІ/РїРёРЅРѕРІ СЃ РЅСѓР»СЏ Рё С„Р»Р°Рі РѕР±С‰РµР№ Р·РµРјР»Рё)
     conf.ender1.pin -= 1;
     conf.ender2.pin -= 1;
     conf.inclinometer.x_channel -= 1;
@@ -82,7 +80,7 @@ int main(int argc, char** argv)
     auto daq = new ros::dc::lcard::LCardDevice;
     daq->Init(conf.daq.slot);
     daq->TtlEnable(true);
-    // плата "закрывается" в pike
+    // РїР»Р°С‚Р° "Р·Р°РєСЂС‹РІР°РµС‚СЃСЏ" РІ pike
 
     auto ender1 = new ros::devices::EnderImpl{daq, conf.ender1.pin};
 
@@ -105,7 +103,7 @@ int main(int argc, char** argv)
     const auto open_res = depthometer_transport.Open();
     if (open_res != 0) {
     }
-    // порт закроется в depthometer, или автоматически при удалении depthometer_transport (в конце main)
+    // РїРѕСЂС‚ Р·Р°РєСЂРѕРµС‚СЃСЏ РІ depthometer, РёР»Рё Р°РІС‚РѕРјР°С‚РёС‡РµСЃРєРё РїСЂРё СѓРґР°Р»РµРЅРёРё depthometer_transport (РІ РєРѕРЅС†Рµ main)
 
     auto depthometer = new ros::devices::CD22{depthometer_transport};
 
@@ -118,19 +116,19 @@ int main(int argc, char** argv)
 
     auto sliceMsrMapper = new ros::pike::logic::SliceMsrMapperImpl;
 
-    auto remote = new ros::pike::logic::RemoteImpl;
+    auto remoteServer = new ros::pike::logic::RemoteServerImpl;
 
     // presenter and view
     auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper,
-            remote};
+            remoteServer};
 
     auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl, conf.object_length};
-    // выставляем mainview как центральный виджет QMainWindow
+    // РІС‹СЃС‚Р°РІР»СЏРµРј mainview РєР°Рє С†РµРЅС‚СЂР°Р»СЊРЅС‹Р№ РІРёРґР¶РµС‚ QMainWindow
     win.setCentralWidget(mainViewImpl);
 
     const auto app_res = QApplication::exec();
 
-    // забираем управление mainview и сами удаляем его (иначе он удалится через DeleteLater)
+    // Р·Р°Р±РёСЂР°РµРј СѓРїСЂР°РІР»РµРЅРёРµ mainview Рё СЃР°РјРё СѓРґР°Р»СЏРµРј РµРіРѕ (РёРЅР°С‡Рµ РѕРЅ СѓРґР°Р»РёС‚СЃСЏ С‡РµСЂРµР· DeleteLater)
     win.takeCentralWidget();
     delete mainViewImpl;
 
@@ -139,9 +137,9 @@ int main(int argc, char** argv)
     delete ongoingReader;
     delete slicer;
     delete sliceMsrMapper;
-    delete remote;
+    delete remoteServer;
 
-    // удаляемые выше зависят от pike
+    // СѓРґР°Р»СЏРµРјС‹Рµ РІС‹С€Рµ Р·Р°РІРёСЃСЏС‚ РѕС‚ pike
     delete pike;
 
     delete ender1;
@@ -152,7 +150,7 @@ int main(int argc, char** argv)
     delete inclinometer;
     delete depthometer;
 
-    // удаляемые выше зависят от daq
+    // СѓРґР°Р»СЏРµРјС‹Рµ РІС‹С€Рµ Р·Р°РІРёСЃСЏС‚ РѕС‚ daq
     delete daq;
 
     return app_res;
