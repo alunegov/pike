@@ -36,9 +36,15 @@ public:
 
     virtual void SetMoveBackwardEnabled(bool enabled) = 0;
 
+    virtual void SetMoveBackward(bool checked) = 0;
+
     virtual void SetRotateCcwEnabled(bool enabled) = 0;
 
+    virtual void SetRotateCcw(bool checked) = 0;
+
     virtual void SetRotateCwEnabled(bool enabled) = 0;
+
+    virtual void SetRotateCw(bool checked) = 0;
 
     virtual void SetSliceEnabled(bool enabled) = 0;
 

@@ -14,8 +14,8 @@ struct CD22 : public Depthometer
 public:
     CD22() = delete;
 
-    explicit CD22(const ce::ceSerial& transport)
-        : transport_{transport}
+    explicit CD22(const ce::ceSerial& transport) :
+        _transport{transport}
     {}
 
     ~CD22() override;
@@ -25,7 +25,7 @@ public:
     int16_t Read() override;
 
 private:
-    ce::ceSerial transport_;
+    ce::ceSerial _transport;
 };
 
 }}

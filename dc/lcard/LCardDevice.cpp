@@ -243,6 +243,12 @@ void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const s
     void* data{nullptr};
     ULONG* sync{nullptr};
 
+    // TODO: подгонять буфер/половину буфера под:
+    // 1. определённое время наполнения (например, 400 мс):
+    //    - если скорость наполнения низкая - уменьшать кол-во точек в шаге IrqStep или кол-во шагов Pages
+    //    - если скорость наполнения высокая - накапливать точки в промежуточном буфере, внутри или снаружи
+    // 2. кол-во точек кратное кол-ву каналов, чтобы во всех кадрах было целое кол-во каналов (точки всех каналов)
+
     status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
     if (status != L_SUCCESS) {
         return;
@@ -409,12 +415,16 @@ ULONG LCardDevice::PrepareAdc(double_t& reg_freq, const _Channels& channels, siz
     adc_param.t1.AdcEna = 1;
 
     status = device_->FillDAQparameters(&adc_param.t1);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return status;
+    }
 
-    // большой уход выставленной от запрошенной частоты регистрации (частоты кадров)
-    assert(abs(1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr) - reg_freq) < (0.02 * reg_freq));
-
+    const double_t old_reg_freq{reg_freq};
     reg_freq = 1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr);
+    // большой уход выставленной от запрошенной частоты регистрации (частоты кадров)
+    if (abs(reg_freq - old_reg_freq) > (0.02 * old_reg_freq)) {
+        return 13;
+    }
 
     status = device_->SetParametersStream(&adc_param.t1, &tm, data, (void**)sync, L_STREAM_ADC);
     if (status != L_SUCCESS) {
@@ -425,6 +435,10 @@ ULONG LCardDevice::PrepareAdc(double_t& reg_freq, const _Channels& channels, siz
     const ULONG irq_step = adc_param.t1.IrqStep; 
     const ULONG pages = adc_param.t1.Pages;
 
+    // размер половины буфера платы, в отсчётах
+    *half_buffer = irq_step * pages / 2;
+
+    // размер отсчёта
     ULONG point_size;
 
     status = device_->GetParameter(L_POINT_SIZE, &point_size);
@@ -433,9 +447,6 @@ ULONG LCardDevice::PrepareAdc(double_t& reg_freq, const _Channels& channels, siz
     }
 
     assert(point_size == sizeof(int16_t));
-
-    // размер половины буфера платы, в отсчётах
-    *half_buffer = irq_step * pages / 2;
 
     return status;
 }

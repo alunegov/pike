@@ -10,52 +10,57 @@ namespace ros { namespace pike { namespace logic {
 
 OngoingReaderImpl::~OngoingReaderImpl()
 {
-    cancel_token_ = true;
-    if (adc_thread_.joinable()) {
-        adc_thread_.join();
+    _cancel_token = true;
+    if (_adc_gather_thread.joinable()) {
+        _adc_gather_thread.join();
     }
-    if (ttl_in_thread_.joinable()) {
-        ttl_in_thread_.join();
+    if (_adc_process_thread.joinable()) {
+        _adc_process_thread.join();
+    }
+    if (_ttl_in_thread.joinable()) {
+        _ttl_in_thread.join();
     }
 }
 
 void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
 {
-    assert(!adc_thread_.joinable() && !ttl_in_thread_.joinable());  // можно задавать только в выключенном состоянии
+    assert(!_adc_gather_thread.joinable() && !_adc_process_thread.joinable() && !_ttl_in_thread.joinable());  // можно задавать только в выключенном состоянии
     assert(output != nullptr);
-    output_ = output;
+    _output = output;
 }
 
 void OngoingReaderImpl::Start()
 {
-    assert(!adc_thread_.joinable() && !ttl_in_thread_.joinable());
+    assert(!_adc_gather_thread.joinable() && !_adc_process_thread.joinable() && !_ttl_in_thread.joinable());
 
-    cancel_token_ = false;
+    _cancel_token = false;
 
-    adc_thread_ = std::thread{[this]() {
+    _adc_gather_thread = std::thread{[this]() {
         const double_t AdcToVolt{10.0 / 8000.0};  // TODO: get AdcToVolt from daq
 
-        double_t regFreq{adc_rate_};
+        double_t regFreq{_adc_rate};
 
         std::vector<uint16_t> channels;
-        pike_->inclinometer()->FillChannels(channels);
-        pike_->odometer()->FillChannels(channels);
+        _pike->inclinometer()->FillChannels(channels);
+        _pike->odometer()->FillChannels(channels);
 
         const auto adc_read_callback = [this, AdcToVolt, &channels](const int16_t* values, size_t values_count) {
+            // TODO: засовывание данных в кольцевой буфер и оповещение об этом
+
             // spawn 3 parallel threads for inclio, distance and depth
             auto inclio_f = std::async(std::launch::async, [this, AdcToVolt, &channels, values, values_count]() -> double_t {
-                pike_->inclinometer()->Update(channels, values, values_count, AdcToVolt);
-                return pike_->inclinometer()->Get();
+                _pike->inclinometer()->Update(channels, values, values_count, AdcToVolt);
+                return _pike->inclinometer()->Get();
             });
             auto distance_f = std::async(std::launch::async, [this, AdcToVolt, &channels, values, values_count]() -> double_t {
-                pike_->odometer()->Update(channels, values, values_count, AdcToVolt);
-                return pike_->odometer()->Get();
+                _pike->odometer()->Update(channels, values, values_count, AdcToVolt);
+                return _pike->odometer()->Get();
             });
             auto depth_f = std::async(std::launch::async, [this]() -> int16_t {
-                if (!depth_idle_token_) {
-                    return pike_->depthometer()->Read();
+                if (!_depth_idle_token) {
+                    return _pike->depthometer()->Read();
                 } else {
-                    return INT16_MIN;
+                    return INT16_MIN;  // TODO: что возвращать?
                 }
             });
 
@@ -63,31 +68,40 @@ void OngoingReaderImpl::Start()
             const double_t distance = distance_f.get();
             const int16_t depth = depth_f.get();
 
-            output_->AdcTick(distance, angle, depth);
+            _output->AdcTick(distance, angle, depth);
 #ifndef NDEBUG
-            output_->AdcTick_Values(channels, values, values_count, AdcToVolt);
+            _output->AdcTick_Values(channels, values, values_count, AdcToVolt);
 #endif
         };
 
         // запуск бесконечного чтения, во время которого будет вызываться adc_read_callback при заполнении половины
         // буфера АЦП
         // TODO: настраивать периодичность вызова callback (сейчас он зависит от типа платы и параметров регистрации -
-        // скорость заполнения половины буфера)
-        pike_->daq()->AdcRead(regFreq, channels, cancel_token_, adc_read_callback);
+        // скорости заполнения половины буфера АЦП)
+        _pike->daq()->AdcRead(regFreq, channels, _cancel_token, adc_read_callback);
     }};
 
-    ttl_in_thread_ = std::thread{[this]() {
+    _adc_process_thread = std::thread{[this] {
+        // TODO: ожидание прихода порции данных от АЦП (и возможно их накопление при высокой частоте сбора),
+        // доставание их из кольцевого буфера, обновление под-устройств и "выдача" через _output
+
+        while (!_cancel_token) {
+            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        }
+    }};
+
+    _ttl_in_thread = std::thread{[this]() {
         // Задержка между чтениями TtlIn (показания ender)
         constexpr std::chrono::milliseconds TtlInDelay{111};
 
-        while (!cancel_token_) {
-            if (!depth_idle_token_) {
+        while (!_cancel_token) {
+            if (!_depth_idle_token) {
                 // читаем сразу оба ender (за одно чтение ttl_in)
-                pike_->ReadAndUpdateTtlIn();
-                const bool ender1 = pike_->ender1()->Get();
-                const bool ender2 = pike_->ender2()->Get();
+                _pike->ReadAndUpdateTtlIn();
+                const bool ender1 = _pike->ender1()->Get();
+                const bool ender2 = _pike->ender2()->Get();
 
-                output_->TtlInTick(ender1, ender2);
+                _output->TtlInTick(ender1, ender2);
             }
 
             std::this_thread::sleep_for(TtlInDelay);
@@ -97,16 +111,17 @@ void OngoingReaderImpl::Start()
 
 void OngoingReaderImpl::Stop()
 {
-    assert(adc_thread_.joinable() && ttl_in_thread_.joinable());
+    assert(_adc_gather_thread.joinable() && _adc_process_thread.joinable() && _ttl_in_thread.joinable());
 
-    cancel_token_ = true;
-    adc_thread_.join();
-    ttl_in_thread_.join();
+    _cancel_token = true;
+    _adc_gather_thread.join();
+    _adc_process_thread.join();
+    _ttl_in_thread.join();
 }
 
 void OngoingReaderImpl::IdleDepth(bool value)
 {
-    depth_idle_token_ = value;
+    _depth_idle_token = value;
 }
 
 }}}

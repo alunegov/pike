@@ -52,10 +52,10 @@ void RemoteServerImpl::Start()
                 if (_move_state != new_move_state) {
                     if (_rot_state == MotionDirection::No) {  // нет вращения
                         if (_move_state != MotionDirection::No) {
-                            _output->RemoteStopMoving();
+                            _output->RemoteStopMovement();
                         }
                         if (new_move_state != MotionDirection::No) {
-                            _output->RemoteStartMoving(new_move_state);
+                            _output->RemoteStartMovement(new_move_state);
                         }
                     }
                     _move_state = new_move_state;
@@ -81,8 +81,8 @@ void RemoteServerImpl::Start()
     _reset_thread = std::thread{[this]() {
         // Задержка между проверками для авто-сброса движения
         constexpr std::chrono::seconds ResetDelay{1};
-        // Период "неприхода" данных от клиента для авто-сброса движения
-        //constexpr std::chrono::duration<> ResetDelta{5};
+        // Период "неприхода" данных от клиента, после которого будет авто-сброс движения
+        constexpr std::chrono::seconds ResetDelta{5};
 
         while (!_cancel_token) {
             std::this_thread::sleep_for(ResetDelay);
@@ -90,10 +90,11 @@ void RemoteServerImpl::Start()
             {
                 std::unique_lock<std::mutex> lock{_state_locker};
 
-                // TODO: если прошло больше ResetDelta
-                if ((std::chrono::steady_clock::now() == _last_state)) {
+                // сбрасываем движение, если прошло больше ResetDelta
+                const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - _last_state);
+                if (elapsed > ResetDelta) {
                     if (_move_state != MotionDirection::No) {
-                        _output->RemoteStopMoving();
+                        _output->RemoteStopMovement();
                         _move_state = MotionDirection::No;
                     }
                     if (_rot_state != MotionDirection::No) {

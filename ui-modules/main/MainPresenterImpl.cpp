@@ -55,29 +55,28 @@ void MainPresenterImpl::OnShow()
     remote_->Start();
 }
 
-void MainPresenterImpl::StartMoving(ros::devices::MoverDirection dir)
+void MainPresenterImpl::StartMovement(ros::devices::MoverDirection dir)
 {
     if (pike_->InMotion()) {
         // TODO: ui notify on reject?
+        //view_->SetMoveForward(false);
         return;
     }
     assert(!pike_->IsSlicing());
 
     pike_->mover()->SetDirection(dir);
-
     pike_->mover()->Start();
 
     pike_->SetInMotion(true);
 
     if (view_ != nullptr) {
-        // TODO: ui notify on start from remote
         SetMotionEnabled(dir == ros::devices::MoverDirection::Forward, dir == ros::devices::MoverDirection::Backward,
                 false, false);
         view_->SetSliceEnabled(false);
     }
 }
 
-void MainPresenterImpl::StopMoving()
+void MainPresenterImpl::StopMovement()
 {
     pike_->mover()->Stop();
 
@@ -100,7 +99,6 @@ void MainPresenterImpl::StartRotation(ros::devices::RotatorDirection dir)
 
     pike_->rotator()->SetDirection(dir);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
-
     pike_->rotator()->Start();
 
     pike_->SetInMotion(true);
@@ -150,9 +148,11 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
     slice_dest_path_ = std::move(dest_path);
 
     ongoingReader_->IdleDepth(true);
+    pike_->SetIsSlicing(true);
 
     slice_cancel_token_ = false;
 
+    // TODO: std::async on threadpool?
     slice_thread_ = std::thread{[this]() {
         auto slice_msr = std::move(slicer_->Read(slice_cancel_token_, this));
 
@@ -166,14 +166,12 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
         //std::this_thread::sleep_for(std::chrono::seconds{4});
         
         ongoingReader_->IdleDepth(false);
-
         pike_->SetIsSlicing(false);
 
         // TODO: lock view_
         if (view_ != nullptr) {
             view_->RunOnUiThread([this, not_canceled, slice_msr = std::move(slice_msr)]() {
                 if (view_ != nullptr) {
-                    // slice_msr - глубокая копия захваченного значения снаружи
                     if (not_canceled && slice_msr.ok) {
                         view_->SetSliceMsr(slice_msr.angles, slice_msr.depths);
                     }
@@ -184,8 +182,6 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
             });
         }
     }};
-
-    pike_->SetIsSlicing(true);
 }
 
 void MainPresenterImpl::StopSlice()
@@ -265,21 +261,47 @@ void MainPresenterImpl::PhotoClicked(std::string dest_path)
     // TODO: save buffer from selected_camera_ as image
 }
 
-void MainPresenterImpl::RemoteStartMoving(ros::pike::logic::MotionDirection dir)
+void MainPresenterImpl::RemoteStartMovement(ros::pike::logic::MotionDirection dir)
 {
     // TODO: lock view_
     if (view_ != nullptr) {
-        view_->RunOnUiThread([this] {
+        view_->RunOnUiThread([this, dir] {
+            if (pike_->InMotion() || pike_->IsSlicing()) {
+                return;
+            }
+
+            //pike_->mover()->SetDirection(dir);
+            pike_->mover()->Start();
+
+            pike_->SetInMotion(true);
+
             if (view_ != nullptr) {
                 view_->SetMoveForward(true);
-                StartMoving(ros::devices::MoverDirection::Forward);
+                SetMotionEnabled(dir == ros::pike::logic::MotionDirection::Inc, dir == ros::pike::logic::MotionDirection::Dec, false, false);
+                view_->SetSliceEnabled(false);
             }
         });
     }
 }
 
-void MainPresenterImpl::RemoteStopMoving()
-{}
+void MainPresenterImpl::RemoteStopMovement()
+{
+    // TODO: lock view_
+    if (view_ != nullptr) {
+        view_->RunOnUiThread([this] {
+            pike_->mover()->Stop();
+
+            pike_->SetInMotion(false);
+
+            if (view_ != nullptr) {
+                view_->SetMoveForward(false);
+                view_->SetMoveBackward(false);
+                SetMotionEnabled(true);
+                view_->SetSliceEnabled(true);
+            }
+        });
+    }
+}
 
 void MainPresenterImpl::RemoteStartRotation(ros::pike::logic::MotionDirection dir)
 {}

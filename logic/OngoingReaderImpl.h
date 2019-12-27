@@ -18,8 +18,8 @@ public:
     OngoingReaderImpl() = delete;
 
     OngoingReaderImpl(ros::devices::Pike* pike, double_t adc_rate) :
-        pike_{pike},
-        adc_rate_{adc_rate}
+        _pike{pike},
+        _adc_rate{adc_rate}
     {}
 
     ~OngoingReaderImpl() override;
@@ -35,17 +35,18 @@ public:
     void IdleDepth(bool value) override;
 
 private:
-    ros::devices::Pike* pike_{nullptr};
+    ros::devices::Pike* _pike{nullptr};
 
-    double_t adc_rate_{0};
+    double_t _adc_rate{0};
 
-    OngoingReaderOutput* output_{nullptr};
+    OngoingReaderOutput* _output{nullptr};
 
-    std::thread adc_thread_;
-    std::thread ttl_in_thread_;
-    std::atomic_bool cancel_token_{false};
+    std::thread _adc_gather_thread;
+    std::thread _adc_process_thread;
+    std::thread _ttl_in_thread;
+    std::atomic_bool _cancel_token{false};
 
-    std::atomic_bool depth_idle_token_{false};
+    std::atomic_bool _depth_idle_token{false};
 };
 
 }}}

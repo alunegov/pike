@@ -19,9 +19,9 @@ public:
 
     virtual void OnShow() = 0;
 
-    virtual void StartMoving(ros::devices::MoverDirection dir) = 0;
+    virtual void StartMovement(ros::devices::MoverDirection dir) = 0;
 
-    virtual void StopMoving() = 0;
+    virtual void StopMovement() = 0;
 
     virtual void StartRotation(ros::devices::RotatorDirection dir) = 0;
 

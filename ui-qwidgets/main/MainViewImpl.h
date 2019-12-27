@@ -66,9 +66,15 @@ public:
 
     void SetMoveBackwardEnabled(bool enabled) override;
 
+    void SetMoveBackward(bool checked) override;
+
     void SetRotateCcwEnabled(bool enabled) override;
 
+    void SetRotateCcw(bool checked) override;
+
     void SetRotateCwEnabled(bool enabled) override;
+
+    void SetRotateCw(bool checked) override;
 
     void SetSliceEnabled(bool enabled) override;
 

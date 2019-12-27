@@ -8,25 +8,25 @@ namespace ros { namespace devices {
 
 CD22::~CD22()
 {
-    transport_.Close();
+    _transport.Close();
 }
 
 int16_t CD22::Read()
 {
-    const int16_t NoValue{INT16_MIN};
+    const int16_t NoValue{INT16_MIN};  // TODO: что возвращать?
 
     uint8_t query[] = {0x02, 0x43, 0xb0, 0x01, 0x03, 0xf2};
     uint8_t ans[6];
     bool r;
 
-    if (!transport_.Write(reinterpret_cast<char*>(query), 6)) {
+    if (!_transport.Write(reinterpret_cast<char*>(query), 6)) {
         //std::cout << "Port write error" << std::endl;
         return NoValue;
     }
 
     memset(ans, 0, sizeof(ans));
     for (size_t i = 0; i < 6; i++) {
-        auto c = transport_.ReadChar(r);
+        auto c = _transport.ReadChar(r);
         if (r) {
             //std::cout << "Char at " << i << " is " << c << std::endl;
             ans[i] = c;

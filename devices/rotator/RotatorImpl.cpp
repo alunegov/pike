@@ -50,6 +50,7 @@ void RotatorImpl::Start()
     // запуск потока, генерирующего step
     rotate_cancel_token_ = false;
 
+    // TODO: std::async on threadpool?
     rotate_thread_ = std::thread{[this]() {
         while (!rotate_cancel_token_) {
             Step();

@@ -14,9 +14,9 @@ class RemoteServerOutput
 public:
     virtual ~RemoteServerOutput() = default;
 
-    virtual void RemoteStartMoving(MotionDirection dir) = 0;
+    virtual void RemoteStartMovement(MotionDirection dir) = 0;
 
-    virtual void RemoteStopMoving() = 0;
+    virtual void RemoteStopMovement() = 0;
 
     virtual void RemoteStartRotation(MotionDirection dir) = 0;
 

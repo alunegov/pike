@@ -38,9 +38,9 @@ public:
 
     void OnShow() override;
 
-    void StartMoving(ros::devices::MoverDirection dir) override;
+    void StartMovement(ros::devices::MoverDirection dir) override;
 
-    void StopMoving() override;
+    void StopMovement() override;
 
     void StartRotation(ros::devices::RotatorDirection dir) override;
 
@@ -80,9 +80,9 @@ public:
 
     // RemoteOutput
 
-    void RemoteStartMoving(ros::pike::logic::MotionDirection dir) override;
+    void RemoteStartMovement(ros::pike::logic::MotionDirection dir) override;
 
-    void RemoteStopMoving() override;
+    void RemoteStopMovement() override;
 
     void RemoteStartRotation(ros::pike::logic::MotionDirection dir) override;
 

@@ -54,20 +54,20 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_
     move_forward_button_->setText("Вперёд");
     move_forward_button_->setObjectName("motion");
     QObject::connect(move_forward_button_, &QPushButton::pressed, this, [=]() {
-        presenter_->StartMoving(ros::devices::MoverDirection::Forward);
+        presenter_->StartMovement(ros::devices::MoverDirection::Forward);
     });
     QObject::connect(move_forward_button_, &QPushButton::released, this, [=]() {
-        presenter_->StopMoving();
+        presenter_->StopMovement();
     });
 
     move_backward_button_ = new QPushButton;
     move_backward_button_->setText("Назад");
     move_backward_button_->setObjectName("motion");
     QObject::connect(move_backward_button_, &QPushButton::pressed, this, [=]() {
-        presenter_->StartMoving(ros::devices::MoverDirection::Backward);
+        presenter_->StartMovement(ros::devices::MoverDirection::Backward);
     });
     QObject::connect(move_backward_button_, &QPushButton::released, this, [=]() {
-        presenter_->StopMoving();
+        presenter_->StopMovement();
     });
 
     rotate_ccw_button_ = new QPushButton;
@@ -226,6 +226,7 @@ void MainViewImpl::SetDepth(int16_t depth)
 void MainViewImpl::UpdateSliceDepth(double_t angle, int16_t depth)
 {
     depth_label_->setText(QString{"%1° - %2 мкм"}.arg(angle).arg(depth));
+    // TODO: постепенное отображение на slice_viewport_ по мере измерения
 }
 
 void MainViewImpl::SetSliceMsr(const std::vector<double_t>& angles, const std::vector<int16_t>& depths)
@@ -235,8 +236,8 @@ void MainViewImpl::SetSliceMsr(const std::vector<double_t>& angles, const std::v
 
 void MainViewImpl::SetEnders(bool ender1, bool ender2)
 {
-    ender1_label_->setText(QString::number(ender1));
-    ender2_label_->setText(QString::number(ender2));
+    ender1_label_->setText(QString::number(ender1 ? 1 : 0));
+    ender2_label_->setText(QString::number(ender2 ? 1 : 0));
 }
 
 void MainViewImpl::SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
@@ -250,7 +251,7 @@ void MainViewImpl::SetMoveForwardEnabled(bool enabled)
 
 void MainViewImpl::SetMoveForward(bool checked)
 {
-    move_forward_button_->setCheckable(true);
+    move_forward_button_->setCheckable(checked);
     move_forward_button_->setChecked(checked);
 }
 
@@ -259,15 +260,27 @@ void MainViewImpl::SetMoveBackwardEnabled(bool enabled)
     move_backward_button_->setEnabled(enabled);
 }
 
+void MainViewImpl::SetMoveBackward(bool checked)
+{
+    move_backward_button_->setCheckable(checked);
+    move_backward_button_->setChecked(checked);
+}
+
 void MainViewImpl::SetRotateCcwEnabled(bool enabled)
 {
     rotate_ccw_button_->setEnabled(enabled);
 }
 
+void MainViewImpl::SetRotateCcw(bool checked)
+{}
+
 void MainViewImpl::SetRotateCwEnabled(bool enabled)
 {
     rotate_cw_button_->setEnabled(enabled);
 }
+
+void MainViewImpl::SetRotateCw(bool checked)
+{}
 
 void MainViewImpl::SetSliceEnabled(bool enabled)
 {
@@ -307,7 +320,7 @@ void MainViewImpl::SetDestPathEnabled(bool enabled)
 void MainViewImpl::keyPressEvent(QKeyEvent* event)
 {
     //event->key()
-    presenter_->StartMoving(ros::devices::MoverDirection::Forward);
+    //presenter_->StartMovement(ros::devices::MoverDirection::Forward);
 }
 
 void MainViewImpl::resizeEvent(QResizeEvent* event)
