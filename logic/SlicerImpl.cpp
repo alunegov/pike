@@ -19,8 +19,10 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
     // TODO: не более числа шагов, нужного на полный оборот (вдруг ender не работает)
     // TODO: "дожимать" несколько шагов после срабатывания ender
     while (true) {
-        const bool ender1 = pike_->ender1()->Read();
-        const bool ender2 = pike_->ender2()->Read();
+        // читаем сразу оба ender (за одно чтение ttl_in)
+        pike_->ReadAndUpdateTtlIn();
+        const bool ender1 = pike_->ender1()->Get();
+        const bool ender2 = pike_->ender2()->Get();
 
         output->TtlInTick(ender1, ender2);
 
@@ -51,8 +53,10 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
     double_t angle{0};  // TODO: начинаем с нулевого угла?
     size_t steps_in_ender2{0};
     while (true) {
-        const bool ender1 = pike_->ender1()->Read();
-        const bool ender2 = pike_->ender2()->Read();
+        // читаем сразу оба ender (за одно чтение ttl_in)
+        pike_->ReadAndUpdateTtlIn();
+        const bool ender1 = pike_->ender1()->Get();
+        const bool ender2 = pike_->ender2()->Get();
 
         output->TtlInTick(ender1, ender2);
 

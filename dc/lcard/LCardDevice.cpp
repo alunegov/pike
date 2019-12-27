@@ -150,6 +150,9 @@ uint16_t LCardDevice::TtlIn()
     return static_cast<uint16_t>(async_param.Data[0]);
 }
 
+// Задержка при ожидании заполнения половинки буфера при чтении
+constexpr std::chrono::milliseconds AdcFillDelay{1};
+
 void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channels& channels, int16_t* values)
 {
     assert(device_ != nullptr);
@@ -204,7 +207,7 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
     for (size_t i = 0; i < half_buffer_count; i++) {
         // ожидание заполнения очередной половины буфера
         while (f1 == f2) {
-            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+            std::this_thread::sleep_for(AdcFillDelay);
 
             f2 = (*sync < tmp_half_buffer) ? 0 : 1;
         }
@@ -218,7 +221,7 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
             tmp_half_buffer = final_half_buffer;
         }
 
-        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        std::this_thread::sleep_for(AdcFillDelay);
 
         f1 = (*sync < half_buffer) ? 0 : 1;
     }
@@ -268,7 +271,7 @@ void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const s
     while (true) {
         // ожидание заполнения очередной половины буфера или отмены чтения
         while ((f1 == f2) && !cancel_token) {
-            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+            std::this_thread::sleep_for(AdcFillDelay);
 
             f2 = (*sync < half_buffer) ? 0 : 1;
         }
@@ -280,7 +283,7 @@ void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const s
         const int16_t* const data_tmp = (int16_t*)data + half_buffer * f1;
         callback(data_tmp, half_buffer);
 
-        std::this_thread::sleep_for(std::chrono::milliseconds{1});
+        std::this_thread::sleep_for(AdcFillDelay);
 
         f1 = (*sync < half_buffer) ? 0 : 1;
     }

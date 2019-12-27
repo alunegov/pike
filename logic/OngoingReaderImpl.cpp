@@ -1,7 +1,9 @@
 #include <OngoingReaderImpl.h>
 
 #include <cassert>
+#include <chrono>
 #include <cstdint>
+#include <future>
 #include <vector>
 
 namespace ros { namespace pike { namespace logic {
@@ -40,34 +42,55 @@ void OngoingReaderImpl::Start()
         pike_->odometer()->FillChannels(channels);
 
         const auto adc_read_callback = [this, AdcToVolt, &channels](const int16_t* values, size_t values_count) {
-            pike_->inclinometer()->Update(channels, values, values_count, AdcToVolt);
-            const double_t angle = pike_->inclinometer()->Get();
+            // spawn 3 parallel threads for inclio, distance and depth
+            auto inclio_f = std::async(std::launch::async, [this, AdcToVolt, &channels, values, values_count]() -> double_t {
+                pike_->inclinometer()->Update(channels, values, values_count, AdcToVolt);
+                return pike_->inclinometer()->Get();
+            });
+            auto distance_f = std::async(std::launch::async, [this, AdcToVolt, &channels, values, values_count]() -> double_t {
+                pike_->odometer()->Update(channels, values, values_count, AdcToVolt);
+                return pike_->odometer()->Get();
+            });
+            auto depth_f = std::async(std::launch::async, [this]() -> int16_t {
+                if (!depth_idle_token_) {
+                    return pike_->depthometer()->Read();
+                } else {
+                    return INT16_MIN;
+                }
+            });
 
-            pike_->odometer()->Update(channels, values, values_count, AdcToVolt);
-            const double_t distance = pike_->odometer()->Get();
-
-            int16_t depth{INT16_MIN};
-            if (!depth_idle_token_) {
-                depth = pike_->depthometer()->Read();
-            }
+            const double_t angle = inclio_f.get();
+            const double_t distance = distance_f.get();
+            const int16_t depth = depth_f.get();
 
             output_->AdcTick(distance, angle, depth);
+#ifndef NDEBUG
             output_->AdcTick_Values(channels, values, values_count, AdcToVolt);
+#endif
         };
 
+        // запуск бесконечного чтения, во время которого будет вызываться adc_read_callback при заполнении половины
+        // буфера АЦП
+        // TODO: настраивать периодичность вызова callback (сейчас он зависит от типа платы и параметров регистрации -
+        // скорость заполнения половины буфера)
         pike_->daq()->AdcRead(regFreq, channels, cancel_token_, adc_read_callback);
     }};
 
     ttl_in_thread_ = std::thread{[this]() {
+        // Задержка между чтениями TtlIn (показания ender)
+        constexpr std::chrono::milliseconds TtlInDelay{111};
+
         while (!cancel_token_) {
             if (!depth_idle_token_) {
-                const bool ender1 = pike_->ender1()->Read();
-                const bool ender2 = pike_->ender2()->Read();
+                // читаем сразу оба ender (за одно чтение ttl_in)
+                pike_->ReadAndUpdateTtlIn();
+                const bool ender1 = pike_->ender1()->Get();
+                const bool ender2 = pike_->ender2()->Get();
 
                 output_->TtlInTick(ender1, ender2);
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds{1});
+            std::this_thread::sleep_for(TtlInDelay);
         }
     }};
 }

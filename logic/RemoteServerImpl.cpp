@@ -1,6 +1,7 @@
 #include <RemoteServerImpl.h>
 
 #include <cassert>
+#include <chrono>
 #include <cmath>
 
 namespace ros { namespace pike { namespace logic {
@@ -29,14 +30,13 @@ void RemoteServerImpl::Start()
     _cancel_token = false;
 
     _recv_thread = std::thread{[this]() {
-        //std::this_thread::sleep_for(std::chrono::seconds{5});
-        //_output->RemoteStartMoving();
+        constexpr std::chrono::milliseconds RecvDelay{777};
 
         while (!_cancel_token) {
-            std::this_thread::sleep_for(std::chrono::milliseconds{777});
+            std::this_thread::sleep_for(RecvDelay);
 
             {
-                std::unique_lock<std::mutex> l{_state_locker};
+                std::unique_lock<std::mutex> lock{_state_locker};
 
                 // TODO: recv from client
                 const double_t x_value{0};
@@ -79,13 +79,19 @@ void RemoteServerImpl::Start()
     }};
 
     _reset_thread = std::thread{[this]() {
+        // Задержка между проверками для авто-сброса движения
+        constexpr std::chrono::seconds ResetDelay{1};
+        // Период "неприхода" данных от клиента для авто-сброса движения
+        //constexpr std::chrono::duration<> ResetDelta{5};
+
         while (!_cancel_token) {
-            std::this_thread::sleep_for(std::chrono::seconds{1});
+            std::this_thread::sleep_for(ResetDelay);
 
             {
-                std::unique_lock<std::mutex> l{_state_locker};
+                std::unique_lock<std::mutex> lock{_state_locker};
 
-                if (std::chrono::steady_clock::now() == _last_state) {
+                // TODO: если прошло больше ResetDelta
+                if ((std::chrono::steady_clock::now() == _last_state)) {
                     if (_move_state != MotionDirection::No) {
                         _output->RemoteStopMoving();
                         _move_state = MotionDirection::No;

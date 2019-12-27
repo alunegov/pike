@@ -59,6 +59,8 @@ public:
 
     void SetIsSlicing(bool is_slicing) override { _is_slicing = is_slicing; }
 
+    void ReadAndUpdateTtlIn() override;
+
 private:
     ros::dc::DAQ* _daq{nullptr};
     ros::devices::Ender* _ender1{nullptr};

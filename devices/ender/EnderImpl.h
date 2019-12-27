@@ -15,17 +15,23 @@ public:
     EnderImpl() = delete;
 
     EnderImpl(ros::dc::DAQ* daq, uint16_t pin) :
-        daq_{daq},
-        pin_{pin}
+        _daq{daq},
+        _pin{pin}
     {}
 
     // Ender
 
+    void Update(uint16_t ttl_in) override;
+
+    bool Get() override;
+
     bool Read() override;
 
 private:
-    ros::dc::DAQ* daq_{nullptr};
-    uint16_t pin_{0};
+    ros::dc::DAQ* _daq{nullptr};
+    uint16_t _pin{0};
+
+    bool _state{false};
 };
 
 }}

@@ -49,6 +49,10 @@ public:
     virtual bool IsSlicing() const = 0;
 
     virtual void SetIsSlicing(bool is_slicing) = 0;
+
+    // Читает состояние TtlIn и обновляет все под-элементы, "работающие" от TtlIn
+    // Чтобы не читать TtlIn несколько раз при массовом "обновлении" под-элементов.
+    virtual void ReadAndUpdateTtlIn() = 0;
 };
 
 }}
