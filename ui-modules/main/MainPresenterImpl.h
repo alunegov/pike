@@ -102,16 +102,24 @@ private:
     ros::pike::logic::SliceMsrMapper* sliceMsrMapper_{nullptr};
     ros::pike::logic::RemoteServer* remote_{nullptr};
 
+    // Поток регистрации slice
     std::thread slice_thread_;
+    // Токен останова потока slice
     std::atomic_bool slice_cancel_token_{false};
 
+    // Номер выбранной камеры
     uint8_t selected_camera_{1};
 
+    // Путь сохранения slice (сохраняется на момент начала slice)
     std::string slice_dest_path_;
 
+    // Путь сохранения видео (сохраняется на момент начала записи)
     std::string rec_dest_path_;
+    // Время начала записи видео
     std::chrono::system_clock::time_point rec_start_time_;
+    // Пройденная дистанция на момент начала записи видео, мм
     double_t rec_start_distance_{0};
+    // Положение на момент начала записи видео, °
     double_t rec_start_angle_{0};
 };
 

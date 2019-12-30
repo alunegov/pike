@@ -30,6 +30,18 @@ MainPresenterImpl::MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic:
 
 MainPresenterImpl::~MainPresenterImpl()
 {
+    if (pike_ != nullptr) {
+        if (pike_->IsMoving()) {
+            pike_->mover()->Stop();
+            pike_->SetIsMoving(false);
+        }
+
+        if (pike_->IsRotating()) {
+            pike_->rotator()->Stop();
+            pike_->SetIsRotating(false);
+        }
+    }
+
     if (ongoingReader_ != nullptr) {
         ongoingReader_->Stop();
     }
@@ -57,17 +69,15 @@ void MainPresenterImpl::OnShow()
 
 void MainPresenterImpl::StartMovement(ros::devices::MoverDirection dir)
 {
-    if (pike_->InMotion()) {
-        // TODO: ui notify on reject?
-        //view_->SetMoveForward(false);
+    if (pike_->IsMoving()) {
         return;
     }
-    assert(!pike_->IsSlicing());
+    assert(!pike_->IsRotating() && !pike_->IsSlicing());
 
     pike_->mover()->SetDirection(dir);
     pike_->mover()->Start();
 
-    pike_->SetInMotion(true);
+    pike_->SetIsMoving(true);
 
     if (view_ != nullptr) {
         SetMotionEnabled(dir == ros::devices::MoverDirection::Forward, dir == ros::devices::MoverDirection::Backward,
@@ -78,12 +88,16 @@ void MainPresenterImpl::StartMovement(ros::devices::MoverDirection dir)
 
 void MainPresenterImpl::StopMovement()
 {
+    assert(pike_->IsMoving() && !pike_->IsRotating() && !pike_->IsSlicing());
+
     pike_->mover()->Stop();
 
-    pike_->SetInMotion(false);
+    pike_->SetIsMoving(false);
 
     if (view_ != nullptr) {
-        // TODO: ui notify on stop from remote
+        // сбрасываем возможное состояние кнопки после remote
+        view_->SetMoveForward(false);
+        view_->SetMoveBackward(false);
         SetMotionEnabled(true);
         view_->SetSliceEnabled(true);
     }
@@ -91,20 +105,18 @@ void MainPresenterImpl::StopMovement()
 
 void MainPresenterImpl::StartRotation(ros::devices::RotatorDirection dir)
 {
-    if (pike_->InMotion()) {
-        // TODO: ui notify on reject?
+    if (pike_->IsRotating()) {
         return;
     }
-    assert(!pike_->IsSlicing());
+    assert(!pike_->IsMoving() && !pike_->IsSlicing());
 
     pike_->rotator()->SetDirection(dir);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
     pike_->rotator()->Start();
 
-    pike_->SetInMotion(true);
+    pike_->SetIsRotating(true);
 
     if (view_ != nullptr) {
-        // TODO: ui notify on start from remote
         SetMotionEnabled(false, false, dir == ros::devices::RotatorDirection::CCW,
                 dir == ros::devices::RotatorDirection::CW);
         view_->SetSliceEnabled(false);
@@ -113,12 +125,16 @@ void MainPresenterImpl::StartRotation(ros::devices::RotatorDirection dir)
 
 void MainPresenterImpl::StopRotation()
 {
+    assert(pike_->IsRotating() && !pike_->IsMoving() && !pike_->IsSlicing());
+
     pike_->rotator()->Stop();
 
-    pike_->SetInMotion(false);
+    pike_->SetIsRotating(false);
 
     if (view_ != nullptr) {
-        // TODO: ui notify on stop from remote
+        // сбрасываем возможное состояние кнопки после remote
+        view_->SetRotateCcw(false);
+        view_->SetRotateCw(false);
         SetMotionEnabled(true);
         view_->SetSliceEnabled(true);
     }
@@ -270,13 +286,21 @@ void MainPresenterImpl::RemoteStartMovement(ros::pike::logic::MotionDirection di
                 return;
             }
 
-            //pike_->mover()->SetDirection(dir);
+            if (dir == ros::pike::logic::MotionDirection::Inc) {
+                pike_->mover()->SetDirection(ros::devices::MoverDirection::Forward);
+            } else {
+                pike_->mover()->SetDirection(ros::devices::MoverDirection::Backward);
+            }
             pike_->mover()->Start();
 
-            pike_->SetInMotion(true);
+            pike_->SetIsMoving(true);
 
             if (view_ != nullptr) {
-                view_->SetMoveForward(true);
+                if (dir == ros::pike::logic::MotionDirection::Inc) {
+                    view_->SetMoveForward(true);
+                } else {
+                    view_->SetMoveBackward(true);
+                }
                 SetMotionEnabled(dir == ros::pike::logic::MotionDirection::Inc, dir == ros::pike::logic::MotionDirection::Dec, false, false);
                 view_->SetSliceEnabled(false);
             }
@@ -289,9 +313,13 @@ void MainPresenterImpl::RemoteStopMovement()
     // TODO: lock view_
     if (view_ != nullptr) {
         view_->RunOnUiThread([this] {
+            if (!pike_->IsMoving() || pike_->IsSlicing()) {
+                return;
+            }
+
             pike_->mover()->Stop();
 
-            pike_->SetInMotion(false);
+            pike_->SetIsMoving(false);
 
             if (view_ != nullptr) {
                 view_->SetMoveForward(false);
@@ -304,10 +332,59 @@ void MainPresenterImpl::RemoteStopMovement()
 }
 
 void MainPresenterImpl::RemoteStartRotation(ros::pike::logic::MotionDirection dir)
-{}
+{
+    // TODO: lock view_
+    if (view_ != nullptr) {
+        view_->RunOnUiThread([this, dir] {
+            if (pike_->InMotion() || pike_->IsSlicing()) {
+                return;
+            }
+
+            if (dir == ros::pike::logic::MotionDirection::Inc) {
+                pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CW);
+            } else {
+                pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CCW);
+            }
+            pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
+            pike_->rotator()->Start();
+
+            pike_->SetIsRotating(true);
+
+            if (view_ != nullptr) {
+                if (dir == ros::pike::logic::MotionDirection::Inc) {
+                    view_->SetRotateCw(true);
+                } else {
+                    view_->SetRotateCcw(true);
+                }
+                SetMotionEnabled(false, false, dir == ros::pike::logic::MotionDirection::Dec, dir == ros::pike::logic::MotionDirection::Inc);
+                view_->SetSliceEnabled(false);
+            }
+        });
+    }
+}
 
 void MainPresenterImpl::RemoteStopRotation()
-{}
+{
+    // TODO: lock view_
+    if (view_ != nullptr) {
+        view_->RunOnUiThread([this] {
+            if (!pike_->IsRotating() || pike_->IsSlicing()) {
+                return;
+            }
+
+            pike_->rotator()->Stop();
+
+            pike_->SetIsRotating(false);
+
+            if (view_ != nullptr) {
+                view_->SetRotateCcw(false);
+                view_->SetRotateCw(false);
+                SetMotionEnabled(true);
+                view_->SetSliceEnabled(true);
+            }
+        });
+    }
+}
 
 void MainPresenterImpl::AdcTick(double_t distance, double_t angle, int16_t depth)
 {

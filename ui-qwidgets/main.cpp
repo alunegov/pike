@@ -43,7 +43,7 @@ int main(int argc, char** argv)
             font-size: %2px;
         }
 
-        QPushButton#record:checked, QPushButton#motion:pressed {
+        QPushButton#record:checked, QPushButton#motion:pressed, QPushButton#motion:checked {
             background-color: red;
         }
     )"}.arg(24).arg(14);

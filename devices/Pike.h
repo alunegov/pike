@@ -44,7 +44,15 @@ public:
 
     virtual bool InMotion() const = 0;
 
-    virtual void SetInMotion(bool in_motion) = 0;
+    //virtual void SetInMotion(bool in_motion) = 0;
+
+    virtual bool IsMoving() const = 0;
+
+    virtual void SetIsMoving(bool is_moving) = 0;
+
+    virtual bool IsRotating() const = 0;
+
+    virtual void SetIsRotating(bool is_rotating) = 0;
 
     virtual bool IsSlicing() const = 0;
 

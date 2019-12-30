@@ -32,11 +32,12 @@ void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
 void OngoingReaderImpl::Start()
 {
     assert(!_adc_gather_thread.joinable() && !_adc_process_thread.joinable() && !_ttl_in_thread.joinable());
+    assert(_output != nullptr);
 
     _cancel_token = false;
 
     _adc_gather_thread = std::thread{[this]() {
-        const double_t AdcToVolt{10.0 / 8000.0};  // TODO: get AdcToVolt from daq
+        const double_t AdcToVolt{10.0 / 8000};  // TODO: get AdcToVolt from daq
 
         double_t regFreq{_adc_rate};
 

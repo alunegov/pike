@@ -26,7 +26,7 @@ private:
     RemoteServerOutput* _output{nullptr};
 
     std::thread _recv_thread;
-    std::thread _reset_thread;
+    std::thread _auto_reset_thread;
     std::atomic_bool _cancel_token{false};
 
     std::mutex _state_locker;

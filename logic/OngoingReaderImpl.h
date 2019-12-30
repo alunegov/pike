@@ -37,15 +37,22 @@ public:
 private:
     ros::devices::Pike* _pike{nullptr};
 
+    // Частота регистрации АЦП, кГц
     double_t _adc_rate{0};
 
+    // Выход
     OngoingReaderOutput* _output{nullptr};
 
+    // Поток регистрации АЦП и глубины
     std::thread _adc_gather_thread;
+    // Поток разбора данных от АЦП (обновление устройств и выдача output)
     std::thread _adc_process_thread;
+    // Поток опроса TtlIn
     std::thread _ttl_in_thread;
+    // Токен останова потоков
     std::atomic_bool _cancel_token{false};
 
+    // Токен приостановки чтения глубины и TtlIn (на время slice)
     std::atomic_bool _depth_idle_token{false};
 };
 

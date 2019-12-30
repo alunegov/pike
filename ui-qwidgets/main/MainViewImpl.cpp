@@ -57,6 +57,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_
         presenter_->StartMovement(ros::devices::MoverDirection::Forward);
     });
     QObject::connect(move_forward_button_, &QPushButton::released, this, [=]() {
+        move_forward_button_->setCheckable(false);
         presenter_->StopMovement();
     });
 
@@ -67,6 +68,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_
         presenter_->StartMovement(ros::devices::MoverDirection::Backward);
     });
     QObject::connect(move_backward_button_, &QPushButton::released, this, [=]() {
+        move_backward_button_->setCheckable(false);
         presenter_->StopMovement();
     });
 
@@ -77,6 +79,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_
         presenter_->StartRotation(ros::devices::RotatorDirection::CCW);
     });
     QObject::connect(rotate_ccw_button_, &QPushButton::released, this, [=]() {
+        rotate_ccw_button_->setCheckable(false);
         presenter_->StopRotation();
     });
 
@@ -87,6 +90,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_
         presenter_->StartRotation(ros::devices::RotatorDirection::CW);
     });
     QObject::connect(rotate_cw_button_, &QPushButton::released, this, [=]() {
+        rotate_cw_button_->setCheckable(false);
         presenter_->StopRotation();
     });
 
@@ -253,6 +257,7 @@ void MainViewImpl::SetMoveForward(bool checked)
 {
     move_forward_button_->setCheckable(checked);
     move_forward_button_->setChecked(checked);
+    move_forward_button_->update();
 }
 
 void MainViewImpl::SetMoveBackwardEnabled(bool enabled)
@@ -264,6 +269,7 @@ void MainViewImpl::SetMoveBackward(bool checked)
 {
     move_backward_button_->setCheckable(checked);
     move_backward_button_->setChecked(checked);
+    move_backward_button_->update();
 }
 
 void MainViewImpl::SetRotateCcwEnabled(bool enabled)
@@ -272,7 +278,11 @@ void MainViewImpl::SetRotateCcwEnabled(bool enabled)
 }
 
 void MainViewImpl::SetRotateCcw(bool checked)
-{}
+{
+    rotate_ccw_button_->setCheckable(checked);
+    rotate_ccw_button_->setChecked(checked);
+    rotate_ccw_button_->update();
+}
 
 void MainViewImpl::SetRotateCwEnabled(bool enabled)
 {
@@ -280,7 +290,11 @@ void MainViewImpl::SetRotateCwEnabled(bool enabled)
 }
 
 void MainViewImpl::SetRotateCw(bool checked)
-{}
+{
+    rotate_cw_button_->setCheckable(checked);
+    rotate_cw_button_->setChecked(checked);
+    rotate_cw_button_->update();
+}
 
 void MainViewImpl::SetSliceEnabled(bool enabled)
 {
@@ -315,12 +329,6 @@ void MainViewImpl::SetPhotoEnabled(bool enabled)
 void MainViewImpl::SetDestPathEnabled(bool enabled)
 {
     dest_path_edit_->setEnabled(enabled);
-}
-
-void MainViewImpl::keyPressEvent(QKeyEvent* event)
-{
-    //event->key()
-    //presenter_->StartMovement(ros::devices::MoverDirection::Forward);
 }
 
 void MainViewImpl::resizeEvent(QResizeEvent* event)

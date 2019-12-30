@@ -51,9 +51,17 @@ public:
 
     ros::devices::Depthometer* depthometer() const override { return _depthometer; }
 
-    bool InMotion() const override { return _in_motion; }
+    bool InMotion() const override { return _is_moving || _is_rotating; }
 
-    void SetInMotion(bool in_motion) override { _in_motion = in_motion; }
+    //void SetInMotion(bool in_motion) override { _in_motion = in_motion; }
+
+    bool IsMoving() const override { return _is_moving; }
+
+    void SetIsMoving(bool is_moving) override { _is_moving = is_moving; };
+
+    bool IsRotating() const override { return _is_rotating; };
+
+    void SetIsRotating(bool is_rotating) override { _is_rotating = is_rotating; }
 
     bool IsSlicing() const override { return _is_slicing; }
 
@@ -70,7 +78,9 @@ private:
     ros::devices::Odometer* _odometer{nullptr};
     ros::devices::Inclinometer* _inclinometer{nullptr};
     ros::devices::Depthometer* _depthometer{nullptr};
-    bool _in_motion{false};
+    //bool _in_motion{false};
+    bool _is_moving{false};
+    bool _is_rotating{false};
     bool _is_slicing{false};
 };
 

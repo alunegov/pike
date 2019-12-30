@@ -91,8 +91,6 @@ public:
     void SetDestPathEnabled(bool enabled) override;
 
 protected:
-    void keyPressEvent(QKeyEvent* event) override;
-    //void keyReleaseEvent(QKeyEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
 private:
