@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
 project(logic LANGUAGES CXX)
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
+#set(CMAKE_AUTOUIC ON)
+find_package(Qt5 REQUIRED COMPONENTS Network)
+
 set(source_list
     "Conf.h"
     "ConfMapper.cpp"
@@ -41,5 +46,6 @@ else()
 endif()
 
 target_link_libraries(${PROJECT_NAME}
+    PUBLIC Qt5::Network
     PUBLIC devices
 )

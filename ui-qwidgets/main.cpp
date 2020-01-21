@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 
     auto sliceMsrMapper = new ros::pike::logic::SliceMsrMapperImpl;
 
-    auto remoteServer = new ros::pike::logic::RemoteServerImpl;
+    auto remoteServer = new ros::pike::logic::RemoteServerImpl{45454};
 
     // presenter and view
     auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper,

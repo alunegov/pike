@@ -2,8 +2,12 @@
 
 #include <atomic>
 #include <chrono>
+#include <cmath>
+#include <cstdint>
 #include <mutex>
 #include <thread>
+
+#include <QtNetwork/QUdpSocket>
 
 #include <RemoteServer.h>
 
@@ -12,6 +16,10 @@ namespace ros { namespace pike { namespace logic {
 class RemoteServerImpl : public RemoteServer
 {
 public:
+    explicit RemoteServerImpl(uint16_t port) :
+        _port{port}
+    {}
+
     ~RemoteServerImpl() override;
 
     // RemoteServer
@@ -23,9 +31,18 @@ public:
     void Stop() override;
 
 private:
+    void ReadPendingDatagrams();
+
+    void ProcessMotionData(double_t x_value, double_t y_value);
+
+    void AutoResetMotion();
+
+    uint16_t _port{0};
+
     RemoteServerOutput* _output{nullptr};
 
-    std::thread _recv_thread;
+    QUdpSocket* _recv_socket{nullptr};
+
     std::thread _auto_reset_thread;
     std::atomic_bool _cancel_token{false};
 
