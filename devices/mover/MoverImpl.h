@@ -28,14 +28,14 @@ public:
 
     void SetDirection(MoverDirection direction);
 
-    void Start();
+    tl::expected<void, std::error_code> Start();
 
-    void Stop();
+    tl::expected<void, std::error_code> Stop();
 
 private:
-    void NonVirtualStop();
+    tl::expected<void, std::error_code> NonVirtualStop();
 
-    void applyDirection();
+    tl::expected<void, std::error_code> applyDirection();
 
     ros::dc::DAQ* daq_{nullptr};
     uint16_t pwm_pin_{0};

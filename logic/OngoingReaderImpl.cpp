@@ -31,8 +31,8 @@ void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
 
 void OngoingReaderImpl::Start()
 {
-    assert(!_adc_gather_thread.joinable() && !_adc_process_thread.joinable() && !_ttl_in_thread.joinable());
     assert(_output != nullptr);
+    assert(!_adc_gather_thread.joinable() && !_adc_process_thread.joinable() && !_ttl_in_thread.joinable());
 
     _cancel_token = false;
 
@@ -59,7 +59,9 @@ void OngoingReaderImpl::Start()
             });
             auto depth_f = std::async(std::launch::async, [this]() -> int16_t {
                 if (!_depth_idle_token) {
-                    return _pike->depthometer()->Read();
+                    const auto depth = _pike->depthometer()->Read();
+                    // TODO: log and return/output?
+                    return depth ? depth.value() : INT16_MIN;  // TODO: ÷òî âîçâğàùàòü?
                 } else {
                     return INT16_MIN;  // TODO: ÷òî âîçâğàùàòü?
                 }
@@ -79,10 +81,13 @@ void OngoingReaderImpl::Start()
         // áóôåğà ÀÖÏ
         // TODO: íàñòğàèâàòü ïåğèîäè÷íîñòü âûçîâà callback (ñåé÷àñ îí çàâèñèò îò òèïà ïëàòû è ïàğàìåòğîâ ğåãèñòğàöèè -
         // ñêîğîñòè çàïîëíåíèÿ ïîëîâèíû áóôåğà ÀÖÏ)
-        _pike->daq()->AdcRead(regFreq, channels, _cancel_token, adc_read_callback);
+        const auto adc_read_opt = _pike->daq()->AdcRead(regFreq, channels, _cancel_token, adc_read_callback);
+        if (!adc_read_opt) {
+            // TODO: log and return/output?
+        }
     }};
 
-    _adc_process_thread = std::thread{[this] {
+    _adc_process_thread = std::thread{[this]() {
         // TODO: îæèäàíèå ïğèõîäà ïîğöèè äàííûõ îò ÀÖÏ (è âîçìîæíî èõ íàêîïëåíèå ïğè âûñîêîé ÷àñòîòå ñáîğà),
         // äîñòàâàíèå èõ èç êîëüöåâîãî áóôåğà, îáíîâëåíèå ïîä-óñòğîéñòâ è "âûäà÷à" ÷åğåç _output
 
@@ -98,7 +103,10 @@ void OngoingReaderImpl::Start()
         while (!_cancel_token) {
             if (!_depth_idle_token) {
                 // ÷èòàåì ñğàçó îáà ender (çà îäíî ÷òåíèå ttl_in)
-                _pike->ReadAndUpdateTtlIn();
+                const auto ttlin_opt = _pike->ReadAndUpdateTtlIn();
+                if (!ttlin_opt) {
+                    // TODO: log and return/output, continue?
+                }
                 const bool ender1 = _pike->ender1()->Get();
                 const bool ender2 = _pike->ender2()->Get();
 

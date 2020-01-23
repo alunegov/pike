@@ -20,7 +20,11 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
     // TODO: "дожимать" несколько шагов после срабатывания ender
     while (true) {
         // читаем сразу оба ender (за одно чтение ttl_in)
-        pike_->ReadAndUpdateTtlIn();
+        const auto ttlin_opt = pike_->ReadAndUpdateTtlIn();
+        if (!ttlin_opt) {
+            // TODO: log and return?
+            return res;
+        }
         const bool ender1 = pike_->ender1()->Get();
         const bool ender2 = pike_->ender2()->Get();
 
@@ -32,7 +36,11 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
         }
 
         // TODO: use Step
-        pike_->rotator()->Rotate();
+        const auto rotate_opt = pike_->rotator()->Rotate();
+        if (!rotate_opt) {
+            // TODO: log and return?
+            return res;
+        }
 
         if (cancel_token) {
             return res;
@@ -54,7 +62,11 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
     size_t steps_in_ender2{0};
     while (true) {
         // читаем сразу оба ender (за одно чтение ttl_in)
-        pike_->ReadAndUpdateTtlIn();
+        const auto ttlin_opt = pike_->ReadAndUpdateTtlIn();
+        if (!ttlin_opt) {
+            // TODO: log and return?
+            return res;
+        }
         const bool ender1 = pike_->ender1()->Get();
         const bool ender2 = pike_->ender2()->Get();
 
@@ -70,15 +82,23 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
             assert(steps_in_ender2 == 0);  // ender выставился, а потом сбросился
         }
 
-        const int16_t depth = pike_->depthometer()->Read();
+        const auto depth = pike_->depthometer()->Read();
+        if (!depth) {
+            // TODO: log and return?
+            return res;
+        }
 
         res.angles.emplace_back(angle);
-        res.depths.emplace_back(depth);
+        res.depths.emplace_back(depth.value());
 
-        output->SliceTick(angle, depth);
+        output->SliceTick(angle, depth.value());
 
         // TODO: use Step
-        pike_->rotator()->Rotate();
+        const auto rotate_opt = pike_->rotator()->Rotate();
+        if (!rotate_opt) {
+            // TODO: log and return?
+            return res;
+        }
 
         angle += angle_per_step;
 
@@ -87,7 +107,10 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
         }
     }
 
-    //pike_->rotator()->Disable();
+    /*const auto rotator_disable_opt = pike_->rotator()->Disable();
+    if (!rotator_disable_opt) {
+        // TODO: log
+    }*/
 
     res.ok = true;
 

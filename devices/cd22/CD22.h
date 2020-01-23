@@ -22,7 +22,7 @@ public:
 
     // Depthometer
 
-    int16_t Read() override;
+    tl::expected<int16_t, std::error_code> Read() override;
 
 private:
     ce::ceSerial _transport;

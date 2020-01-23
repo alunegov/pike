@@ -16,6 +16,8 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 target_include_directories(${PROJECT_NAME}
     PUBLIC "."
     PRIVATE "lcard"
+
+    PUBLIC "../_ext/expected/include"
     PRIVATE "../_ext/lcomp/include"
 )
 

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <system_error>
+
+#include <tl/expected.hpp>
 
 namespace ros { namespace devices {
 
@@ -18,7 +21,7 @@ public:
 
     // ¬озвращает состо€ние - true, если на пин приходит 1, иначе false
     // „итает состо€ние с устройства.
-    virtual bool Read() = 0;
+    virtual tl::expected<bool, std::error_code> Read() = 0;
 };
 
 }}

@@ -16,39 +16,41 @@ void MoverImpl::SetDirection(MoverDirection direction)
     direction_ = direction;
 }
 
-void MoverImpl::Start()
+tl::expected<void, std::error_code> MoverImpl::Start()
 {
-    Stop();
-    // TODO: delay?
-
-    applyDirection();
-
-    daq_->TtlOut_SetPin(pwm_pin_);
+    return Stop()  // TODO: delay?
+        .and_then([this]() { return applyDirection(); })
+        .and_then([this]() { return daq_->TtlOut_SetPin(pwm_pin_); });
 }
 
-void MoverImpl::Stop()
+tl::expected<void, std::error_code> MoverImpl::Stop()
 {
-    NonVirtualStop();
+    return NonVirtualStop();
 }
 
-void MoverImpl::NonVirtualStop()
+tl::expected<void, std::error_code> MoverImpl::NonVirtualStop()
 {
-    daq_->TtlOut_ClrPin(pwm_pin_);
+    return daq_->TtlOut_ClrPin(pwm_pin_);
 }
 
-void MoverImpl::applyDirection()
+tl::expected<void, std::error_code> MoverImpl::applyDirection()
 {
+    tl::expected<void, std::error_code> res;
+
     switch (direction_) {
     case MoverDirection::Forward:
-        daq_->TtlOut_ClrPin(dir_pin_);
+        res = daq_->TtlOut_ClrPin(dir_pin_);
         break;
     case MoverDirection::Backward:
-        daq_->TtlOut_SetPin(dir_pin_);
+        res = daq_->TtlOut_SetPin(dir_pin_);
         break;
     default:
         assert(false);
+        res = tl::make_unexpected(std::make_error_code(std::errc::bad_address));
         break;
     }
+
+    return res;
 }
 
 }}

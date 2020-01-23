@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <system_error>
 #include <thread>
 
 #include <Pike.h>
@@ -21,7 +22,8 @@ class MainPresenterImpl :
     public MainPresenter,
     public ros::pike::logic::OngoingReaderOutput,
     public ros::pike::logic::SlicerReadOutput,
-    public ros::pike::logic::RemoteServerOutput
+    public ros::pike::logic::RemoteServerOutput,
+    public ros::devices::RotatorOutput
 {
 public:
     MainPresenterImpl() = delete;
@@ -87,6 +89,10 @@ public:
     void RemoteStartRotation(ros::pike::logic::MotionDirection dir) override;
 
     void RemoteStopRotation() override;
+
+    // RotatorOutput
+
+    void RotateError(const std::error_code& ec) override;
 
 private:
     void SetMotionEnabled(bool enabled);

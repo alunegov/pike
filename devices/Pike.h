@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <system_error>
+
+#include <tl/expected.hpp>
 
 #include <DAQ.h>
 #include <Depthometer.h>
@@ -60,7 +63,7 @@ public:
 
     // Читает состояние TtlIn и обновляет все под-элементы, "работающие" от TtlIn
     // Чтобы не читать TtlIn несколько раз при массовом "обновлении" под-элементов.
-    virtual void ReadAndUpdateTtlIn() = 0;
+    virtual tl::expected<void, std::error_code> ReadAndUpdateTtlIn() = 0;
 };
 
 }}

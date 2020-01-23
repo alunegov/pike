@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <system_error>
+
+#include <tl/expected.hpp>
 
 namespace ros { namespace devices {
 
@@ -10,7 +13,7 @@ class Depthometer
 public:
     virtual ~Depthometer() = default;
 
-    virtual int16_t Read() = 0;
+    virtual tl::expected<int16_t, std::error_code> Read() = 0;
 };
 
 }}

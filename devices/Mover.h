@@ -1,5 +1,9 @@
 #pragma once
 
+#include <system_error>
+
+#include <tl/expected.hpp>
+
 namespace ros { namespace devices {
 
 // Ќаправление движени€
@@ -20,10 +24,10 @@ public:
 
     // «апускает перемещение
     // ѕеред началом останавливает возможное перемещение и выставл€ет направление.
-    virtual void Start() = 0;
+    virtual tl::expected<void, std::error_code> Start() = 0;
 
     // ќстанавливает перемещение
-    virtual void Stop() = 0;
+    virtual tl::expected<void, std::error_code> Stop() = 0;
 };
 
 }}

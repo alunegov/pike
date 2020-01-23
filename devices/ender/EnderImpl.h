@@ -25,7 +25,7 @@ public:
 
     bool Get() override;
 
-    bool Read() override;
+    tl::expected<bool, std::error_code> Read() override;
 
 private:
     ros::dc::DAQ* _daq{nullptr};

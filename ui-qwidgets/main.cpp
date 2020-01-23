@@ -78,8 +78,16 @@ int main(int argc, char** argv)
 
     // dc and devices
     auto daq = new ros::dc::lcard::LCardDevice;
-    daq->Init(conf.daq.slot);
-    daq->TtlEnable(true);
+    const auto daq_init_opt = daq->Init(conf.daq.slot);
+    if (!daq_init_opt) {
+        // TODO: log and cleanup
+        return 1;
+    }
+    const auto daq_ttlin_enable_opt = daq->TtlEnable(true);
+    if (!daq_ttlin_enable_opt) {
+        // TODO: log and cleanup
+        return 1;
+    }
     // плата "закрывается" в pike
 
     auto ender1 = new ros::devices::EnderImpl{daq, conf.ender1.pin};
@@ -102,6 +110,8 @@ int main(int argc, char** argv)
     ce::ceSerial depthometer_transport{conf.depthometer.port_name, conf.depthometer.baud_rate, 8, 'N', 1};
     const auto open_res = depthometer_transport.Open();
     if (open_res != 0) {
+        // TODO: log and cleanup
+        //return 1;
     }
     // порт закроется в depthometer, или автоматически при удалении depthometer_transport (в конце main)
 
@@ -116,7 +126,7 @@ int main(int argc, char** argv)
 
     auto sliceMsrMapper = new ros::pike::logic::SliceMsrMapperImpl;
 
-    auto remoteServer = new ros::pike::logic::RemoteServerImpl{45454};
+    auto remoteServer = new ros::pike::logic::RemoteServerImpl{45454};  // TODO: port from conf
 
     // presenter and view
     auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper,

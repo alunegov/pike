@@ -32,28 +32,30 @@ public:
 
     // Rotator
 
+    void SetOutput(RotatorOutput* output) override;
+
     void SetDirection(RotatorDirection direction) override;
 
     void SetSpeed(RotatorSpeed speed) override;
 
     uint32_t StepsIn360() override;
 
-    void Start() override;
+    tl::expected<void, std::error_code> Start() override;
 
     void Stop() override;
 
-    void Rotate(size_t steps_count = 1) override;
+    tl::expected<void, std::error_code> Rotate(size_t steps_count = 1) override;
 
-    void Enable() override;
+    tl::expected<void, std::error_code> Enable() override;
 
-    void Disable() override;
+    tl::expected<void, std::error_code> Disable() override;
 
-    void Step() override;
+    tl::expected<void, std::error_code> Step() override;
 
 private:
-    void applyDirection();
+    tl::expected<void, std::error_code> applyDirection();
 
-    void applySpeed();
+    tl::expected<void, std::error_code> applySpeed();
 
     ros::dc::DAQ* daq_{nullptr};
     uint16_t enable_pin_{0};
@@ -62,6 +64,8 @@ private:
     uint16_t m0_pin_{0};
     uint32_t steps_per_msr_{0};
     uint32_t steps_per_view_{0};
+
+    RotatorOutput* _output{nullptr};
 
     RotatorDirection direction_{RotatorDirection::CW};
     RotatorSpeed speed_{RotatorSpeed::Low};

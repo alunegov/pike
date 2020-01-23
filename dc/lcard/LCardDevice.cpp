@@ -14,7 +14,7 @@ LCardDevice::~LCardDevice()
     NonVirtualDeinit();
 }
 
-void LCardDevice::Init(size_t slot_num)
+tl::expected<void, std::error_code> LCardDevice::Init(size_t slot_num)
 {
     assert(device_ == nullptr);
 
@@ -25,25 +25,26 @@ void LCardDevice::Init(size_t slot_num)
     lcomp_handle_ = LoadLibrary(LCompName);
     if (lcomp_handle_ == nullptr) {
         Deinit();
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     const auto create_instance = (CREATEFUNCPTR)GetProcAddress(lcomp_handle_, "CreateInstance");
     if (create_instance == nullptr) {
         Deinit();
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
     
     IDaqLDevice* const device_instance = create_instance(static_cast<ULONG>(slot_num));
     if (device_instance == nullptr) {
         Deinit();
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     const HRESULT query_res = device_instance->QueryInterface(IID_ILDEV, (void**)&device_);
     if (!SUCCEEDED(query_res)) {
+        // TODO: device_instance->Release()?
         Deinit();
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     status = device_instance->Release();
@@ -52,7 +53,7 @@ void LCardDevice::Init(size_t slot_num)
     const HANDLE device_handle = device_->OpenLDevice();
     if (device_handle == INVALID_HANDLE_VALUE) {
         Deinit();
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     SLOT_PAR slot_param;
@@ -60,7 +61,7 @@ void LCardDevice::Init(size_t slot_num)
     status = device_->GetSlotParam(&slot_param);
     if (status != L_SUCCESS) {
         Deinit();
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     board_type_ = slot_param.BoardType;
@@ -69,7 +70,7 @@ void LCardDevice::Init(size_t slot_num)
     status = device_->LoadBios(const_cast<char*>(biosName));
     if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) {
         Deinit();
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     PLATA_DESCR_U2 plata_descr;
@@ -77,22 +78,24 @@ void LCardDevice::Init(size_t slot_num)
     status = device_->ReadPlataDescr(&plata_descr);
     if (status != L_SUCCESS) {
         Deinit();
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     adc_rate_params_ = DetectAdcRateParams(board_type_, plata_descr);
     if (adc_rate_params_.FClock == 0) {
         Deinit();
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
+
+    return {};
 }
 
-void LCardDevice::Deinit()
+tl::expected<void, std::error_code> LCardDevice::Deinit()
 {
-    NonVirtualDeinit();
+    return NonVirtualDeinit();
 }
 
-void LCardDevice::TtlEnable(bool enable)
+tl::expected<void, std::error_code> LCardDevice::TtlEnable(bool enable)
 {
     assert(device_ != nullptr);
 
@@ -102,10 +105,14 @@ void LCardDevice::TtlEnable(bool enable)
     async_param.Mode = enable ? 1 : 0;
 
     const ULONG status = device_->IoAsync(&async_param);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+    }
+
+    return {};
 }
 
-void LCardDevice::TtlOut(uint16_t value)
+tl::expected<void, std::error_code> LCardDevice::TtlOut(uint16_t value)
 {
     assert(device_ != nullptr);
 
@@ -116,27 +123,29 @@ void LCardDevice::TtlOut(uint16_t value)
 
     const ULONG status = device_->IoAsync(&async_param);
     if (status != L_SUCCESS) {
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     ttl_out_value = value;
+
+    return {};
 }
 
-void LCardDevice::TtlOut_SetPin(uint16_t value)
+tl::expected<void, std::error_code> LCardDevice::TtlOut_SetPin(uint16_t value)
 {
     const uint16_t new_ttl_out_value = ttl_out_value | (1u << value);
 
     return TtlOut(new_ttl_out_value);
 }
 
-void LCardDevice::TtlOut_ClrPin(uint16_t value)
+tl::expected<void, std::error_code> LCardDevice::TtlOut_ClrPin(uint16_t value)
 {
     const uint16_t new_ttl_out_value = ttl_out_value & ~(1u << value);
 
     return TtlOut(new_ttl_out_value);
 }
 
-uint16_t LCardDevice::TtlIn()
+tl::expected<uint16_t, std::error_code> LCardDevice::TtlIn()
 {
     assert(device_ != nullptr);
 
@@ -145,7 +154,9 @@ uint16_t LCardDevice::TtlIn()
     async_param.s_Type = L_ASYNC_TTL_INP;
 
     const ULONG status = device_->IoAsync(&async_param);
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+    }
 
     return static_cast<uint16_t>(async_param.Data[0]);
 }
@@ -153,7 +164,8 @@ uint16_t LCardDevice::TtlIn()
 // Задержка при ожидании заполнения половинки буфера при чтении
 constexpr std::chrono::milliseconds AdcFillDelay{1};
 
-void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channels& channels, int16_t* values)
+tl::expected<void, std::error_code> LCardDevice::AdcRead(double_t& reg_freq, size_t point_count,
+        const _Channels& channels, int16_t* values)
 {
     assert(device_ != nullptr);
 
@@ -169,7 +181,7 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
 
     status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
     if (status != L_SUCCESS) {
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     // кол-во половинок, нужное для запрошенного количества точек
@@ -185,12 +197,12 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
 
     status = device_->InitStartLDevice();
     if (status != L_SUCCESS) {
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     status = device_->StartLDevice();
     if (status != L_SUCCESS) {
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     //
@@ -227,11 +239,15 @@ void LCardDevice::AdcRead(double_t& reg_freq, size_t point_count, const _Channel
     }
 
     status = device_->StopLDevice();
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+    }
+
+    return {};
 }
 
-void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const std::atomic_bool& cancel_token,
-        const std::function<AdcReadCallback>& callback)
+tl::expected<void, std::error_code> LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels,
+        const std::atomic_bool& cancel_token, const std::function<AdcReadCallback>& callback)
 {
     assert(device_ != nullptr);
 
@@ -251,17 +267,17 @@ void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const s
 
     status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
     if (status != L_SUCCESS) {
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     status = device_->InitStartLDevice();
     if (status != L_SUCCESS) {
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     status = device_->StartLDevice();
     if (status != L_SUCCESS) {
-        return;
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
     }
 
     //
@@ -295,16 +311,22 @@ void LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels, const s
     }
 
     status = device_->StopLDevice();
-    if (status != L_SUCCESS) {}
+    if (status != L_SUCCESS) {
+        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+    }
+
+    return {};
 }
 
-void LCardDevice::NonVirtualDeinit()
+tl::expected<void, std::error_code> LCardDevice::NonVirtualDeinit()
 {
     if (device_ != nullptr) {
         ULONG status;
 
         status = device_->CloseLDevice();
-        if (status != L_SUCCESS) {}
+        if (status != L_SUCCESS) {
+            return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        }
 
         status = device_->Release();
         device_ = nullptr;  // по факту device_ уже удалён
@@ -312,9 +334,13 @@ void LCardDevice::NonVirtualDeinit()
 
     if (lcomp_handle_ != nullptr) {
         const auto free_res = FreeLibrary(lcomp_handle_);
-        if (!free_res) {}
+        if (!free_res) {
+            return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        }
         lcomp_handle_ = nullptr;
     }
+
+    return {};
 }
 
 const char* LCardDevice::DetectBiosName(ULONG board_type)

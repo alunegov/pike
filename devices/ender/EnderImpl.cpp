@@ -14,11 +14,13 @@ bool EnderImpl::Get()
     return _state;
 }
 
-bool EnderImpl::Read()
+tl::expected<bool, std::error_code> EnderImpl::Read()
 {
-    const uint16_t ttl_in = _daq->TtlIn();
-    Update(ttl_in);
-    return Get();
+    return _daq->TtlIn()
+        .map([this](uint16_t ttl_in) {
+            Update(ttl_in);
+            return Get();
+        });
 }
 
 }}

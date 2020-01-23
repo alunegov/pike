@@ -13,3 +13,6 @@
 [submodule "_ext/FakeIt"]
 	path = _ext/FakeIt
 	url = https://github.com/eranpeer/FakeIt.git
+[submodule "_ext/expected"]
+	path = _ext/expected
+	url = https://github.com/TartanLlama/expected.git

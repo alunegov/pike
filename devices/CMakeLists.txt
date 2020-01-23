@@ -27,6 +27,7 @@ set(source_list
     "pike/PikeImpl.h"
     "rotator/RotatorImpl.cpp"
     "rotator/RotatorImpl.h"
+
     "../_ext/serial/ceSerial.cpp"
 )
 
@@ -44,6 +45,8 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE "odometer"
     PRIVATE "pike"
     PRIVATE "rotator"
+
+    PUBLIC "../_ext/expected/include"
     PRIVATE "../_ext/serial"
 )
 
@@ -70,12 +73,16 @@ target_link_libraries(${PROJECT_NAME}
 if(BUILD_TESTING)
     add_executable(${PROJECT_NAME}-test
         "../_misc/catch2/catch2-main.cpp"
+        "ender/EnderImplTest.cpp"
         "odometer/OdometerImplTest.cpp"
     )
     target_include_directories(${PROJECT_NAME}-test
         PRIVATE "."
+        PRIVATE "ender"
         PRIVATE "odometer"
+
         PRIVATE "../_ext/Catch2/single_include"
+        PRIVATE "../_ext/FakeIt/single_header"
     )
     target_link_libraries(${PROJECT_NAME}-test
         PRIVATE ${PROJECT_NAME}
