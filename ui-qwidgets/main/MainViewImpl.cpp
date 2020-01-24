@@ -208,6 +208,8 @@ void MainViewImpl::SetDistance(double_t distance)
     // debug
     std::uniform_real_distribution<> dis{0, 100};
     distance_viewport_->SetDistance(dis(gen));
+
+    slice_viewport_->SetDummySlice();
 }
 
 void MainViewImpl::SetAngle(double_t angle)
@@ -222,14 +224,12 @@ void MainViewImpl::SetAngle(double_t angle)
 void MainViewImpl::SetDepth(int16_t depth)
 {
     depth_label_->setText(QString{"%1 мкм"}.arg(depth));
-
-    // debug
-    slice_viewport_->SetDummySlice();
 }
 
 void MainViewImpl::UpdateSliceDepth(double_t angle, int16_t depth)
 {
     depth_label_->setText(QString{"%1° - %2 мкм"}.arg(angle).arg(depth));
+
     // TODO: постепенное отображение на slice_viewport_ по мере измерения
 }
 

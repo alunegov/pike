@@ -65,10 +65,14 @@ public:
 
     // OngoingReaderOutput
 
-    void AdcTick(double_t distance, double_t angle, int16_t depth) override;
+    void AdcTick(double_t distance, double_t angle) override;
 
     void AdcTick_Values(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
             double_t adc_to_volt) override;
+
+    void AdcFinish(bool canceled) override;
+
+    void DepthTick(int16_t depth) override;
 
     // also for SlicerReadOutput
     void TtlInTick(bool ender1, bool ender2) override;

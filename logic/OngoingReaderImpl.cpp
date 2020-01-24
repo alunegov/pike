@@ -17,14 +17,14 @@ OngoingReaderImpl::~OngoingReaderImpl()
     /*if (_adc_process_thread.joinable()) {
         _adc_process_thread.join();
     }*/
-    if (_ttl_in_thread.joinable()) {
-        _ttl_in_thread.join();
+    if (_misc_thread.joinable()) {
+        _misc_thread.join();
     }
 }
 
 void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
 {
-    assert(!_adc_gather_thread.joinable()/* && !_adc_process_thread.joinable()*/ && !_ttl_in_thread.joinable());  // можно задавать только в выключенном состо€нии
+    assert(!_adc_gather_thread.joinable()/* && !_adc_process_thread.joinable()*/ && !_misc_thread.joinable());  // можно задавать только в выключенном состо€нии
     assert(output != nullptr);
     _output = output;
 }
@@ -32,7 +32,7 @@ void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
 void OngoingReaderImpl::Start()
 {
     assert(_output != nullptr);
-    assert(!_adc_gather_thread.joinable()/* && !_adc_process_thread.joinable()*/ && !_ttl_in_thread.joinable());
+    assert(!_adc_gather_thread.joinable()/* && !_adc_process_thread.joinable()*/ && !_misc_thread.joinable());
 
     _cancel_token = false;
 
@@ -48,7 +48,7 @@ void OngoingReaderImpl::Start()
         const auto adc_read_callback = [this, AdcToVolt, &channels](const int16_t* values, size_t values_count) {
             // TODO: засовывание данных в кольцевой буфер и оповещение об этом
 
-            // spawn 3 parallel threads for inclio, distance and depth
+            // spawn 2 parallel threads for inclio and distance
             auto inclio_f = std::async(std::launch::async, [this, AdcToVolt, &channels, values, values_count]() -> double_t {
                 _pike->inclinometer()->Update(channels, values, values_count, AdcToVolt);
                 return _pike->inclinometer()->Get();
@@ -57,21 +57,11 @@ void OngoingReaderImpl::Start()
                 _pike->odometer()->Update(channels, values, values_count, AdcToVolt);
                 return _pike->odometer()->Get();
             });
-            auto depth_f = std::async(std::launch::async, [this]() -> int16_t {
-                if (!_depth_idle_token) {
-                    const auto depth = _pike->depthometer()->Read();
-                    // TODO: log and return/output?
-                    return depth ? depth.value() : INT16_MIN;  // TODO: что возвращать?
-                } else {
-                    return INT16_MIN;  // TODO: что возвращать?
-                }
-            });
 
             const double_t angle = inclio_f.get();
             const double_t distance = distance_f.get();
-            const int16_t depth = depth_f.get();
 
-            _output->AdcTick(distance, angle, depth);
+            _output->AdcTick(distance, angle);
 #ifndef NDEBUG
             _output->AdcTick_Values(channels, values, values_count, AdcToVolt);
 #endif
@@ -85,6 +75,8 @@ void OngoingReaderImpl::Start()
         if (!adc_read_opt) {
             // TODO: log and return/output?
         }
+
+        _output->AdcFinish(_cancel_token);
     }};
 
     /*_adc_process_thread = std::thread{[this]() {
@@ -96,24 +88,31 @@ void OngoingReaderImpl::Start()
         }
     }};*/
 
-    _ttl_in_thread = std::thread{[this]() {
-        // «адержка между чтени€ми TtlIn (показани€ ender)
-        constexpr std::chrono::milliseconds TtlInDelay{111};
+    _misc_thread = std::thread{[this]() {
+        // «адержка между чтени€ми depth и TtlIn (показани€ ender)
+        constexpr std::chrono::milliseconds MiscDelay{333};
 
         while (!_cancel_token) {
-            std::this_thread::sleep_for(TtlInDelay);
+            std::this_thread::sleep_for(MiscDelay);
 
             if (!_depth_idle_token) {
+                const auto depth = _pike->depthometer()->Read();
+                if (depth) {
+                    _output->DepthTick(depth.value());
+                } else {
+                    // TODO: log and return/output?
+                }
+
                 // читаем сразу оба ender (за одно чтение ttl_in)
                 const auto ttlin_opt = _pike->ReadAndUpdateTtlIn();
-                if (!ttlin_opt) {
-                    // TODO: log and return/output, continue?
-                    continue;
-                }
-                const bool ender1 = _pike->ender1()->Get();
-                const bool ender2 = _pike->ender2()->Get();
+                if (ttlin_opt) {
+                    const bool ender1 = _pike->ender1()->Get();
+                    const bool ender2 = _pike->ender2()->Get();
 
-                _output->TtlInTick(ender1, ender2);
+                    _output->TtlInTick(ender1, ender2);
+                } else {
+                    // TODO: log and return/output?
+                }
             }
         }
     }};
@@ -121,12 +120,12 @@ void OngoingReaderImpl::Start()
 
 void OngoingReaderImpl::Stop()
 {
-    assert(_adc_gather_thread.joinable()/* && _adc_process_thread.joinable()*/ && _ttl_in_thread.joinable());
+    assert(_adc_gather_thread.joinable()/* && _adc_process_thread.joinable()*/ && _misc_thread.joinable());
 
     _cancel_token = true;
     _adc_gather_thread.join();
     //_adc_process_thread.join();
-    _ttl_in_thread.join();
+    _misc_thread.join();
 }
 
 void OngoingReaderImpl::IdleDepth(bool value)

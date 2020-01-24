@@ -42,12 +42,12 @@ private:
     // Выход
     OngoingReaderOutput* _output{nullptr};
 
-    // Поток регистрации АЦП и глубины
+    // Поток регистрации АЦП
     std::thread _adc_gather_thread;
     // Поток разбора данных от АЦП (обновление устройств и выдача output)
     //std::thread _adc_process_thread;
-    // Поток опроса TtlIn
-    std::thread _ttl_in_thread;
+    // Поток опроса глубины и TtlIn (показания ender)
+    std::thread _misc_thread;
     // Токен останова потоков
     std::atomic_bool _cancel_token{false};
 

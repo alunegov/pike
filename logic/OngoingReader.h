@@ -6,16 +6,26 @@
 
 namespace ros { namespace pike { namespace logic {
 
+// События генерируемые во время работы OngoingReader
 class OngoingReaderOutput
 {
 public:
     virtual ~OngoingReaderOutput() = default;
 
-    virtual void AdcTick(double_t distance, double_t angle, int16_t depth) = 0;
+    // Новое значение от АЦП (показания пройденного расстояния и положения в пространстве)
+    virtual void AdcTick(double_t distance, double_t angle) = 0;
 
+    // Новое значение от АЦП (отсчёты каналов регистрации)
     virtual void AdcTick_Values(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
             double_t adc_to_volt) = 0;
 
+    // Поток чтения АЦП завершён
+    virtual void AdcFinish(bool canceled) = 0;
+
+    // Новое значение губины
+    virtual void DepthTick(int16_t depth) = 0;
+
+    // Новое значение TtlIn (показания ender)
     virtual void TtlInTick(bool ender1, bool ender2) = 0;
 };
 
