@@ -1,4 +1,4 @@
-#include <LCardDevice.h>
+#include <LCardDaq.h>
 
 #include <cassert>
 #include <chrono>
@@ -9,12 +9,12 @@ namespace ros { namespace dc { namespace lcard {
 // TODO: use lcomp.dll for 32bit
 const char* const LCompName{"lcomp64.dll"};
 
-LCardDevice::~LCardDevice()
+LCardDaq::~LCardDaq()
 {
     NonVirtualDeinit();
 }
 
-tl::expected<void, std::error_code> LCardDevice::Init(size_t slot_num)
+tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
 {
     assert(device_ == nullptr);
 
@@ -90,12 +90,12 @@ tl::expected<void, std::error_code> LCardDevice::Init(size_t slot_num)
     return {};
 }
 
-tl::expected<void, std::error_code> LCardDevice::Deinit()
+tl::expected<void, std::error_code> LCardDaq::Deinit()
 {
     return NonVirtualDeinit();
 }
 
-tl::expected<void, std::error_code> LCardDevice::TtlEnable(bool enable)
+tl::expected<void, std::error_code> LCardDaq::TtlEnable(bool enable)
 {
     assert(device_ != nullptr);
 
@@ -112,7 +112,7 @@ tl::expected<void, std::error_code> LCardDevice::TtlEnable(bool enable)
     return {};
 }
 
-tl::expected<void, std::error_code> LCardDevice::TtlOut(uint16_t value)
+tl::expected<void, std::error_code> LCardDaq::TtlOut(uint16_t value)
 {
     assert(device_ != nullptr);
 
@@ -131,21 +131,21 @@ tl::expected<void, std::error_code> LCardDevice::TtlOut(uint16_t value)
     return {};
 }
 
-tl::expected<void, std::error_code> LCardDevice::TtlOut_SetPin(uint16_t value)
+tl::expected<void, std::error_code> LCardDaq::TtlOut_SetPin(uint16_t value)
 {
     const uint16_t new_ttl_out_value = ttl_out_value | (1u << value);
 
     return TtlOut(new_ttl_out_value);
 }
 
-tl::expected<void, std::error_code> LCardDevice::TtlOut_ClrPin(uint16_t value)
+tl::expected<void, std::error_code> LCardDaq::TtlOut_ClrPin(uint16_t value)
 {
     const uint16_t new_ttl_out_value = ttl_out_value & ~(1u << value);
 
     return TtlOut(new_ttl_out_value);
 }
 
-tl::expected<uint16_t, std::error_code> LCardDevice::TtlIn()
+tl::expected<uint16_t, std::error_code> LCardDaq::TtlIn()
 {
     assert(device_ != nullptr);
 
@@ -164,7 +164,7 @@ tl::expected<uint16_t, std::error_code> LCardDevice::TtlIn()
 // Задержка при ожидании заполнения половинки буфера при чтении
 constexpr std::chrono::milliseconds AdcFillDelay{1};
 
-tl::expected<void, std::error_code> LCardDevice::AdcRead(double_t& reg_freq, size_t point_count,
+tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t point_count,
         const _Channels& channels, int16_t* values)
 {
     assert(device_ != nullptr);
@@ -246,7 +246,7 @@ tl::expected<void, std::error_code> LCardDevice::AdcRead(double_t& reg_freq, siz
     return {};
 }
 
-tl::expected<void, std::error_code> LCardDevice::AdcRead(double_t& reg_freq, const _Channels& channels,
+tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const _Channels& channels,
         const std::atomic_bool& cancel_token, const std::function<AdcReadCallback>& callback)
 {
     assert(device_ != nullptr);
@@ -318,7 +318,7 @@ tl::expected<void, std::error_code> LCardDevice::AdcRead(double_t& reg_freq, con
     return {};
 }
 
-tl::expected<void, std::error_code> LCardDevice::NonVirtualDeinit()
+tl::expected<void, std::error_code> LCardDaq::NonVirtualDeinit()
 {
     if (device_ != nullptr) {
         ULONG status;
@@ -343,7 +343,7 @@ tl::expected<void, std::error_code> LCardDevice::NonVirtualDeinit()
     return {};
 }
 
-const char* LCardDevice::DetectBiosName(ULONG board_type)
+const char* LCardDaq::DetectBiosName(ULONG board_type)
 {
     switch (board_type) {
     case PCIA:
@@ -361,7 +361,7 @@ const char* LCardDevice::DetectBiosName(ULONG board_type)
     }
 }
 
-AdcRateParams LCardDevice::DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr)
+AdcRateParams LCardDaq::DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr)
 {
     AdcRateParams res{0, 0, 0, 0, 0};
 
@@ -395,7 +395,7 @@ AdcRateParams LCardDevice::DetectAdcRateParams(ULONG board_type, const PLATA_DES
     return res;
 }
 
-ULONG LCardDevice::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t* half_buffer, void** data, ULONG** sync)
+ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t* half_buffer, void** data, ULONG** sync)
 {
     assert(device_ != nullptr);
     assert((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154));  // adc_param.t1
@@ -477,7 +477,7 @@ ULONG LCardDevice::PrepareAdc(double_t& reg_freq, const _Channels& channels, siz
     return status;
 }
 
-std::pair<uint32_t, uint16_t> LCardDevice::GetRate(const AdcRateParams& rateParams, double_t channelRate,
+std::pair<uint32_t, uint16_t> LCardDaq::GetRate(const AdcRateParams& rateParams, double_t channelRate,
         size_t channelCount, double_t eps)
 {
     assert(channelRate > 0);

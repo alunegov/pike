@@ -9,7 +9,8 @@
 
 #include <ceSerial.h>
 
-#include <LCardDevice.h>
+#include <DummyDaq.h>
+#include <LCardDaq.h>
 
 #include <CD22.h>
 #include <EnderImpl.h>
@@ -31,8 +32,6 @@
 
 int main(int argc, char** argv)
 {
-    const uint16_t AdcCommonGnd{1 << 5};
-
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     QApplication app(argc, argv);
@@ -69,6 +68,8 @@ int main(int argc, char** argv)
     conf.rotator.dir_pin -= 1;
     conf.rotator.mx_pin -= 1;
     if (conf.daq.common_gnd) {
+        constexpr uint16_t AdcCommonGnd{1 << 5};
+
         conf.inclinometer.x_channel |= AdcCommonGnd;
         conf.inclinometer.y_channel |= AdcCommonGnd;
 
@@ -77,7 +78,8 @@ int main(int argc, char** argv)
     }
 
     // dc and devices
-    auto daq = new ros::dc::lcard::LCardDevice;
+    auto daq = new ros::dc::lcard::LCardDaq;
+    //auto daq = new ros::dc::dummy::DummyDaq;
     const auto daq_init_opt = daq->Init(conf.daq.slot);
     if (!daq_init_opt) {
         // TODO: log and cleanup

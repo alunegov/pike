@@ -4,8 +4,10 @@ project(dc LANGUAGES CXX)
 
 set(source_list
     "DAQ.h"
-    "lcard/LCardDevice.cpp"
-    "lcard/LCardDevice.h"
+    "dummy/DummyDaq.cpp"
+    "dummy/DummyDaq.h"
+    "lcard/LCardDaq.cpp"
+    "lcard/LCardDaq.h"
 )
 
 add_library(${PROJECT_NAME} ${source_list})
@@ -15,6 +17,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC "."
+    PRIVATE "dummy"
     PRIVATE "lcard"
 
     PUBLIC "../_ext/expected/include"

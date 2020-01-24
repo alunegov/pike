@@ -26,12 +26,12 @@ struct AdcRateParams
 };
 
 // Плата АЦП/ЦАП/ТТЛ от Л-Кард (через lcomp)
-class LCardDevice : public DAQ
+class LCardDaq : public DAQ
 {
 public:
-    LCardDevice() = default;
+    LCardDaq() = default;
 
-    ~LCardDevice() override;
+    ~LCardDaq() override;
 
     // DAQ
 
