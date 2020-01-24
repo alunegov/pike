@@ -13,7 +13,7 @@
 #include <Odometer.h>
 #include <Rotator.h>
 
-namespace ros { namespace devices {
+namespace ros { namespace pike { namespace logic {
 
 // "Пика"
 class Pike
@@ -66,4 +66,4 @@ public:
     virtual tl::expected<void, std::error_code> ReadAndUpdateTtlIn() = 0;
 };
 
-}}
+}}}

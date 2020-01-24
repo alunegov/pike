@@ -12,7 +12,7 @@
 #include <Odometer.h>
 #include <Rotator.h>
 
-namespace ros { namespace devices {
+namespace ros { namespace pike { namespace logic {
 
 // "Пика"
 class PikeImpl : public Pike
@@ -84,4 +84,4 @@ private:
     bool _is_slicing{false};
 };
 
-}}
+}}}

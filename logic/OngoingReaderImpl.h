@@ -6,7 +6,6 @@
 #include <thread>
 
 #include <OngoingReader.h>
-
 #include <Pike.h>
 
 namespace ros { namespace pike { namespace logic {
@@ -17,7 +16,7 @@ class OngoingReaderImpl : public OngoingReader
 public:
     OngoingReaderImpl() = delete;
 
-    OngoingReaderImpl(ros::devices::Pike* pike, double_t adc_rate) :
+    OngoingReaderImpl(ros::pike::logic::Pike* pike, double_t adc_rate) :
         _pike{pike},
         _adc_rate{adc_rate}
     {}
@@ -35,7 +34,7 @@ public:
     void IdleDepth(bool value) override;
 
 private:
-    ros::devices::Pike* _pike{nullptr};
+    ros::pike::logic::Pike* _pike{nullptr};
 
     // Частота регистрации АЦП, кГц
     double_t _adc_rate{0};
@@ -46,7 +45,7 @@ private:
     // Поток регистрации АЦП и глубины
     std::thread _adc_gather_thread;
     // Поток разбора данных от АЦП (обновление устройств и выдача output)
-    std::thread _adc_process_thread;
+    //std::thread _adc_process_thread;
     // Поток опроса TtlIn
     std::thread _ttl_in_thread;
     // Токен останова потоков

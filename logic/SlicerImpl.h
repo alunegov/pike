@@ -4,9 +4,8 @@
 #include <cmath>
 #include <cstdint>
 
-#include <Slicer.h>
-
 #include <Pike.h>
+#include <Slicer.h>
 
 namespace ros { namespace pike { namespace logic {
 
@@ -16,7 +15,7 @@ class SlicerImpl : public Slicer
 public:
     SlicerImpl() = delete;
 
-    explicit SlicerImpl(ros::devices::Pike* pike) :
+    explicit SlicerImpl(ros::pike::logic::Pike* pike) :
         pike_{pike}
     {}
 
@@ -25,7 +24,7 @@ public:
     SliceMsr Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) override;
 
 private:
-    ros::devices::Pike* pike_{nullptr};
+    ros::pike::logic::Pike* pike_{nullptr};
 };
 
 }}}

@@ -8,7 +8,6 @@ set(source_list
     "Inclinometer.h"
     "Mover.h"
     "Odometer.h"
-    "Pike.h"
     "Rotator.h"
     "cd22/CD22.cpp"
     "cd22/CD22.h"
@@ -23,8 +22,6 @@ set(source_list
     "mover/MoverImpl.h"
     "odometer/OdometerImpl.cpp"
     "odometer/OdometerImpl.h"
-    "pike/PikeImpl.cpp"
-    "pike/PikeImpl.h"
     "rotator/RotatorImpl.cpp"
     "rotator/RotatorImpl.h"
 
@@ -43,7 +40,6 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE "inclinometer"
     PRIVATE "mover"
     PRIVATE "odometer"
-    PRIVATE "pike"
     PRIVATE "rotator"
 
     PUBLIC "../_ext/expected/include"

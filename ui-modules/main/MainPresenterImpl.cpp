@@ -9,7 +9,7 @@
 
 namespace ros { namespace pike { namespace modules {
 
-MainPresenterImpl::MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
+MainPresenterImpl::MainPresenterImpl(ros::pike::logic::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
         ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper,
         ros::pike::logic::RemoteServer* remote) :
     pike_{pike},
@@ -37,6 +37,7 @@ MainPresenterImpl::~MainPresenterImpl()
             if (!mover_stop_opt) {
                 // TODO: log
             }
+            // TODO: уместно ли сбрасывать is_moving в случае ошибки mover()->Stop()?
             pike_->SetIsMoving(false);
         }
 
@@ -102,7 +103,10 @@ void MainPresenterImpl::StartMovement(ros::devices::MoverDirection dir)
 
 void MainPresenterImpl::StopMovement()
 {
-    assert(pike_->IsMoving() && !pike_->IsRotating() && !pike_->IsSlicing());
+    if (!pike_->IsMoving()) {
+        return;
+    }
+    assert(!pike_->IsRotating() && !pike_->IsSlicing());
 
     const auto mover_stop_opt = pike_->mover()->Stop();
     if (!mover_stop_opt) {
@@ -148,7 +152,10 @@ void MainPresenterImpl::StartRotation(ros::devices::RotatorDirection dir)
 
 void MainPresenterImpl::StopRotation()
 {
-    assert(pike_->IsRotating() && !pike_->IsMoving() && !pike_->IsSlicing());
+    if (!pike_->IsRotating()) {
+        return;
+    }
+    assert(!pike_->IsMoving() && !pike_->IsSlicing());
 
     pike_->rotator()->Stop();
 

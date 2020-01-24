@@ -18,11 +18,11 @@
 #include <InclinometerImplTransTableMapper.h>
 #include <MoverImpl.h>
 #include <OdometerImpl.h>
-#include <PikeImpl.h>
 #include <RotatorImpl.h>
 
 #include <ConfMapper.h>
 #include <OngoingReaderImpl.h>
+#include <PikeImpl.h>
 #include <RemoteServerImpl.h>
 #include <SliceMsrMapperImpl.h>
 #include <SlicerImpl.h>
@@ -78,8 +78,8 @@ int main(int argc, char** argv)
     }
 
     // dc and devices
-    auto daq = new ros::dc::lcard::LCardDaq;
-    //auto daq = new ros::dc::dummy::DummyDaq;
+    //auto daq = new ros::dc::lcard::LCardDaq;
+    auto daq = new ros::dc::dummy::DummyDaq;
     const auto daq_init_opt = daq->Init(conf.daq.slot);
     if (!daq_init_opt) {
         // TODO: log and cleanup
@@ -119,7 +119,7 @@ int main(int argc, char** argv)
 
     auto depthometer = new ros::devices::CD22{depthometer_transport};
 
-    auto pike = new ros::devices::PikeImpl{daq, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
+    auto pike = new ros::pike::logic::PikeImpl{daq, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
 
     // logic/interactors/save-mappers
     auto ongoingReader = new ros::pike::logic::OngoingReaderImpl{pike, conf.daq.adc_rate};

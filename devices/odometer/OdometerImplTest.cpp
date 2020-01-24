@@ -11,7 +11,7 @@ const double_t adc_to_volt{1};
 const double_t threshold{2};
 const double_t distance_per_pulse{1};
 
-TEST_CASE("usual workflow", "[odometer]") {
+TEST_CASE("odometer usual workflow", "[odometer]") {
     ros::devices::OdometerImpl sut{a_channel, b_channel, threshold, distance_per_pulse};
 
     REQUIRE(sut.Get() == 0);
@@ -55,7 +55,7 @@ TEST_CASE("usual workflow", "[odometer]") {
     }
 }
 
-TEST_CASE("ignore irrelevant adc channels", "[odometer]") {
+TEST_CASE("odometer ignore irrelevant adc channels", "[odometer]") {
     ros::devices::OdometerImpl sut{a_channel, b_channel, threshold, distance_per_pulse};
 
     REQUIRE(sut.Get() == 0);
@@ -74,7 +74,7 @@ TEST_CASE("ignore irrelevant adc channels", "[odometer]") {
     }
 }
 
-TEST_CASE("account adc_to_volt coeff", "[odometer]") {
+TEST_CASE("odometer account adc_to_volt coeff", "[odometer]") {
     ros::devices::OdometerImpl sut{a_channel, b_channel, threshold, distance_per_pulse};
 
     REQUIRE(sut.Get() == 0);

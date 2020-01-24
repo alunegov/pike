@@ -14,9 +14,9 @@ OngoingReaderImpl::~OngoingReaderImpl()
     if (_adc_gather_thread.joinable()) {
         _adc_gather_thread.join();
     }
-    if (_adc_process_thread.joinable()) {
+    /*if (_adc_process_thread.joinable()) {
         _adc_process_thread.join();
-    }
+    }*/
     if (_ttl_in_thread.joinable()) {
         _ttl_in_thread.join();
     }
@@ -24,7 +24,7 @@ OngoingReaderImpl::~OngoingReaderImpl()
 
 void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
 {
-    assert(!_adc_gather_thread.joinable() && !_adc_process_thread.joinable() && !_ttl_in_thread.joinable());  // можно задавать только в выключенном состоянии
+    assert(!_adc_gather_thread.joinable()/* && !_adc_process_thread.joinable()*/ && !_ttl_in_thread.joinable());  // можно задавать только в выключенном состоянии
     assert(output != nullptr);
     _output = output;
 }
@@ -32,7 +32,7 @@ void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
 void OngoingReaderImpl::Start()
 {
     assert(_output != nullptr);
-    assert(!_adc_gather_thread.joinable() && !_adc_process_thread.joinable() && !_ttl_in_thread.joinable());
+    assert(!_adc_gather_thread.joinable()/* && !_adc_process_thread.joinable()*/ && !_ttl_in_thread.joinable());
 
     _cancel_token = false;
 
@@ -87,44 +87,45 @@ void OngoingReaderImpl::Start()
         }
     }};
 
-    _adc_process_thread = std::thread{[this]() {
+    /*_adc_process_thread = std::thread{[this]() {
         // TODO: ожидание прихода порции данных от АЦП (и возможно их накопление при высокой частоте сбора),
         // доставание их из кольцевого буфера, обновление под-устройств и "выдача" через _output
 
         while (!_cancel_token) {
             std::this_thread::sleep_for(std::chrono::milliseconds{1});
         }
-    }};
+    }};*/
 
     _ttl_in_thread = std::thread{[this]() {
         // Задержка между чтениями TtlIn (показания ender)
         constexpr std::chrono::milliseconds TtlInDelay{111};
 
         while (!_cancel_token) {
+            std::this_thread::sleep_for(TtlInDelay);
+
             if (!_depth_idle_token) {
                 // читаем сразу оба ender (за одно чтение ttl_in)
                 const auto ttlin_opt = _pike->ReadAndUpdateTtlIn();
                 if (!ttlin_opt) {
                     // TODO: log and return/output, continue?
+                    continue;
                 }
                 const bool ender1 = _pike->ender1()->Get();
                 const bool ender2 = _pike->ender2()->Get();
 
                 _output->TtlInTick(ender1, ender2);
             }
-
-            std::this_thread::sleep_for(TtlInDelay);
         }
     }};
 }
 
 void OngoingReaderImpl::Stop()
 {
-    assert(_adc_gather_thread.joinable() && _adc_process_thread.joinable() && _ttl_in_thread.joinable());
+    assert(_adc_gather_thread.joinable()/* && _adc_process_thread.joinable()*/ && _ttl_in_thread.joinable());
 
     _cancel_token = true;
     _adc_gather_thread.join();
-    _adc_process_thread.join();
+    //_adc_process_thread.join();
     _ttl_in_thread.join();
 }
 

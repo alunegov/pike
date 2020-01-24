@@ -5,9 +5,8 @@
 #include <system_error>
 #include <thread>
 
-#include <Pike.h>
-
 #include <OngoingReader.h>
+#include <Pike.h>
 #include <RemoteServer.h>
 #include <SliceMsrMapper.h>
 #include <Slicer.h>
@@ -28,7 +27,7 @@ class MainPresenterImpl :
 public:
     MainPresenterImpl() = delete;
 
-    MainPresenterImpl(ros::devices::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
+    MainPresenterImpl(ros::pike::logic::Pike* pike, ros::pike::logic::OngoingReader* ongoingReader,
             ros::pike::logic::Slicer* slicer, ros::pike::logic::SliceMsrMapper* sliceMsrMapper,
             ros::pike::logic::RemoteServer* remote);
 
@@ -101,8 +100,7 @@ private:
 
     ros::pike::modules::MainView* view_{nullptr};
 
-    ros::devices::Pike* pike_{nullptr};
-
+    ros::pike::logic::Pike* pike_{nullptr};
     ros::pike::logic::OngoingReader* ongoingReader_{nullptr};
     ros::pike::logic::Slicer* slicer_{nullptr};
     ros::pike::logic::SliceMsrMapper* sliceMsrMapper_{nullptr};

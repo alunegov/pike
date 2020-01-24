@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace ros { namespace devices {
+namespace ros { namespace pike { namespace logic {
 
 tl::expected<void, std::error_code> PikeImpl::ReadAndUpdateTtlIn()
 {
@@ -13,4 +13,4 @@ tl::expected<void, std::error_code> PikeImpl::ReadAndUpdateTtlIn()
         });
 }
 
-}}
+}}}
