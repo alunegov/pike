@@ -3,6 +3,8 @@
 #include <cassert>
 #include <thread>
 
+#include <error_devices.hpp>
+
 namespace ros { namespace devices {
 
 RotatorImpl::~RotatorImpl()
@@ -50,8 +52,7 @@ tl::expected<void, std::error_code> RotatorImpl::Start()
     assert(!rotate_thread_.joinable());
 
     return Enable()
-        .and_then([this]() { return applyDirection(); })
-        .and_then([this]() { return applySpeed(); })
+        .and_then([this]() { return PreStep(); })
         .map([this]() {
             // запуск потока, генерирующего step
             rotate_cancel_token_ = false;
@@ -86,8 +87,7 @@ tl::expected<void, std::error_code> RotatorImpl::Rotate(size_t steps_count)
     assert(!rotate_thread_.joinable());
 
     return Enable()
-        .and_then([this]() { return applyDirection(); })
-        .and_then([this]() { return applySpeed(); })
+        .and_then([this]() { return PreStep(); })
         .and_then([this, steps_count]() mutable -> tl::expected<void, std::error_code> {
             while (steps_count > 0) {
                 const auto step_opt = Step();
@@ -106,19 +106,31 @@ tl::expected<void, std::error_code> RotatorImpl::Rotate(size_t steps_count)
 
 tl::expected<void, std::error_code> RotatorImpl::Enable()
 {
-    return daq_->TtlOut_ClrPin(enable_pin_); // delay MIN 650 nanosec to STEP
+    //assert(!rotate_thread_.joinable());
+
+    return daq_->TtlOut_ClrPin(enable_pin_);  // delay MIN 650 nanosec to STEP
 }
 
 tl::expected<void, std::error_code> RotatorImpl::Disable()
 {
+    //assert(!rotate_thread_.joinable());
+
     return daq_->TtlOut_SetPin(enable_pin_);
+}
+
+tl::expected<void, std::error_code> RotatorImpl::PreStep()
+{
+    //assert(!rotate_thread_.joinable());
+
+    return applyDirection()
+        .and_then([this]() { return applySpeed(); });
 }
 
 tl::expected<void, std::error_code> RotatorImpl::Step()
 {
     return daq_->TtlOut_SetPin(step_pin_)  // delay MIN 1.9 microsec
+        //.and_then([this]() -> tl::expected<void, std::error_code> { return tl::make_unexpected(ros::make_error_code(ros::error_devices_rotator::generic)); })
         .and_then([this]() { return daq_->TtlOut_ClrPin(step_pin_); });  // delay MIN 1.9 microsec
-        //.and_then([this]() -> tl::expected<void, std::error_code> { return tl::make_unexpected(std::make_error_code(std::errc::bad_address)); });
 }
 
 tl::expected<void, std::error_code> RotatorImpl::applyDirection()
@@ -134,7 +146,7 @@ tl::expected<void, std::error_code> RotatorImpl::applyDirection()
         break;
     default:
         assert(false);
-        res = tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        res = tl::make_unexpected(ros::make_error_code(ros::error_devices_rotator::invalid_direction));
         break;
     }
     // delay MIN 650 nanosec
@@ -155,7 +167,7 @@ tl::expected<void, std::error_code> RotatorImpl::applySpeed()
         break;
     default:
         assert(false);
-        res = tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        res = tl::make_unexpected(ros::make_error_code(ros::error_devices_rotator::invalid_speed));
         break;
     }
     // delay MIN 650 nanosec

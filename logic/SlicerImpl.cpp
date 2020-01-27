@@ -12,9 +12,22 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
 
     SliceMsr res;
 
+    const auto rotator_enable_opt = pike_->rotator()->Enable();
+    if (!rotator_enable_opt) {
+        // TODO: log and return?
+        res.ec = rotator_enable_opt.error();
+        return res;
+    }
+
     // поворот в крайнее левое положение
     pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CCW);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
+    auto rotator_prestep_opt = pike_->rotator()->PreStep();
+    if (!rotator_prestep_opt) {
+        // TODO: log and return?
+        res.ec = rotator_prestep_opt.error();
+        return res;
+    }
 
     // TODO: не более числа шагов, нужного на полный оборот (вдруг ender не работает)
     // TODO: "дожимать" несколько шагов после срабатывания ender
@@ -23,6 +36,7 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
         const auto ttlin_opt = pike_->ReadAndUpdateTtlIn();
         if (!ttlin_opt) {
             // TODO: log and return?
+            res.ec = ttlin_opt.error();
             return res;
         }
         const bool ender1 = pike_->ender1()->Get();
@@ -35,10 +49,10 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
             break;
         }
 
-        // TODO: use Step
-        const auto rotate_opt = pike_->rotator()->Rotate();
+        const auto rotate_opt = pike_->rotator()->Step();
         if (!rotate_opt) {
             // TODO: log and return?
+            res.ec = rotate_opt.error();
             return res;
         }
 
@@ -53,6 +67,12 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
     // измерение, поворачивая в крайнее правое положение
     pike_->rotator()->SetDirection(ros::devices::RotatorDirection::CW);
     pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::Low);
+    rotator_prestep_opt = pike_->rotator()->PreStep();
+    if (!rotator_prestep_opt) {
+        // TODO: log and return?
+        res.ec = rotator_prestep_opt.error();
+        return res;
+    }
 
     assert(pike_->rotator()->StepsIn360() > 0);
     const double_t angle_per_step = 360.0 / pike_->rotator()->StepsIn360();
@@ -65,6 +85,7 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
         const auto ttlin_opt = pike_->ReadAndUpdateTtlIn();
         if (!ttlin_opt) {
             // TODO: log and return?
+            res.ec = ttlin_opt.error();
             return res;
         }
         const bool ender1 = pike_->ender1()->Get();
@@ -85,6 +106,7 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
         const auto depth = pike_->depthometer()->Read();
         if (!depth) {
             // TODO: log and return?
+            res.ec = depth.error();
             return res;
         }
 
@@ -93,10 +115,10 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
 
         output->SliceTick(angle, depth.value());
 
-        // TODO: use Step
-        const auto rotate_opt = pike_->rotator()->Rotate();
+        const auto rotate_opt = pike_->rotator()->Step();
         if (!rotate_opt) {
             // TODO: log and return?
+            res.ec = rotate_opt.error();
             return res;
         }
 
@@ -110,6 +132,8 @@ SliceMsr SlicerImpl::Read(const std::atomic_bool& cancel_token, SlicerReadOutput
     /*const auto rotator_disable_opt = pike_->rotator()->Disable();
     if (!rotator_disable_opt) {
         // TODO: log
+        res.ec = rotator_disable_opt.error();
+        return res;
     }*/
 
     res.ok = true;

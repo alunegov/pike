@@ -74,9 +74,8 @@ void OngoingReaderImpl::Start()
         const auto adc_read_opt = _pike->daq()->AdcRead(regFreq, channels, _cancel_token, adc_read_callback);
         if (!adc_read_opt) {
             // TODO: log and return/output?
+            _output->AdcError(adc_read_opt.error());
         }
-
-        _output->AdcFinish(_cancel_token);
     }};
 
     /*_adc_process_thread = std::thread{[this]() {

@@ -29,6 +29,8 @@ tl::expected<void, std::error_code> DummyDaq::TtlOut(uint16_t value)
 {
     (void)value;
 
+    std::this_thread::sleep_for(std::chrono::milliseconds{1});
+
     return {};
 }
 
@@ -36,18 +38,20 @@ tl::expected<void, std::error_code> DummyDaq::TtlOut_SetPin(uint16_t value)
 {
     (void)value;
 
-    return {};
+    return TtlOut(0);
 }
 
 tl::expected<void, std::error_code> DummyDaq::TtlOut_ClrPin(uint16_t value)
 {
     (void)value;
 
-    return {};
+    return TtlOut(0);
 }
 
 tl::expected<uint16_t, std::error_code> DummyDaq::TtlIn()
 {
+    std::this_thread::sleep_for(std::chrono::milliseconds{1});
+
     // TODO: return random
     return static_cast<uint16_t>(0);
 }
@@ -75,6 +79,8 @@ tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, const 
 {
     assert(reg_freq > 0);
     assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
+
+    //return tl::make_unexpected(std::make_error_code(std::errc::io_error));
 
     // половина такого буфера б. заполняться за 640 мс при 12.8 кГц
     const size_t buffer{16384};

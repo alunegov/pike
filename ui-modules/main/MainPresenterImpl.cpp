@@ -85,20 +85,8 @@ void MainPresenterImpl::StartMovement(ros::devices::MoverDirection dir)
     }
     assert(!pike_->IsRotating() && !pike_->IsSlicing());
 
-    pike_->mover()->SetDirection(dir);
-    const auto mover_start_opt = pike_->mover()->Start();
-    if (!mover_start_opt) {
-        // TODO: log, ui
-        return;
-    }
-
-    pike_->SetIsMoving(true);
-
-    if (view_ != nullptr) {
-        const bool is_fwd = dir == ros::devices::MoverDirection::Forward;
-        SetMotionEnabled(is_fwd, !is_fwd, false, false);
-        view_->SetSliceEnabled(false);
-    }
+    const bool is_fwd = dir == ros::devices::MoverDirection::Forward;
+    InternalStartMovement(is_fwd, false);
 }
 
 void MainPresenterImpl::StopMovement()
@@ -108,21 +96,7 @@ void MainPresenterImpl::StopMovement()
     }
     assert(!pike_->IsRotating() && !pike_->IsSlicing());
 
-    const auto mover_stop_opt = pike_->mover()->Stop();
-    if (!mover_stop_opt) {
-        // TODO: log, ui
-        return;
-    }
-
-    pike_->SetIsMoving(false);
-
-    if (view_ != nullptr) {
-        // сбрасываем возможное состояние кнопки после remote
-        view_->SetMoveForward(false);
-        view_->SetMoveBackward(false);
-        SetMotionEnabled(true);
-        view_->SetSliceEnabled(true);
-    }
+    InternalStopMovement();
 }
 
 void MainPresenterImpl::StartRotation(ros::devices::RotatorDirection dir)
@@ -132,22 +106,8 @@ void MainPresenterImpl::StartRotation(ros::devices::RotatorDirection dir)
     }
     assert(!pike_->IsMoving() && !pike_->IsSlicing());
 
-    pike_->rotator()->SetDirection(dir);
-    pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
-    const auto rotator_start_opt = pike_->rotator()->Start();
-    if (!rotator_start_opt) {
-        // TODO: log, ui
-        return;
-    }
-    // после старта вращения могут прийти сообщения через RotateError
-
-    pike_->SetIsRotating(true);
-
-    if (view_ != nullptr) {
-        const bool is_ccw = dir == ros::devices::RotatorDirection::CCW;
-        SetMotionEnabled(false, false, is_ccw, !is_ccw);
-        view_->SetSliceEnabled(false);
-    }
+    const bool is_ccw = dir == ros::devices::RotatorDirection::CCW;
+    InternalStartRotation(is_ccw, true);
 }
 
 void MainPresenterImpl::StopRotation()
@@ -157,17 +117,7 @@ void MainPresenterImpl::StopRotation()
     }
     assert(!pike_->IsMoving() && !pike_->IsSlicing());
 
-    pike_->rotator()->Stop();
-
-    pike_->SetIsRotating(false);
-
-    if (view_ != nullptr) {
-        // сбрасываем возможное состояние кнопки после remote
-        view_->SetRotateCcw(false);
-        view_->SetRotateCw(false);
-        SetMotionEnabled(true);
-        view_->SetSliceEnabled(true);
-    }
+    InternalStopRotation();
 }
 
 void MainPresenterImpl::ResetDistanceClicked()
@@ -218,6 +168,10 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
                 if (view_ != nullptr) {
                     if (!canceled && slice_msr.ok) {
                         view_->SetSliceMsr(slice_msr.angles, slice_msr.depths);
+                    } else {
+                        if (!canceled) {
+                            view_->SetStatusMsg("slice error: " + slice_msr.ec.message());
+                        }
                     }
                     view_->SetSliceEnabled(true);
                     view_->SliceCompleted();
@@ -230,7 +184,7 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
 
 void MainPresenterImpl::StopSlice()
 {
-    assert(pike_->IsSlicing());
+    //assert(pike_->IsSlicing());  // при ошибке slicer поток уже подходит к завершению (на строке view_->SliceCompleted())
     assert(slice_thread_.joinable());
 
     slice_cancel_token_ = true;
@@ -332,9 +286,17 @@ void MainPresenterImpl::AdcTick_Values(const std::vector<uint16_t>& channels, co
     }
 }
 
-void MainPresenterImpl::AdcFinish(bool canceled)
+void MainPresenterImpl::AdcError(const std::error_code& ec)
 {
-    // TODO: поток чтения АЦП завершён - если ошибка нужно заблокировать весь функционал
+    // TODO: lock view_
+    if (view_ != nullptr) {
+        view_->RunOnUiThread([this, ec]() {
+            if (view_ != nullptr) {
+                view_->SetStatusMsg("adc_read error: " + ec.message());
+                // TODO: поток чтения АЦП завершён - нужно заблокировать весь функционал
+            }
+        });
+    }
 }
 
 void MainPresenterImpl::DepthTick(int16_t depth)
@@ -383,26 +345,7 @@ void MainPresenterImpl::RemoteStartMovement(ros::pike::logic::MotionDirection di
             }
 
             const bool is_fwd = dir == ros::pike::logic::MotionDirection::Inc;
-
-            const auto mover_dir = is_fwd ? ros::devices::MoverDirection::Forward : ros::devices::MoverDirection::Backward;
-            pike_->mover()->SetDirection(mover_dir);
-            const auto mover_start_opt = pike_->mover()->Start();
-            if (!mover_start_opt) {
-                // TODO: log, ui?
-                return;
-            }
-
-            pike_->SetIsMoving(true);
-
-            if (view_ != nullptr) {
-                if (is_fwd) {
-                    view_->SetMoveForward(true);
-                } else {
-                    view_->SetMoveBackward(true);
-                }
-                SetMotionEnabled(is_fwd, !is_fwd, false, false);
-                view_->SetSliceEnabled(false);
-            }
+            InternalStartMovement(is_fwd, true);
         });
     }
 }
@@ -417,20 +360,7 @@ void MainPresenterImpl::RemoteStopMovement()
             }
             assert(!pike_->IsRotating());
 
-            const auto mover_stop_opt = pike_->mover()->Stop();
-            if (!mover_stop_opt) {
-                // TODO: log, ui?
-                return;
-            }
-
-            pike_->SetIsMoving(false);
-
-            if (view_ != nullptr) {
-                view_->SetMoveForward(false);
-                view_->SetMoveBackward(false);
-                SetMotionEnabled(true);
-                view_->SetSliceEnabled(true);
-            }
+            InternalStopMovement();
         });
     }
 }
@@ -445,28 +375,7 @@ void MainPresenterImpl::RemoteStartRotation(ros::pike::logic::MotionDirection di
             }
             
             const bool is_ccw = dir == ros::pike::logic::MotionDirection::Dec;
-
-            const auto rotator_dir = is_ccw ? ros::devices::RotatorDirection::CCW : ros::devices::RotatorDirection::CW;
-            pike_->rotator()->SetDirection(rotator_dir);
-            pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
-            const auto rotator_start_opt = pike_->rotator()->Start();
-            if (!rotator_start_opt) {
-                // TODO: log, ui?
-                return;
-            }
-            // после старта вращения могут прийти сообщения через RotateError
-
-            pike_->SetIsRotating(true);
-
-            if (view_ != nullptr) {
-                if (is_ccw) {
-                    view_->SetRotateCcw(true);
-                } else {
-                    view_->SetRotateCw(true);
-                }
-                SetMotionEnabled(false, false, is_ccw, !is_ccw);
-                view_->SetSliceEnabled(false);
-            }
+            InternalStartRotation(is_ccw, true);
         });
     }
 }
@@ -481,16 +390,7 @@ void MainPresenterImpl::RemoteStopRotation()
             }
             assert(!pike_->IsMoving());
 
-            pike_->rotator()->Stop();
-
-            pike_->SetIsRotating(false);
-
-            if (view_ != nullptr) {
-                view_->SetRotateCcw(false);
-                view_->SetRotateCw(false);
-                SetMotionEnabled(true);
-                view_->SetSliceEnabled(true);
-            }
+            InternalStopRotation();
         });
     }
 }
@@ -499,9 +399,114 @@ void MainPresenterImpl::RotateError(const std::error_code& ec)
 {
     // TODO: lock view_
     if (view_ != nullptr) {
-        view_->RunOnUiThread([this] {
+        view_->RunOnUiThread([this, ec] {
             // TODO: ui
+            if (view_ != nullptr) {
+                view_->SetStatusMsg("rotator()->Step() error: " + ec.message());
+            }
+
+            // из-за очерёдности обработки UI-сообщений здесь мы можем оказаться уже после StopRotation
+            if (!pike_->IsRotating()) {
+                return;
+            }
+
+            InternalStopRotation();
         });
+    }
+}
+
+void MainPresenterImpl::InternalStartMovement(bool is_fwd, bool remote)
+{
+    const auto mover_dir = is_fwd ? ros::devices::MoverDirection::Forward : ros::devices::MoverDirection::Backward;
+    pike_->mover()->SetDirection(mover_dir);
+    const auto mover_start_opt = pike_->mover()->Start();
+    if (!mover_start_opt) {
+        // TODO: log, ui?
+        if (view_ != nullptr) {
+            view_->SetStatusMsg("mover()->Start() error: " + mover_start_opt.error().message());
+        }
+        return;
+    }
+
+    pike_->SetIsMoving(true);
+
+    if (view_ != nullptr) {
+        if (remote) {
+            if (is_fwd) {
+                view_->SetMoveForward(true);
+            } else {
+                view_->SetMoveBackward(true);
+            }
+        }
+        SetMotionEnabled(is_fwd, !is_fwd, false, false);
+        view_->SetSliceEnabled(false);
+    }
+}
+
+void MainPresenterImpl::InternalStopMovement()
+{
+    const auto mover_stop_opt = pike_->mover()->Stop();
+    if (!mover_stop_opt) {
+        // TODO: log, ui?
+        if (view_ != nullptr) {
+            view_->SetStatusMsg("mover()->Stop() error: " + mover_stop_opt.error().message());
+        }
+        return;
+    }
+
+    pike_->SetIsMoving(false);
+
+    if (view_ != nullptr) {
+        // сбрасываем возможное состояние кнопки после remote
+        view_->SetMoveForward(false);
+        view_->SetMoveBackward(false);
+        SetMotionEnabled(true);
+        view_->SetSliceEnabled(true);
+    }
+}
+
+void MainPresenterImpl::InternalStartRotation(bool is_ccw, bool remote)
+{
+    const auto rotator_dir = is_ccw ? ros::devices::RotatorDirection::CCW : ros::devices::RotatorDirection::CW;
+    pike_->rotator()->SetDirection(rotator_dir);
+    pike_->rotator()->SetSpeed(ros::devices::RotatorSpeed::High);
+    const auto rotator_start_opt = pike_->rotator()->Start();
+    if (!rotator_start_opt) {
+        // TODO: log, ui?
+        if (view_ != nullptr) {
+            view_->SetStatusMsg("rotator()->Start() error: " + rotator_start_opt.error().message());
+        }
+        return;
+    }
+    // после старта вращения могут прийти сообщения через RotateError
+
+    pike_->SetIsRotating(true);
+
+    if (view_ != nullptr) {
+        if (remote) {
+            if (is_ccw) {
+                view_->SetRotateCcw(true);
+            } else {
+                view_->SetRotateCw(true);
+            }
+        }
+        SetMotionEnabled(false, false, is_ccw, !is_ccw);
+        view_->SetSliceEnabled(false);
+    }
+}
+
+void MainPresenterImpl::InternalStopRotation()
+{
+    pike_->rotator()->Stop();
+
+    pike_->SetIsRotating(false);
+
+    if (view_ != nullptr) {
+        // сбрасываем возможное состояние кнопки после remote
+        view_->SetRotateCcw(false);
+        view_->SetRotateCw(false);
+        SetMotionEnabled(true);
+        view_->SetSliceEnabled(true);
     }
 }
 

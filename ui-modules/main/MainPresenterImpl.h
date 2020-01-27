@@ -70,7 +70,7 @@ public:
     void AdcTick_Values(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
             double_t adc_to_volt) override;
 
-    void AdcFinish(bool canceled) override;
+    void AdcError(const std::error_code& ec) override;
 
     void DepthTick(int16_t depth) override;
 
@@ -98,6 +98,14 @@ public:
     void RotateError(const std::error_code& ec) override;
 
 private:
+    void InternalStartMovement(bool is_fwd, bool remote);
+
+    void InternalStopMovement();
+
+    void InternalStartRotation(bool is_ccw, bool remote);
+
+    void InternalStopRotation();
+
     void SetMotionEnabled(bool enabled);
 
     void SetMotionEnabled(bool forward_enabled, bool backward_enabled, bool ccw_enabled, bool cw_enabled);

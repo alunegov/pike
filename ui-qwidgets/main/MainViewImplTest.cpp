@@ -33,7 +33,7 @@ void MainViewImplTest::testSetDistance()
 
     auto& p = presenter_mock.get();
 
-    ros::pike::ui::MainViewImpl sut{&p, 110};
+    ros::pike::ui::MainViewImpl sut{&p, 110, [](const std::string&){}};
 
     sut.SetDistance(13.0);
     //QVERIFY(sut.distance_label_->text() == "13");
@@ -46,7 +46,7 @@ void MainViewImplTest::testSetAngle()
 
     auto& p = presenter_mock.get();
 
-    ros::pike::ui::MainViewImpl sut{&p, 110};
+    ros::pike::ui::MainViewImpl sut{&p, 110, [](const std::string&){}};
 
     sut.SetAngle(13.0);
     //QVERIFY(sut.angle_label_->text() == "13");

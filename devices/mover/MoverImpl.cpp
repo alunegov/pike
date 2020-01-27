@@ -2,6 +2,8 @@
 
 #include <cassert>
 
+#include <error_devices.hpp>
+
 namespace ros { namespace devices {
 
 MoverImpl::~MoverImpl()
@@ -20,8 +22,8 @@ tl::expected<void, std::error_code> MoverImpl::Start()
 {
     return Stop()  // TODO: delay?
         .and_then([this]() { return applyDirection(); })
+        //.and_then([this]() -> tl::expected<void, std::error_code> { return tl::make_unexpected(ros::make_error_code(ros::error_devices_mover::generic)); })
         .and_then([this]() { return daq_->TtlOut_SetPin(pwm_pin_); });
-        //.and_then([this]() -> tl::expected<void, std::error_code> { return tl::make_unexpected(std::make_error_code(std::errc::bad_address)); });
 }
 
 tl::expected<void, std::error_code> MoverImpl::Stop()
@@ -47,7 +49,7 @@ tl::expected<void, std::error_code> MoverImpl::applyDirection()
         break;
     default:
         assert(false);
-        res = tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        res = tl::make_unexpected(ros::make_error_code(ros::error_devices_mover::invalid_direction));
         break;
     }
 

@@ -35,15 +35,19 @@ class MainViewImpl :
     friend class ::MainViewImplTest;
 
 public:
+    using SetStatusMsgFunc = std::function<void(const std::string& msg)>;
+
     MainViewImpl() = delete;
 
-    MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_t object_length);
+    MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_t object_length, const SetStatusMsgFunc& setStatusMsgFunc);
 
     ~MainViewImpl() override;
 
     // MainView
 
     void RunOnUiThread(const std::function<void()>& f) override;
+
+    void SetStatusMsg(const std::string& msg) override;
 
     void SetDistance(double_t distance) override;
 
@@ -108,6 +112,8 @@ private:
     }
 
     ros::pike::modules::MainPresenter* presenter_{nullptr};
+
+    SetStatusMsgFunc _setStatusMsgFunc;
 
     CameraWidget* camera_viewport_{nullptr};
 

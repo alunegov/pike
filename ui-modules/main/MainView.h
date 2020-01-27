@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
+#include <string>
 #include <vector>
 
 namespace ros { namespace pike { namespace modules {
@@ -14,6 +15,8 @@ public:
     virtual ~MainView() = default;
 
     virtual void RunOnUiThread(const std::function<void()>& f) = 0;
+
+    virtual void SetStatusMsg(const std::string& msg) = 0;
 
     virtual void SetDistance(double_t distance) = 0;
 

@@ -14,8 +14,9 @@ namespace ros { namespace pike { namespace ui {
 const size_t distance_viewport_height{50};
 const size_t min_viewport_size{100};
 
-MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_t object_length) :
-    presenter_{presenter}
+MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_t object_length, const SetStatusMsgFunc& setStatusMsgFunc) :
+    presenter_{presenter},
+    _setStatusMsgFunc{setStatusMsgFunc}
 {
     assert(presenter != nullptr);
 
@@ -199,6 +200,11 @@ MainViewImpl::~MainViewImpl()
 void MainViewImpl::RunOnUiThread(const std::function<void()>& f)
 {
     RunOnUiThread(this, f);
+}
+
+void MainViewImpl::SetStatusMsg(const std::string& msg)
+{
+    _setStatusMsgFunc(msg);
 }
 
 void MainViewImpl::SetDistance(double_t distance)

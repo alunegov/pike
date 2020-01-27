@@ -69,6 +69,9 @@ public:
     // Запрещает вращение (low-level)
     virtual tl::expected<void, std::error_code> Disable() = 0;
 
+    // Применяет направление и скорость вращения (low-level)
+    virtual tl::expected<void, std::error_code> PreStep() = 0;
+
     // Поворачивает на один шаг (low-level)
     virtual tl::expected<void, std::error_code> Step() = 0;
 };

@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <system_error>
 #include <vector>
 
 namespace ros { namespace pike { namespace logic {
@@ -19,8 +20,8 @@ public:
     virtual void AdcTick_Values(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
             double_t adc_to_volt) = 0;
 
-    // Поток чтения АЦП завершён
-    virtual void AdcFinish(bool canceled) = 0;
+    // Ошибка АЦП (по факту, поток чтения АЦП завершён)
+    virtual void AdcError(const std::error_code& ec) = 0;
 
     // Новое значение губины
     virtual void DepthTick(int16_t depth) = 0;

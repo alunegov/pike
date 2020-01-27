@@ -5,6 +5,8 @@ project(devices LANGUAGES CXX)
 set(source_list
     "Depthometer.h"
     "Ender.h"
+    "error_devices.cpp"
+    "error_devices.hpp"
     "Inclinometer.h"
     "Mover.h"
     "Odometer.h"
@@ -41,6 +43,8 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE "mover"
     PRIVATE "odometer"
     PRIVATE "rotator"
+
+    PRIVATE "../shared"
 
     PUBLIC "../_ext/expected/include"
     PRIVATE "../_ext/serial"

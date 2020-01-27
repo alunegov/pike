@@ -6,6 +6,8 @@ set(source_list
     "DAQ.h"
     "dummy/DummyDaq.cpp"
     "dummy/DummyDaq.h"
+    "lcard/error_lcard.cpp"
+    "lcard/error_lcard.hpp"
     "lcard/LCardDaq.cpp"
     "lcard/LCardDaq.h"
 )
@@ -19,6 +21,8 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC "."
     PRIVATE "dummy"
     PRIVATE "lcard"
+
+    PRIVATE "../shared"
 
     PUBLIC "../_ext/expected/include"
     PRIVATE "../_ext/lcomp/include"

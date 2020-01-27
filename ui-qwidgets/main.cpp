@@ -6,6 +6,8 @@
 
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
+#include <QtWidgets/QMessageBox>
+#include <QtWidgets/QStatusBar>
 
 #include <ceSerial.h>
 
@@ -50,6 +52,9 @@ int main(int argc, char** argv)
 
     QMainWindow win;
     win.setMinimumSize(640, 480);
+    auto statusBar = new QStatusBar(&win);
+    statusBar->setObjectName(QString::fromUtf8("statusBar"));
+    win.setStatusBar(statusBar);
     win.show();
 
     auto conf = ros::pike::logic::ConfMapper::Load("conf.json");
@@ -83,11 +88,13 @@ int main(int argc, char** argv)
     const auto daq_init_opt = daq->Init(conf.daq.slot);
     if (!daq_init_opt) {
         // TODO: log and cleanup
+        QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq->Init error: " + daq_init_opt.error().message()));
         return 1;
     }
     const auto daq_ttlin_enable_opt = daq->TtlEnable(true);
     if (!daq_ttlin_enable_opt) {
         // TODO: log and cleanup
+        QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq->TtlEnable error: " + daq_ttlin_enable_opt.error().message()));
         return 1;
     }
     // плата "закрывается" в pike
@@ -113,15 +120,16 @@ int main(int argc, char** argv)
     const auto open_res = depthometer_transport.Open();
     if (open_res != 0) {
         // TODO: log and cleanup
+        //QMessageBox::critical(nullptr, "pike", QString("COM open error: %1").arg(open_res));
         //return 1;
     }
     // порт закроется в depthometer, или автоматически при удалении depthometer_transport (в конце main)
 
     auto depthometer = new ros::devices::CD22{depthometer_transport};
 
-    auto pike = new ros::pike::logic::PikeImpl{daq, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
-
     // logic/interactors/save-mappers
+    auto pike = new ros::pike::logic::PikeImpl{daq, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
+    
     auto ongoingReader = new ros::pike::logic::OngoingReaderImpl{pike, conf.daq.adc_rate};
 
     auto slicer = new ros::pike::logic::SlicerImpl{pike};
@@ -134,7 +142,12 @@ int main(int argc, char** argv)
     auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper,
             remoteServer};
 
-    auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl, conf.object_length};
+    auto setStatusMsgFunc = [&win](const std::string& msg) {
+        assert(win.statusBar() != nullptr);
+        win.statusBar()->showMessage(QString::fromStdString(msg));
+    };
+
+    auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl, conf.object_length, setStatusMsgFunc};
     // выставляем mainview как центральный виджет QMainWindow
     win.setCentralWidget(mainViewImpl);
 

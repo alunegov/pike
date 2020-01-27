@@ -4,6 +4,8 @@
 #include <chrono>
 #include <thread>
 
+#include <error_lcard.hpp>
+
 namespace ros { namespace dc { namespace lcard {
 
 // TODO: use lcomp.dll for 32bit
@@ -25,26 +27,26 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
     lcomp_handle_ = LoadLibrary(LCompName);
     if (lcomp_handle_ == nullptr) {
         Deinit();
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::LoadLibraryErr));
     }
 
     const auto create_instance = (CREATEFUNCPTR)GetProcAddress(lcomp_handle_, "CreateInstance");
     if (create_instance == nullptr) {
         Deinit();
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::CreateInstanceAddrErr));
     }
     
     IDaqLDevice* const device_instance = create_instance(static_cast<ULONG>(slot_num));
     if (device_instance == nullptr) {
         Deinit();
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::CreateInstanceErr));
     }
 
     const HRESULT query_res = device_instance->QueryInterface(IID_ILDEV, (void**)&device_);
     if (!SUCCEEDED(query_res)) {
         // TODO: device_instance->Release()?
         Deinit();
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::QueryInterfaceErr));
     }
 
     status = device_instance->Release();
@@ -53,7 +55,7 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
     const HANDLE device_handle = device_->OpenLDevice();
     if (device_handle == INVALID_HANDLE_VALUE) {
         Deinit();
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::OpenLDeviceErr));
     }
 
     SLOT_PAR slot_param;
@@ -61,7 +63,7 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
     status = device_->GetSlotParam(&slot_param);
     if (status != L_SUCCESS) {
         Deinit();
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::GetSlotParamErr));
     }
 
     board_type_ = slot_param.BoardType;
@@ -70,7 +72,7 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
     status = device_->LoadBios(const_cast<char*>(biosName));
     if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) {
         Deinit();
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::LoadBiosErr));
     }
 
     PLATA_DESCR_U2 plata_descr;
@@ -78,13 +80,13 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
     status = device_->ReadPlataDescr(&plata_descr);
     if (status != L_SUCCESS) {
         Deinit();
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::ReadPlataDescrErr));
     }
 
     adc_rate_params_ = DetectAdcRateParams(board_type_, plata_descr);
     if (adc_rate_params_.FClock == 0) {
         Deinit();
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::DetectAdcRateParamsErr));
     }
 
     return {};
@@ -106,7 +108,7 @@ tl::expected<void, std::error_code> LCardDaq::TtlEnable(bool enable)
 
     const ULONG status = device_->IoAsync(&async_param);
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::IoAsyncErr));
     }
 
     return {};
@@ -123,7 +125,7 @@ tl::expected<void, std::error_code> LCardDaq::TtlOut(uint16_t value)
 
     const ULONG status = device_->IoAsync(&async_param);
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::IoAsyncErr));
     }
 
     ttl_out_value = value;
@@ -155,7 +157,7 @@ tl::expected<uint16_t, std::error_code> LCardDaq::TtlIn()
 
     const ULONG status = device_->IoAsync(&async_param);
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::IoAsyncErr));
     }
 
     return static_cast<uint16_t>(async_param.Data[0]);
@@ -181,7 +183,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
 
     status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::PrepareAdcErr));
     }
 
     // кол-во половинок, нужное для запрошенного количества точек
@@ -197,12 +199,12 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
 
     status = device_->InitStartLDevice();
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::InitStartLDeviceErr));
     }
 
     status = device_->StartLDevice();
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::StartLDeviceErr));
     }
 
     //
@@ -240,7 +242,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
 
     status = device_->StopLDevice();
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::StopLDeviceErr));
     }
 
     return {};
@@ -267,17 +269,17 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
 
     status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::PrepareAdcErr));
     }
 
     status = device_->InitStartLDevice();
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::InitStartLDeviceErr));
     }
 
     status = device_->StartLDevice();
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::StartLDeviceErr));
     }
 
     //
@@ -312,7 +314,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
 
     status = device_->StopLDevice();
     if (status != L_SUCCESS) {
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::StopLDeviceErr));
     }
 
     return {};
@@ -325,7 +327,7 @@ tl::expected<void, std::error_code> LCardDaq::NonVirtualDeinit()
 
         status = device_->CloseLDevice();
         if (status != L_SUCCESS) {
-            return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+            return tl::make_unexpected(ros::make_error_code(ros::error_lcard::CloseLDeviceErr));
         }
 
         status = device_->Release();
@@ -335,7 +337,7 @@ tl::expected<void, std::error_code> LCardDaq::NonVirtualDeinit()
     if (lcomp_handle_ != nullptr) {
         const auto free_res = FreeLibrary(lcomp_handle_);
         if (!free_res) {
-            return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+            return tl::make_unexpected(ros::make_error_code(ros::error_lcard::FreeLibraryErr));
         }
         lcomp_handle_ = nullptr;
     }

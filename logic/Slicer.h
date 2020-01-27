@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <system_error>
 #include <vector>
 
 namespace ros { namespace pike { namespace logic {
@@ -13,6 +14,7 @@ struct SliceMsr
     double_t inclio_angle{0};
     std::vector<double_t> angles;
     std::vector<int16_t> depths;
+    std::error_code ec;
 };
 
 class SlicerReadOutput

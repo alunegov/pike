@@ -50,6 +50,8 @@ public:
 
     tl::expected<void, std::error_code> Disable() override;
 
+    tl::expected<void, std::error_code> PreStep() override;
+
     tl::expected<void, std::error_code> Step() override;
 
 private:

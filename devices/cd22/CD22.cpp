@@ -4,6 +4,8 @@
 //#include <iomanip>
 //#include <iostream>
 
+#include <error_devices.hpp>
+
 namespace ros { namespace devices {
 
 CD22::~CD22()
@@ -19,7 +21,7 @@ tl::expected<int16_t, std::error_code> CD22::Read()
 
     if (!_transport.Write(reinterpret_cast<char*>(query), 6)) {
         //std::cout << "Port write error" << std::endl;
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_devices_depthometer::write_err));
     }
 
     memset(ans, 0, sizeof(ans));
@@ -30,7 +32,7 @@ tl::expected<int16_t, std::error_code> CD22::Read()
             ans[i] = c;
         } else {
             //std::cout << "Port read error at " << i << " byte" << std::endl;
-            return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+            return tl::make_unexpected(ros::make_error_code(ros::error_devices_depthometer::read_err));
         }
     }
 
@@ -43,17 +45,17 @@ tl::expected<int16_t, std::error_code> CD22::Read()
     // BCC check
     if ((ans[1] ^ ans[2] ^ ans[3]) != ans[5]) {
         //std::cout << "an BCC is invalid" << std::endl;
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_devices_depthometer::invalid_bcc));
     }
     // error check
     if (ans[1] == 0x15) {
         //std::cout << "error code " << std::hex << static_cast<int>(ans[2]) << " " << std::endl;
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_devices_depthometer::invalid_error));
     }
     // ACK check
     if (ans[1] != 0x06) {
         //std::cout << "not an ACK but " << std::hex << static_cast<int>(ans[1]) << " " << std::endl;
-        return tl::make_unexpected(std::make_error_code(std::errc::bad_address));
+        return tl::make_unexpected(ros::make_error_code(ros::error_devices_depthometer::invalid_ack));
     }
 
     return static_cast<int16_t>((ans[2] << 8) | ans[3]);
