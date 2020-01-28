@@ -37,6 +37,7 @@ int main(int argc, char** argv)
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     QApplication app(argc, argv);
+
     // стиль для всего приложения
     const auto style = QString{R"(
         QPushButton {
