@@ -56,7 +56,7 @@ int main(int argc, char** argv)
     win.setMinimumSize(640, 480);
 
     auto statusBar = new QStatusBar(&win);
-    statusBar->setObjectName(QString::fromUtf8("statusBar"));
+    statusBar->setObjectName("statusBar");
     win.setStatusBar(statusBar);
 
     win.show();

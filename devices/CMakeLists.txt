@@ -56,13 +56,9 @@ target_compile_definitions(${PROJECT_NAME}
 )
 
 if(MSVC)
-    target_compile_options(${PROJECT_NAME}
-        PRIVATE /W4
-    )
+    target_compile_options(${PROJECT_NAME} PRIVATE /W4)
 else()
-    target_compile_options(${PROJECT_NAME}
-        PRIVATE -Wall -Wextra
-    )
+    target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
 endif()
 
 target_link_libraries(${PROJECT_NAME}
@@ -76,6 +72,7 @@ if(BUILD_TESTING)
         "ender/EnderImplTest.cpp"
         "odometer/OdometerImplTest.cpp"
     )
+
     target_include_directories(${PROJECT_NAME}-test
         PRIVATE "."
         PRIVATE "ender"
@@ -84,8 +81,10 @@ if(BUILD_TESTING)
         PRIVATE "../_ext/Catch2/single_include"
         PRIVATE "../_ext/FakeIt/single_header"
     )
+
     target_link_libraries(${PROJECT_NAME}-test
         PRIVATE ${PROJECT_NAME}
     )
+
     add_test(${PROJECT_NAME}-test ${PROJECT_NAME}-test)
 endif()
