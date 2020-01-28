@@ -58,6 +58,9 @@ Conf ConfMapper::Load(const std::string& filename)
     res.rotator.steps_per_msr = static_cast<uint32_t>(rotator["steps_per_msr"].GetInt());
     res.rotator.steps_per_view = static_cast<uint32_t>(rotator["steps_per_view"].GetInt());
 
+    const auto& remote = doc["remote"];
+    res.remote.port = static_cast<uint16_t>(remote["port"].GetInt());
+
     return res;
 }
 

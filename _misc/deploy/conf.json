@@ -45,5 +45,8 @@
         "mx_pin": 6,
         "steps_per_msr": 24686,
         "steps_per_view": 1543
+    },
+    "remote": {
+        "port": 45454
     }
 }

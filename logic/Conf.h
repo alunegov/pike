@@ -64,6 +64,11 @@ struct Conf
         uint32_t steps_per_msr;
         uint32_t steps_per_view;
     } rotator;
+
+    struct
+    {
+        uint16_t port;
+    } remote;
 };
 
 }}}

@@ -51,10 +51,13 @@ int main(int argc, char** argv)
     app.setStyleSheet(style);
 
     QMainWindow win;
+
     win.setMinimumSize(640, 480);
+
     auto statusBar = new QStatusBar(&win);
     statusBar->setObjectName(QString::fromUtf8("statusBar"));
     win.setStatusBar(statusBar);
+
     win.show();
 
     auto conf = ros::pike::logic::ConfMapper::Load("conf.json");
@@ -136,7 +139,7 @@ int main(int argc, char** argv)
 
     auto sliceMsrMapper = new ros::pike::logic::SliceMsrMapperImpl;
 
-    auto remoteServer = new ros::pike::logic::RemoteServerImpl{45454};  // TODO: port from conf
+    auto remoteServer = new ros::pike::logic::RemoteServerImpl{conf.remote.port};
 
     // presenter and view
     auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper,
