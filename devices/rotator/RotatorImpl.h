@@ -38,7 +38,7 @@ public:
 
     void SetSpeed(RotatorSpeed speed) override;
 
-    uint32_t StepsIn360() override;
+    uint32_t StepsIn360() const override;
 
     tl::expected<void, std::error_code> Start() override;
 

@@ -4,7 +4,7 @@
 
 namespace ros { namespace pike { namespace logic {
 
-tl::expected<void, std::error_code> PikeImpl::ReadAndUpdateTtlIn()
+tl::expected<void, std::error_code> PikeImpl::ReadAndUpdateTtlIn() const
 {
     return daq()->TtlIn()
         .map([this](uint16_t ttl_in) {

@@ -101,7 +101,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_
     slice_button_->setObjectName("record");
     QObject::connect(slice_button_, &QPushButton::toggled, this, [=](bool checked) {
         if (checked) {
-            presenter_->StartSlice(std::move(dest_path_edit_->text().toStdString()));
+            presenter_->StartSlice(dest_path_edit_->text().toStdString());
         } else {
             presenter_->StopSlice();
         }
@@ -125,7 +125,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_
     rec_button_->setObjectName("record");
     QObject::connect(rec_button_, &QPushButton::toggled, this, [=](bool checked) {
         if (checked) {
-            presenter_->StartRec(std::move(dest_path_edit_->text().toStdString()));
+            presenter_->StartRec(dest_path_edit_->text().toStdString());
         } else {
             presenter_->StopRec();
         }
@@ -134,7 +134,7 @@ MainViewImpl::MainViewImpl(ros::pike::modules::MainPresenter* presenter, double_
     photo_button_ = new QPushButton;
     photo_button_->setText("Камера/Фото");
     QObject::connect(photo_button_, &QPushButton::clicked, this, [=]() {
-        presenter_->PhotoClicked(std::move(dest_path_edit_->text().toStdString()));
+        presenter_->PhotoClicked(dest_path_edit_->text().toStdString());
     });
 
     dest_path_edit_ = new QLineEdit;
@@ -209,6 +209,7 @@ void MainViewImpl::SetStatusMsg(const std::string& msg)
 
 void MainViewImpl::SetDistance(double_t distance)
 {
+    (void)distance;
     //distance_viewport_->SetDistance(distance);
 
     // debug
@@ -220,6 +221,7 @@ void MainViewImpl::SetDistance(double_t distance)
 
 void MainViewImpl::SetAngle(double_t angle)
 {
+    (void)angle;
     //inclio_viewport_->SetAngle(angle);
 
     // debug
@@ -252,7 +254,12 @@ void MainViewImpl::SetEnders(bool ender1, bool ender2)
 
 void MainViewImpl::SetAdcChannels(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
         double_t adc_to_volt)
-{}
+{
+    (void)channels;
+    (void)values;
+    (void)values_count;
+    (void)adc_to_volt;
+}
 
 void MainViewImpl::SetMoveForwardEnabled(bool enabled)
 {

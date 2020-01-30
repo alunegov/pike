@@ -32,7 +32,7 @@ void RotatorImpl::SetSpeed(RotatorSpeed speed)
     speed_ = speed;
 }
 
-uint32_t RotatorImpl::StepsIn360()
+uint32_t RotatorImpl::StepsIn360() const
 {
     // определяем по заданной, а не выставленной скорости
     switch (speed_) {

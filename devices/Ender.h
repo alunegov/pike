@@ -17,7 +17,7 @@ public:
     virtual void Update(uint16_t ttl_in) = 0;
 
     // Возвращает последнее прочитанное состояние
-    virtual bool Get() = 0;
+    virtual bool Get() const = 0;
 
     // Возвращает состояние - true, если на пин приходит 1, иначе false
     // Читает состояние с устройства.

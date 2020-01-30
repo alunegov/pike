@@ -33,7 +33,7 @@ class Slicer
 public:
     virtual ~Slicer() = default;
 
-    virtual SliceMsr Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) = 0;
+    virtual SliceMsr Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) const = 0;
 };
 
 }}}

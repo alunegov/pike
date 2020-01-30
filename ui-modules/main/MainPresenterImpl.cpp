@@ -36,6 +36,7 @@ MainPresenterImpl::~MainPresenterImpl()
             const auto mover_stop_opt = pike_->mover()->Stop();
             if (!mover_stop_opt) {
                 // TODO: log
+                //"mover stop error: " + mover_stop_opt.error().message()
             }
             // TODO: уместно ли сбрасывать is_moving в случае ошибки mover()->Stop()?
             pike_->SetIsMoving(false);
@@ -130,7 +131,7 @@ void MainPresenterImpl::ResetDistanceClicked()
     }
 }
 
-void MainPresenterImpl::StartSlice(std::string dest_path)
+void MainPresenterImpl::StartSlice(const std::string& dest_path)
 {
     assert(!pike_->InMotion());
     assert(!pike_->IsSlicing());
@@ -141,7 +142,7 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
         SetMotionEnabled(false);
     }
 
-    slice_dest_path_ = std::move(dest_path);
+    slice_dest_path_ = dest_path;
 
     ongoingReader_->IdleDepth(true);
     pike_->SetIsSlicing(true);
@@ -150,7 +151,7 @@ void MainPresenterImpl::StartSlice(std::string dest_path)
 
     // TODO: std::async on threadpool?
     slice_thread_ = std::thread{[this]() {
-        auto slice_msr = std::move(slicer_->Read(slice_cancel_token_, this));
+        auto slice_msr = slicer_->Read(slice_cancel_token_, this);
 
         // чтобы не зависеть от возможных будущих изменений slice_cancel_token_
         const bool canceled = slice_cancel_token_;
@@ -202,9 +203,9 @@ void MainPresenterImpl::Camera2Clicked()
     selected_camera_ = 2;
 }
 
-void MainPresenterImpl::StartRec(std::string dest_path)
+void MainPresenterImpl::StartRec(const std::string& dest_path)
 {
-    rec_dest_path_ = std::move(dest_path);
+    rec_dest_path_ = dest_path;
     rec_start_time_ = std::chrono::system_clock::now();
     rec_start_distance_ = pike_->odometer()->Get();
     rec_start_angle_ = pike_->inclinometer()->Get();
@@ -241,7 +242,7 @@ void MainPresenterImpl::StopRec()
     }
 }
 
-void MainPresenterImpl::PhotoClicked(std::string dest_path)
+void MainPresenterImpl::PhotoClicked(const std::string& dest_path)
 {
     const auto start_time = std::chrono::system_clock::now();
     const auto start_time_t = std::chrono::system_clock::to_time_t(start_time);
@@ -292,7 +293,7 @@ void MainPresenterImpl::AdcError(const std::error_code& ec)
     if (view_ != nullptr) {
         view_->RunOnUiThread([this, ec]() {
             if (view_ != nullptr) {
-                view_->SetStatusMsg("adc_read error: " + ec.message());
+                view_->SetStatusMsg("adc read error: " + ec.message());
                 // TODO: поток чтения АЦП завершён - нужно заблокировать весь функционал
             }
         });
@@ -402,7 +403,7 @@ void MainPresenterImpl::RotateError(const std::error_code& ec)
         view_->RunOnUiThread([this, ec] {
             // TODO: ui
             if (view_ != nullptr) {
-                view_->SetStatusMsg("rotator()->Step() error: " + ec.message());
+                view_->SetStatusMsg("rotator step error: " + ec.message());
             }
 
             // из-за очерёдности обработки UI-сообщений здесь мы можем оказаться уже после StopRotation
@@ -423,7 +424,7 @@ void MainPresenterImpl::InternalStartMovement(bool is_fwd, bool remote)
     if (!mover_start_opt) {
         // TODO: log, ui?
         if (view_ != nullptr) {
-            view_->SetStatusMsg("mover()->Start() error: " + mover_start_opt.error().message());
+            view_->SetStatusMsg("mover start error: " + mover_start_opt.error().message());
         }
         return;
     }
@@ -449,7 +450,7 @@ void MainPresenterImpl::InternalStopMovement()
     if (!mover_stop_opt) {
         // TODO: log, ui?
         if (view_ != nullptr) {
-            view_->SetStatusMsg("mover()->Stop() error: " + mover_stop_opt.error().message());
+            view_->SetStatusMsg("mover stop error: " + mover_stop_opt.error().message());
         }
         return;
     }
@@ -474,7 +475,7 @@ void MainPresenterImpl::InternalStartRotation(bool is_ccw, bool remote)
     if (!rotator_start_opt) {
         // TODO: log, ui?
         if (view_ != nullptr) {
-            view_->SetStatusMsg("rotator()->Start() error: " + rotator_start_opt.error().message());
+            view_->SetStatusMsg("rotator start error: " + rotator_start_opt.error().message());
         }
         return;
     }

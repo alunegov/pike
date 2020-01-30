@@ -3,6 +3,9 @@
 #include <atomic>
 #include <cmath>
 #include <cstdint>
+#include <system_error>
+
+#include <tl/expected.hpp>
 
 #include <Pike.h>
 #include <Slicer.h>
@@ -21,9 +24,16 @@ public:
 
     // Slicer
 
-    SliceMsr Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) override;
+    SliceMsr Read(const std::atomic_bool& cancel_token, SlicerReadOutput* output) const override;
 
 private:
+    // поворот в крайнее левое положение
+    tl::expected<void, std::error_code> rotate_to_start(const std::atomic_bool& cancel_token, SlicerReadOutput* output) const;
+
+    // измерение, поворачивая в крайнее правое положение
+    tl::expected<void, std::error_code> read_slice(const std::atomic_bool& cancel_token, SlicerReadOutput* output,
+            SliceMsr& slice_msr) const;
+
     ros::pike::logic::Pike* pike_{nullptr};
 };
 

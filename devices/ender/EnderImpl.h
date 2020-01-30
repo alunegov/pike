@@ -23,7 +23,7 @@ public:
 
     void Update(uint16_t ttl_in) override;
 
-    bool Get() override;
+    bool Get() const override;
 
     tl::expected<bool, std::error_code> Read() override;
 

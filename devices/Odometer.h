@@ -13,7 +13,7 @@ public:
     virtual ~Odometer() = default;
 
     // Заполняет номера каналов для регистрации с АЦП
-    virtual void FillChannels(std::vector<uint16_t>& channels) = 0;
+    virtual void FillChannels(std::vector<uint16_t>& channels) const = 0;
 
     // Обновляет пройденное расстояние по зарегистрированному сигналу с каналов
     virtual void Update(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
@@ -21,7 +21,7 @@ public:
 
     // Возвращает пройденное расстояние, мм
     // Размерность задаётся размерностью Conf::odometer::distance_per_pulse.
-    virtual double_t Get() = 0;
+    virtual double_t Get() const = 0;
 
     // Обнуляет пройденное расстояние
     virtual void Reset() = 0;

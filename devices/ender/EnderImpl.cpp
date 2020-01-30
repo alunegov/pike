@@ -9,7 +9,7 @@ void EnderImpl::Update(uint16_t ttl_in)
     _state = (ttl_in & (1u << _pin)) != 0;
 }
 
-bool EnderImpl::Get()
+bool EnderImpl::Get() const
 {
     return _state;
 }

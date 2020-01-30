@@ -67,7 +67,7 @@ public:
 
     void SetIsSlicing(bool is_slicing) override { _is_slicing = is_slicing; }
 
-    tl::expected<void, std::error_code> ReadAndUpdateTtlIn() override;
+    tl::expected<void, std::error_code> ReadAndUpdateTtlIn() const override;
 
 private:
     ros::dc::DAQ* _daq{nullptr};

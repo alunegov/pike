@@ -63,7 +63,7 @@ public:
 
     // Читает состояние TtlIn и обновляет все под-элементы, "работающие" от TtlIn
     // Чтобы не читать TtlIn несколько раз при массовом "обновлении" под-элементов.
-    virtual tl::expected<void, std::error_code> ReadAndUpdateTtlIn() = 0;
+    virtual tl::expected<void, std::error_code> ReadAndUpdateTtlIn() const = 0;
 };
 
 }}}

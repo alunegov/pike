@@ -65,8 +65,8 @@ private:
     ULONG PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t* half_buffer, void** data, ULONG** sync);
 
     // копия функции ___GetRate из проекта UsbE_dll_v2
-    std::pair<uint32_t, uint16_t> GetRate(const AdcRateParams& rateParams, double_t channelRate, size_t channelCount,
-            double_t eps);
+    static std::pair<uint32_t, uint16_t> GetRate(const AdcRateParams& rateParams, double_t channelRate,
+            size_t channelCount, double_t eps);
 
     HINSTANCE lcomp_handle_{nullptr};
     IDaqLDevice* device_{nullptr};

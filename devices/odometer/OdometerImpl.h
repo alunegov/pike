@@ -24,18 +24,18 @@ public:
 
     // Odometer
 
-    void FillChannels(std::vector<uint16_t>& channels) override;
+    void FillChannels(std::vector<uint16_t>& channels) const override;
 
     void Update(const std::vector<uint16_t>& channels, const int16_t* values, size_t values_count,
             double_t adc_to_volt) override;
 
-    double_t Get() override;
+    double_t Get() const override;
 
     void Reset() override;
 
 private:
     std::array<std::vector<int16_t>, 2> ExtractChannelsValues(const std::vector<uint16_t>& channels,
-            const int16_t* values, size_t values_count);
+            const int16_t* values, size_t values_count) const;
 
     uint64_t CalcPulses(const std::array<std::vector<int16_t>, 2>& channels_values, double_t adc_to_volt);
 

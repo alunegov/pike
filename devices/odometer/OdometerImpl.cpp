@@ -8,7 +8,7 @@
 
 namespace ros { namespace devices {
 
-void OdometerImpl::FillChannels(std::vector<uint16_t>& channels)
+void OdometerImpl::FillChannels(std::vector<uint16_t>& channels) const
 {
     channels.push_back(a_channel_);
     channels.push_back(b_channel_);
@@ -24,7 +24,7 @@ void OdometerImpl::Update(const std::vector<uint16_t>& channels, const int16_t* 
     pulses_ += a_pulses;
 }
 
-double_t OdometerImpl::Get()
+double_t OdometerImpl::Get() const
 {
     return pulses_ * distance_per_pulse_;
 }
@@ -35,7 +35,7 @@ void OdometerImpl::Reset()
 }
 
 std::array<std::vector<int16_t>, 2> OdometerImpl::ExtractChannelsValues(const std::vector<uint16_t>& channels,
-        const int16_t* values, size_t values_count)
+        const int16_t* values, size_t values_count) const
 {
     assert(!channels.empty());
     assert(values != nullptr);

@@ -49,7 +49,7 @@ public:
 
     void ResetDistanceClicked() override;
 
-    void StartSlice(std::string dest_path) override;
+    void StartSlice(const std::string& dest_path) override;
 
     void StopSlice() override;
 
@@ -57,11 +57,11 @@ public:
 
     void Camera2Clicked() override;
 
-    void StartRec(std::string dest_path) override;
+    void StartRec(const std::string& dest_path) override;
 
     void StopRec() override;
 
-    void PhotoClicked(std::string dest_path) override;
+    void PhotoClicked(const std::string& dest_path) override;
 
     // OngoingReaderOutput
 

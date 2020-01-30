@@ -21,7 +21,7 @@ InclinometerImpl::InclinometerImpl(uint16_t x_channel, uint16_t y_channel, const
     std::reverse(channels_trans_table_[1].begin(), channels_trans_table_[1].end());
 }
 
-void InclinometerImpl::FillChannels(std::vector<uint16_t>& channels)
+void InclinometerImpl::FillChannels(std::vector<uint16_t>& channels) const
 {
     channels.push_back(x_channel_);
     channels.push_back(y_channel_);
@@ -39,13 +39,13 @@ void InclinometerImpl::Update(const std::vector<uint16_t>& channels, const int16
     angle_ = new_angle;
 }
 
-double_t InclinometerImpl::Get()
+double_t InclinometerImpl::Get() const
 {
     return angle_;
 }
 
 std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const std::vector<uint16_t>& channels, const int16_t* values,
-        size_t values_count, double_t adc_to_volt)
+        size_t values_count, double_t adc_to_volt) const
 {
     assert(!channels.empty());
     assert(values != nullptr);
@@ -74,7 +74,7 @@ std::array<double_t, 2> InclinometerImpl::CalcChannelsValue(const std::vector<ui
     return res;
 }
 
-std::array<double_t, 2> InclinometerImpl::CalcChannelsFi(const std::array<double_t, 2>& channels_value)
+std::array<double_t, 2> InclinometerImpl::CalcChannelsFi(const std::array<double_t, 2>& channels_value) const
 {
     const auto line = [](const _ChannelEntry& p1, const _ChannelEntry& p2, double_t x) -> double_t {
         return p1.SinFi + (x - p1.V) * (p2.SinFi - p1.SinFi) / (p2.V - p1.V);

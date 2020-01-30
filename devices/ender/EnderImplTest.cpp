@@ -3,16 +3,16 @@
 #include <tl/expected.hpp>
 
 #include <catch2/catch.hpp>
-#include <standalone/fakeit.hpp>
+#include <catch/fakeit.hpp>
 
 #include <EnderImpl.h>
 
-TEST_CASE("ender Read", "[ender]") {
+TEST_CASE("ender Read", "[EnderImpl]") {
     const uint16_t Pin{1 - 1};
 
     fakeit::Mock<ros::dc::DAQ> daq_mock;
-
     auto& daq = daq_mock.get();
+
     ros::devices::EnderImpl sut{&daq, Pin};
 
     SECTION("should update it's state and return state on daq success") {

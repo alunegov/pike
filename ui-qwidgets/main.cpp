@@ -92,13 +92,13 @@ int main(int argc, char** argv)
     const auto daq_init_opt = daq->Init(conf.daq.slot);
     if (!daq_init_opt) {
         // TODO: log and cleanup
-        QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq->Init error: " + daq_init_opt.error().message()));
+        QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq init error: " + daq_init_opt.error().message()));
         return 1;
     }
     const auto daq_ttlin_enable_opt = daq->TtlEnable(true);
     if (!daq_ttlin_enable_opt) {
         // TODO: log and cleanup
-        QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq->TtlEnable error: " + daq_ttlin_enable_opt.error().message()));
+        QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq ttl enable error: " + daq_ttlin_enable_opt.error().message()));
         return 1;
     }
     // плата "закрывается" в pike

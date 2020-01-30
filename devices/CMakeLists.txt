@@ -79,6 +79,8 @@ if(BUILD_TESTING)
         PRIVATE "odometer"
 
         PRIVATE "../_ext/Catch2/single_include"
+        # fix for __has_include (FakeIt and VS2015)
+        PRIVATE "../_ext/Catch2/single_include/catch2"
         PRIVATE "../_ext/FakeIt/single_header"
     )
 
