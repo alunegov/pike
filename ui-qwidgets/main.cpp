@@ -1,5 +1,5 @@
 #ifdef _MSC_VER
-#include <vld.h>
+//#include <vld.h>
 #endif
 
 #include <cstdint>
@@ -36,7 +36,7 @@ int main(int argc, char** argv)
 {
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
-    QApplication app(argc, argv);
+    QApplication app{argc, argv};
 
     // стиль для всего приложения
     const auto style = QString{R"(
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
 
     win.setMinimumSize(640, 480);
 
-    auto statusBar = new QStatusBar(&win);
+    auto const statusBar = new QStatusBar{&win};
     statusBar->setObjectName("statusBar");
     win.setStatusBar(statusBar);
 
@@ -87,8 +87,8 @@ int main(int argc, char** argv)
     }
 
     // dc and devices
-    //auto daq = new ros::dc::lcard::LCardDaq;
-    auto daq = new ros::dc::dummy::DummyDaq;
+    //auto const daq = new ros::dc::lcard::LCardDaq;
+    auto const daq = new ros::dc::dummy::DummyDaq;
     const auto daq_init_opt = daq->Init(conf.daq.slot);
     if (!daq_init_opt) {
         // TODO: log and cleanup
@@ -103,21 +103,26 @@ int main(int argc, char** argv)
     }
     // плата "закрывается" в pike
 
-    auto ender1 = new ros::devices::EnderImpl{daq, conf.ender1.pin};
+    auto const ender1 = new ros::devices::EnderImpl{daq, conf.ender1.pin};
 
-    auto ender2 = new ros::devices::EnderImpl{daq, conf.ender2.pin};
+    auto const ender2 = new ros::devices::EnderImpl{daq, conf.ender2.pin};
 
-    auto rotator = new ros::devices::RotatorImpl{daq, conf.rotator.en_pin, conf.rotator.step_pin, conf.rotator.dir_pin,
+    auto const rotator = new ros::devices::RotatorImpl{daq, conf.rotator.en_pin, conf.rotator.step_pin, conf.rotator.dir_pin,
             conf.rotator.mx_pin, conf.rotator.steps_per_msr, conf.rotator.steps_per_view};
 
-    auto mover = new ros::devices::MoverImpl{daq, conf.mover.pwm_pin, conf.mover.dir_pin};
+    auto const mover = new ros::devices::MoverImpl{daq, conf.mover.pwm_pin, conf.mover.dir_pin};
 
-    auto odometer = new ros::devices::OdometerImpl{conf.odometer.a_channel, conf.odometer.b_channel,
+    auto const odometer = new ros::devices::OdometerImpl{conf.odometer.a_channel, conf.odometer.b_channel,
             conf.odometer.threshold, conf.odometer.distance_per_pulse};
 
-    auto trans_table = ros::devices::InclinometerImplTransTableMapper::Load(conf.inclinometer.trans_table_file);
+    const auto trans_table = ros::devices::InclinometerImplTransTableMapper::Load(conf.inclinometer.trans_table_file);
+    if (trans_table.size() < 2) {
+        // TODO: log and cleanup
+        QMessageBox::critical(nullptr, "pike", QString::fromStdString("empty trans table"));
+        return 1;
+    }
 
-    auto inclinometer = new ros::devices::InclinometerImpl{conf.inclinometer.x_channel, conf.inclinometer.y_channel,
+    auto const inclinometer = new ros::devices::InclinometerImpl{conf.inclinometer.x_channel, conf.inclinometer.y_channel,
             trans_table};
 
     ce::ceSerial depthometer_transport{conf.depthometer.port_name, conf.depthometer.baud_rate, 8, 'N', 1};
@@ -129,29 +134,29 @@ int main(int argc, char** argv)
     }
     // порт закроется в depthometer, или автоматически при удалении depthometer_transport (в конце main)
 
-    auto depthometer = new ros::devices::CD22{depthometer_transport};
+    auto const depthometer = new ros::devices::CD22{depthometer_transport};
 
     // logic/interactors/save-mappers
-    auto pike = new ros::pike::logic::PikeImpl{daq, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
+    auto const pike = new ros::pike::logic::PikeImpl{daq, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
     
-    auto ongoingReader = new ros::pike::logic::OngoingReaderImpl{pike, conf.daq.adc_rate};
+    auto const ongoingReader = new ros::pike::logic::OngoingReaderImpl{pike, conf.daq.adc_rate};
 
-    auto slicer = new ros::pike::logic::SlicerImpl{pike};
+    auto const slicer = new ros::pike::logic::SlicerImpl{pike};
 
-    auto sliceMsrMapper = new ros::pike::logic::SliceMsrMapperImpl;
+    auto const sliceMsrMapper = new ros::pike::logic::SliceMsrMapperImpl;
 
-    auto remoteServer = new ros::pike::logic::RemoteServerImpl{conf.remote.port};
+    auto const remoteServer = new ros::pike::logic::RemoteServerImpl{conf.remote.port};
 
     // presenter and view
-    auto mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper,
+    auto const mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper,
             remoteServer};
 
-    auto setStatusMsgFunc = [&win](const std::string& msg) {
+    const auto setStatusMsgFunc = [&win](const std::string& msg) {
         assert(win.statusBar() != nullptr);
         win.statusBar()->showMessage(QString::fromStdString(msg));
     };
 
-    auto mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl, conf.object_length, setStatusMsgFunc};
+    auto const mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl, conf.object_length, setStatusMsgFunc};
     // выставляем mainview как центральный виджет QMainWindow
     win.setCentralWidget(mainViewImpl);
 
