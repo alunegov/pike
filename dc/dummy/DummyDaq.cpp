@@ -77,6 +77,9 @@ tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, size_t
 tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, const _Channels& channels,
         const std::atomic_bool& cancel_token, const std::function<AdcReadCallback>& callback)
 {
+    (void)reg_freq;
+    (void)channels;
+
     assert(reg_freq > 0);
     assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
 
