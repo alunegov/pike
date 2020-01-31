@@ -70,12 +70,15 @@ if(BUILD_TESTING)
     add_executable(${PROJECT_NAME}-test
         "../_misc/catch2/catch2-main.cpp"
         "ender/EnderImplTest.cpp"
+        "inclinometer/InclinometerImplTest.cpp"
+        "inclinometer/InclinometerImplTransTableMapperTest.cpp"
         "odometer/OdometerImplTest.cpp"
     )
 
     target_include_directories(${PROJECT_NAME}-test
         PRIVATE "."
         PRIVATE "ender"
+        PRIVATE "inclinometer"
         PRIVATE "odometer"
 
         PRIVATE "../_ext/Catch2/single_include"

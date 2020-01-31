@@ -105,7 +105,7 @@ std::array<double_t, 2> InclinometerImpl::CalcChannelsFi(const std::array<double
     return res;
 }
 
-double_t InclinometerImpl::CalcAngle(std::array<double_t, 2> channels_fi)
+double_t InclinometerImpl::CalcAngle(const std::array<double_t, 2>& channels_fi)
 {
     const double_t sin_fi_x{channels_fi[0]};
     const double_t sin_fi_y{channels_fi[1]};

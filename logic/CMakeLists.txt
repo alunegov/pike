@@ -57,6 +57,7 @@ target_link_libraries(${PROJECT_NAME}
 if(BUILD_TESTING)
     add_executable(${PROJECT_NAME}-test
         "../_misc/catch2/catch2-main.cpp"
+        "ConfMapperTest.cpp"
         "OngoingReaderImplTest.cpp"
         "PikeImplTest.cpp"
         "SlicerImplTest.cpp"

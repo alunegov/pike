@@ -17,9 +17,9 @@ namespace ros { namespace devices {
 struct InclinometerImplChannelTransTableEntry
 {
     // Значение SinFi
-    double_t SinFi;
+    double_t SinFi{0};
     // Значение канала, В
-    double_t V;
+    double_t V{0};
 
     InclinometerImplChannelTransTableEntry(double_t sin_fi, double_t v) :
         SinFi{sin_fi},
@@ -60,7 +60,7 @@ private:
     // Преобразование значения по каналам регистрации в SinFi (по настроечным таблицам)
     std::array<double_t, 2> CalcChannelsFi(const std::array<double_t, 2>& channels_value) const;
 
-    static double_t CalcAngle(std::array<double_t, 2> channels_fi);
+    static double_t CalcAngle(const std::array<double_t, 2>& channels_fi);
 
     uint16_t x_channel_{0};
     uint16_t y_channel_{0};

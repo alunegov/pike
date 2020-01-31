@@ -11,7 +11,7 @@ const double_t adc_to_volt{1};
 const double_t threshold{2};
 const double_t distance_per_pulse{1};
 
-TEST_CASE("odometer usual workflow", "[OdometerImpl]") {
+TEST_CASE("OdometerImpl usual workflow", "[OdometerImpl]") {
     ros::devices::OdometerImpl sut{a_channel, b_channel, threshold, distance_per_pulse};
 
     REQUIRE(sut.Get() == 0);
@@ -21,9 +21,7 @@ TEST_CASE("odometer usual workflow", "[OdometerImpl]") {
 
         sut.FillChannels(channels);
 
-        REQUIRE(channels.size() == 2);
-        REQUIRE(channels[0] == a_channel);
-        REQUIRE(channels[1] == b_channel);
+        REQUIRE(channels == std::vector<uint16_t>{a_channel, b_channel});
 
         SECTION("Update should recalc distance") {
             //     _   _   _   _
@@ -55,7 +53,7 @@ TEST_CASE("odometer usual workflow", "[OdometerImpl]") {
     }
 }
 
-TEST_CASE("odometer ignore irrelevant adc channels", "[OdometerImpl]") {
+TEST_CASE("OdometerImpl ignore irrelevant adc channels", "[OdometerImpl]") {
     ros::devices::OdometerImpl sut{a_channel, b_channel, threshold, distance_per_pulse};
 
     REQUIRE(sut.Get() == 0);
@@ -75,7 +73,7 @@ TEST_CASE("odometer ignore irrelevant adc channels", "[OdometerImpl]") {
     }
 }
 
-TEST_CASE("odometer account adc_to_volt coeff", "[OdometerImpl]") {
+TEST_CASE("OdometerImpl account adc_to_volt coeff", "[OdometerImpl]") {
     ros::devices::OdometerImpl sut{a_channel, b_channel, threshold, distance_per_pulse};
 
     REQUIRE(sut.Get() == 0);
