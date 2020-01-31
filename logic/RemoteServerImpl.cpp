@@ -90,6 +90,9 @@ void RemoteServerImpl::ProcessMotionData(double_t x_value, double_t y_value)
             ? ((x_value >= 0) ? MotionDirection::Inc : MotionDirection::Dec)
             : MotionDirection::No;
 
+    // По условиям ниже выходит, что сначала нужно остановить вращение и только потом начинать движение - нужны два
+    // пакета. Но для перехода из движения во вращение достаточно одного - _move_state сбрасывается по коду раньше.
+
     if (_move_state != new_move_state) {
         if (_rot_state == MotionDirection::No) {  // нет вращения
             if (_move_state != MotionDirection::No) {
@@ -98,8 +101,9 @@ void RemoteServerImpl::ProcessMotionData(double_t x_value, double_t y_value)
             if (new_move_state != MotionDirection::No) {
                 _output->RemoteStartMovement(new_move_state);
             }
+
+            _move_state = new_move_state;
         }
-        _move_state = new_move_state;
     }
 
     if (_rot_state != new_rot_state) {
@@ -110,8 +114,9 @@ void RemoteServerImpl::ProcessMotionData(double_t x_value, double_t y_value)
             if (new_rot_state != MotionDirection::No) {
                 _output->RemoteStartRotation(new_rot_state);
             }
+
+            _rot_state = new_rot_state;
         }
-        _rot_state = new_rot_state;
     }
 
     _last_state = std::chrono::steady_clock::now();

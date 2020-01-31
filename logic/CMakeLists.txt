@@ -60,6 +60,7 @@ if(BUILD_TESTING)
         "ConfMapperTest.cpp"
         "OngoingReaderImplTest.cpp"
         "PikeImplTest.cpp"
+        "RemoteServerImplTest.cpp"
         "SlicerImplTest.cpp"
     )
 
