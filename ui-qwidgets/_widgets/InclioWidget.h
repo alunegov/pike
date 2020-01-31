@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include <QtCore/QVariantAnimation>
 #include <QtGui/qevent.h>
 #include <QtGui/QPen>
 #include <QtWidgets/QLabel>
@@ -22,6 +23,8 @@ protected:
     void resizeEvent(QResizeEvent* event) override;
 
 private:
+    const int AnimDuration{250};
+
     void update_view();
 
     QLabel* angle_text_{nullptr};
@@ -31,6 +34,8 @@ private:
     QPen pen2_;
 
     double_t angle_{0};
+
+    QVariantAnimation _anim;
 };
 
 }}}

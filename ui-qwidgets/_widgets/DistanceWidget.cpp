@@ -17,6 +17,12 @@ DistanceWidget::DistanceWidget(double_t max_distance) :
     distance_view_->setAlignment(Qt::AlignCenter);
     //distance_view_->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
 
+    _anim.setDuration(AnimDuration);
+    QObject::connect(&_anim, &QVariantAnimation::valueChanged, this, [this](const QVariant& value) {
+        distance_ = value.toDouble();
+        update_view();
+    });
+
     // layout
     auto rootLayout = new QVBoxLayout;
     rootLayout->addWidget(distance_view_);
@@ -26,10 +32,14 @@ DistanceWidget::DistanceWidget(double_t max_distance) :
 
 void DistanceWidget::SetDistance(double_t distance)
 {
-    distance_ = distance;
+    _anim.stop();
 
-    distance_view_->setText(QString{"%1 мм"}.arg(distance_));
-    update_view();
+    //distance_view_->setText(QString{"%1 мм"}.arg(distance));
+
+    _anim.setStartValue(distance_);
+    _anim.setEndValue(distance);
+
+    _anim.start();
 }
 
 void DistanceWidget::resizeEvent(QResizeEvent* event)
@@ -61,10 +71,9 @@ void DistanceWidget::update_view()
     const auto distance_coeff = w / max_distance_;
 
     //QImage img{"devicesetups.svg"};
-    //img.rec
     //painter.drawImage(rect, img);
 
-    painter.drawText(distance_ * distance_coeff, rect.height(), QString::number(distance_));
+    painter.drawText(distance_ * distance_coeff + 3, rect.height() - 3, QString::number(distance_));
 
     painter.drawRect(distance_ * distance_coeff, 0, rw, rect.height());
 

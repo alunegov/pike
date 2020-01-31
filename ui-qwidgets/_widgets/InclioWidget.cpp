@@ -4,6 +4,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include <QTimer>
 #include <QtGui/QPainter>
 #include <QtWidgets/QVBoxLayout>
 
@@ -23,6 +24,15 @@ InclioWidget::InclioWidget()
     pen1_.setColor(QColor{"blue"});
     pen2_.setStyle(Qt::DotLine);
 
+    _anim.setDuration(AnimDuration);
+    QObject::connect(&_anim, &QVariantAnimation::valueChanged, this, [this](const QVariant& value) {
+        angle_ = value.toDouble();
+        while (angle_ > 360) {
+            angle_ -= 360;
+        }
+        update_view();
+    });
+
     // layout
     auto rootLayout = new QVBoxLayout;
     rootLayout->addWidget(angle_text_);
@@ -33,10 +43,17 @@ InclioWidget::InclioWidget()
 
 void InclioWidget::SetAngle(double_t angle)
 {
-    angle_ = angle;
+    _anim.stop();
 
-    angle_text_->setText(QString{"%1°"}.arg(angle_));
-    update_view();
+    angle_text_->setText(QString{"%1°"}.arg(angle));
+
+    const auto v = (std::abs(angle - angle_) <= 180)
+        ? std::make_pair(angle_, angle)
+        : std::make_pair((angle_ < angle) ? 360 + angle_ : angle_, (angle_ < angle) ? angle : 360 + angle);
+    _anim.setStartValue(v.first);
+    _anim.setEndValue(v.second);
+
+    _anim.start();
 }
 
 void InclioWidget::resizeEvent(QResizeEvent* event)
