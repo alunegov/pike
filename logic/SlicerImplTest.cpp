@@ -1,4 +1,8 @@
 #include <catch2/catch.hpp>
+
+#if !defined(CATCH_INTERNAL_UNSUPPRESS_PARENTHESES_WARNINGS)
+#   define CATCH_INTERNAL_UNSUPPRESS_PARENTHESES_WARNINGS
+#endif
 #include <catch/fakeit.hpp>
 
 #include <SlicerImpl.h>
