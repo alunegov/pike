@@ -22,20 +22,19 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
 
     using CREATEFUNCPTR = IDaqLDevice*(*)(ULONG slot);
 
-    ULONG status;
-
     lcomp_handle_ = LoadLibrary(LCompName);
     if (lcomp_handle_ == nullptr) {
         Deinit();
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::LoadLibraryErr));
     }
 
-    const auto create_instance = (CREATEFUNCPTR)GetProcAddress(lcomp_handle_, "CreateInstance");
+    const auto create_instance = reinterpret_cast<CREATEFUNCPTR>(GetProcAddress(lcomp_handle_, "CreateInstance"));
     if (create_instance == nullptr) {
         Deinit();
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::CreateInstanceAddrErr));
     }
     
+    assert(slot_num <= ULONG_MAX);
     IDaqLDevice* const device_instance = create_instance(static_cast<ULONG>(slot_num));
     if (device_instance == nullptr) {
         Deinit();
@@ -49,7 +48,7 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::QueryInterfaceErr));
     }
 
-    status = device_instance->Release();
+    ULONG status = device_instance->Release();
     //device_instance = nullptr;
 
     const HANDLE device_handle = device_->OpenLDevice();
@@ -172,16 +171,14 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
     assert(device_ != nullptr);
 
     assert(point_count > 0);
-    assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
+    assert(!channels.empty());
     assert(values != nullptr);
-
-    ULONG status;
 
     size_t half_buffer{0};
     void* data{nullptr};
     ULONG* sync{nullptr};
 
-    status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
+    ULONG status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
     if (status != L_SUCCESS) {
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::PrepareAdcErr));
     }
@@ -210,12 +207,10 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
     //
     // с момента запуска, пока мы спим - *sync увеличивается
 
-    size_t f1, f2;
-
     // какой смысл использовать InterlockedExchange(&s, *sync) (как в примере)? - ведь нужно синхронизировать доступ
     // к sync, а не к s.
-    f1 = (*sync < half_buffer) ? 0 : 1;
-    f2 = (*sync < half_buffer) ? 0 : 1;
+    size_t f1 = (*sync < half_buffer) ? 0 : 1;
+    size_t f2 = (*sync < half_buffer) ? 0 : 1;
     size_t tmp_half_buffer{(half_buffer_count == 1) ? final_half_buffer : half_buffer};
 
     for (size_t i = 0; i < half_buffer_count; i++) {
@@ -227,7 +222,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
         }
 
         int16_t* const values_tmp = values + half_buffer * i;
-        const int16_t* const data_tmp = (int16_t*)data + half_buffer * f1;
+        const int16_t* const data_tmp = static_cast<int16_t*>(data) + half_buffer * f1;
         memmove(values_tmp, data_tmp, tmp_half_buffer * sizeof(int16_t));
 
         // для "последней половины" корректируем ожидаемое кол-во точек
@@ -253,10 +248,6 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
 {
     assert(device_ != nullptr);
 
-    assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
-
-    ULONG status;
-
     size_t half_buffer{0};
     void* data{nullptr};
     ULONG* sync{nullptr};
@@ -267,7 +258,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
     //    - если скорость наполнения высокая - накапливать точки в промежуточном буфере, внутри или снаружи
     // 2. кол-во точек кратное кол-ву каналов, чтобы во всех кадрах было целое кол-во каналов (точки всех каналов)
 
-    status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
+    ULONG status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
     if (status != L_SUCCESS) {
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::PrepareAdcErr));
     }
@@ -285,12 +276,10 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
     //
     // с момента запуска, пока мы спим - *sync увеличивается
 
-    size_t f1, f2;
-
     // какой смысл использовать InterlockedExchange(&s, *sync) (как в примере)? - ведь нужно синхронизировать доступ
     // к sync, а не к s.
-    f1 = (*sync < half_buffer) ? 0 : 1;
-    f2 = (*sync < half_buffer) ? 0 : 1;
+    size_t f1 = (*sync < half_buffer) ? 0 : 1;
+    size_t f2 = (*sync < half_buffer) ? 0 : 1;
 
     while (true) {
         // ожидание заполнения очередной половины буфера или отмены чтения
@@ -304,7 +293,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
             break;
         }
 
-        const int16_t* const data_tmp = (int16_t*)data + half_buffer * f1;
+        const int16_t* const data_tmp = static_cast<int16_t*>(data) + half_buffer * f1;
         callback(data_tmp, half_buffer);
 
         std::this_thread::sleep_for(AdcFillDelay);
@@ -323,9 +312,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
 tl::expected<void, std::error_code> LCardDaq::NonVirtualDeinit()
 {
     if (device_ != nullptr) {
-        ULONG status;
-
-        status = device_->CloseLDevice();
+        ULONG status = device_->CloseLDevice();
         if (status != L_SUCCESS) {
             return tl::make_unexpected(ros::make_error_code(ros::error_lcard::CloseLDeviceErr));
         }
@@ -403,13 +390,11 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t
     assert((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154));  // adc_param.t1
 
     assert(reg_freq > 0);
-    assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
-
-    ULONG status;
+    assert(!channels.empty());
 
     ULONG tm = 10000000;
 
-    status = device_->RequestBufferStream(&tm, L_STREAM_ADC);
+    ULONG status = device_->RequestBufferStream(&tm, L_STREAM_ADC);
     if (status != L_SUCCESS) {
         return status;
     }
@@ -427,6 +412,7 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t
     if ((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154)) {
         adc_param.t1.SynchroType = 0;
     }
+    assert(channels.size() <= ULONG_MAX);
     adc_param.t1.NCh = static_cast<ULONG>(channels.size());
     for (size_t i = 0; i < channels.size(); i++) {
         adc_param.t1.Chn[i] = channels[i];
@@ -494,7 +480,7 @@ std::pair<uint32_t, uint16_t> LCardDaq::GetRate(const AdcRateParams& rateParams,
     for (uint32_t i1 = rateParams.FClock_MinDiv; i1 <= rateParams.FClock_MaxDiv; i1++) {
         const double_t d2{rateParams.FClock / i1 / channelRate};
         
-        size_t i2 = (size_t)trunc(d2) - (channelCount - 1u);
+        size_t i2 = static_cast<size_t>(trunc(d2)) - (channelCount - 1u);
         if (i2 > rateParams.IKD_MaxKoeff) {
             continue;
         }
@@ -511,6 +497,7 @@ std::pair<uint32_t, uint16_t> LCardDaq::GetRate(const AdcRateParams& rateParams,
         if ((d3 < dMinDelta) || (i2 == rateParams.IKD_MinKoeff)) {
             dMinDelta = d3;
             res.first = i1;
+            assert(i2 <= UINT16_MAX);
             res.second = static_cast<uint16_t>(i2);
         }
 
