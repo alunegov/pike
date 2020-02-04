@@ -1,5 +1,6 @@
 #include <LCardDaq.h>
 
+#include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <thread>
@@ -288,7 +289,6 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
 
             f2 = (*sync < half_buffer) ? 0 : 1;
         }
-
         if (cancel_token) {
             break;
         }
@@ -352,7 +352,7 @@ const char* LCardDaq::DetectBiosName(ULONG board_type)
 
 AdcRateParams LCardDaq::DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr)
 {
-    AdcRateParams res{0, 0, 0, 0, 0};
+    AdcRateParams res{0.0, 0, 0, 0, 0};
 
     switch (board_type) {
     case E440:
@@ -414,9 +414,8 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t
     }
     assert(channels.size() <= ULONG_MAX);
     adc_param.t1.NCh = static_cast<ULONG>(channels.size());
-    for (size_t i = 0; i < channels.size(); i++) {
-        adc_param.t1.Chn[i] = channels[i];
-    }
+    assert(channels.size() <= std::size(adc_param.t1.Chn));
+    std::copy(channels.begin(), channels.end(), std::begin(adc_param.t1.Chn));
     adc_param.t1.FIFO = 1024;
     adc_param.t1.IrqStep = 1024;
     adc_param.t1.Pages = 128;

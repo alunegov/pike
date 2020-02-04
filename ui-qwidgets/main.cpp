@@ -87,8 +87,8 @@ int main(int argc, char** argv)
     }
 
     // dc and devices
-    //auto const daq = new ros::dc::lcard::LCardDaq;
-    auto const daq = new ros::dc::dummy::DummyDaq;
+    auto const daq = new ros::dc::lcard::LCardDaq;
+    //auto const daq = new ros::dc::dummy::DummyDaq;
     const auto daq_init_opt = daq->Init(conf.daq.slot);
     if (!daq_init_opt) {
         // TODO: log and cleanup

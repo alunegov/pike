@@ -29,7 +29,32 @@ target_include_directories(${PROJECT_NAME}
 )
 
 if(MSVC)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE _SCL_SECURE_NO_WARNINGS)
+endif()
+
+if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4)
 else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+endif()
+
+if(BUILD_TESTING)
+    add_executable(${PROJECT_NAME}-test
+        "../_misc/catch2/catch2-main.cpp"
+        "lcard/LCardDaqTest.cpp"
+    )
+
+    target_include_directories(${PROJECT_NAME}-test
+        PRIVATE "."
+        PRIVATE "lcard"
+
+        PRIVATE "../_ext/Catch2/single_include"
+        PRIVATE "../_ext/lcomp/include"
+    )
+
+    target_link_libraries(${PROJECT_NAME}-test
+        PRIVATE ${PROJECT_NAME}
+    )
+
+    add_test(${PROJECT_NAME}-test ${PROJECT_NAME}-test)
 endif()

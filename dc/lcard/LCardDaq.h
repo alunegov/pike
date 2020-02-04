@@ -13,6 +13,8 @@
 
 #include <DAQ.h>
 
+class LCardDaqTest;
+
 namespace ros { namespace dc { namespace lcard {
 
 // Параметры платы Л-Кард, используемые для настройки частоты АЦП (межкадровой и межканальной задержек)
@@ -28,6 +30,8 @@ struct AdcRateParams
 // Плата АЦП/ЦАП/ТТЛ от Л-Кард (через lcomp)
 class LCardDaq : public DAQ
 {
+    friend class ::LCardDaqTest;
+
 public:
     LCardDaq() = default;
 
@@ -71,7 +75,7 @@ private:
     HINSTANCE lcomp_handle_{nullptr};
     IDaqLDevice* device_{nullptr};
     ULONG board_type_{NONE};
-    AdcRateParams adc_rate_params_{};
+    AdcRateParams adc_rate_params_{0.0, 0, 0, 0, 0};
 
     uint16_t ttl_out_value{0};
 };
