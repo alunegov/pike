@@ -52,8 +52,14 @@ if(BUILD_TESTING)
         PRIVATE "../_ext/lcomp/include"
     )
 
+    target_compile_definitions(${PROJECT_NAME}-test
+        PUBLIC ${K3_ADCRAW}
+        PUBLIC ${K3_ROSFLOAT}
+    )
+
     target_link_libraries(${PROJECT_NAME}-test
         PRIVATE ${PROJECT_NAME}
+        PRIVATE RosMath
     )
 
     add_test(${PROJECT_NAME}-test ${PROJECT_NAME}-test)
