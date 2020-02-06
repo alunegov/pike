@@ -1,11 +1,11 @@
+#include <LCardDaq.h>
+
 #include <chrono>
 #include <fstream>
 #include <future>
 #include <thread>
 
 #include <catch2/catch.hpp>
-
-#include <LCardDaq.h>
 
 #include <RosMath.h>
 
@@ -44,11 +44,11 @@ void ExportToDsv(const std::vector<T>& values, double_t dx, const std::string& f
     }
 }
 
-static_assert(sizeof(int16_t) == sizeof(AdcRaw_t), "");
+static_assert(sizeof(AdcRaw_t) == sizeof(int16_t), "AdcRaw_t size is not 16 bit");
 
 using Harmonic = std::tuple<double_t, double_t, ptrdiff_t>;
 
-// поиск максимальной гармоники в спектре, полученном из сигнала канала
+// поиск максимальной гармоники в спектре сигнала
 Harmonic FindMaxHarmonic(const std::vector<int16_t>& values, double_t df)
 {
     assert(!values.empty());
@@ -109,7 +109,10 @@ Harmonic FindMaxHarmonicInChannel(const std::vector<int16_t>& values, size_t poi
     return FindMaxHarmonic(channel_values, df);
 }
 
-const auto RefRegFreq{12.8};
+const double_t RefRegFreq{12.8};
+
+const uint16_t AdcCommonGnd{1 << 5};
+const ros::dc::DAQ::_Channels RefChannels{0 | AdcCommonGnd, 1 | AdcCommonGnd, 2 | AdcCommonGnd, 3 | AdcCommonGnd};
 
 TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
     ros::dc::lcard::LCardDaq sut;
@@ -122,16 +125,15 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
     SECTION("sync mode") {
         double_t reg_freq{RefRegFreq};
         const size_t points_count{1024};
-        const ros::dc::DAQ::_Channels channels{0, 1, 2, 3};
-        std::vector<int16_t> vals(points_count * channels.size());
+        std::vector<int16_t> vals(points_count * RefChannels.size());
 
-        const auto adc_read_opt = sut.AdcRead(reg_freq, points_count, channels, vals.data());
+        const auto adc_read_opt = sut.AdcRead(reg_freq, points_count, RefChannels, vals.data());
 
         REQUIRE(adc_read_opt);
         REQUIRE(double_equals(reg_freq, RefRegFreq, 0.03));
 
-        const size_t test_points_count{1024};
-        const auto max_harm = FindMaxHarmonicInChannel(vals, test_points_count, channels.size(), 0, reg_freq);
+        const size_t test_points_count{points_count};
+        const auto max_harm = FindMaxHarmonicInChannel(vals, test_points_count, RefChannels.size(), 0, reg_freq);
 
         REQUIRE(std::get<2>(max_harm) != -1);
         REQUIRE(double_equals(std::get<1>(max_harm), 262.0, 1.0));
@@ -139,7 +141,6 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
 
     SECTION("async mode") {
         double_t reg_freq{RefRegFreq};
-        const ros::dc::DAQ::_Channels channels{0, 1, 2, 3};
         std::atomic_bool cancel_token{false};
 
         size_t callback_counter{0};
@@ -152,7 +153,7 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
                 vals.insert(vals.end(), values, values + values_count);
             };
 
-            return sut.AdcRead(reg_freq, channels, cancel_token, adc_read_callback);
+            return sut.AdcRead(reg_freq, RefChannels, cancel_token, adc_read_callback);
         });
 
         std::this_thread::sleep_for(std::chrono::seconds{3});
@@ -166,7 +167,7 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
         REQUIRE(vals.size() > 0);
 
         const size_t test_points_count{1024};
-        const auto max_harm = FindMaxHarmonicInChannel(vals, test_points_count, channels.size(), 0, reg_freq);
+        const auto max_harm = FindMaxHarmonicInChannel(vals, test_points_count, RefChannels.size(), 0, reg_freq);
 
         REQUIRE(std::get<2>(max_harm) != -1);
         REQUIRE(double_equals(std::get<1>(max_harm), 262.0, 1.0));
@@ -185,13 +186,12 @@ TEST_CASE("LCardDaq PrepareAdc", "[LCardDaq]") {
     REQUIRE(init_opt);
 
     double_t reg_freq{RefRegFreq};
-    const ros::dc::DAQ::_Channels channels{0, 1, 2, 3};
     size_t half_buffer{0};
     void* data{nullptr};
     ULONG* sync{nullptr};
 
     // PrepareAdc
-    const auto prepare_adc_res = sut_test.PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
+    const auto prepare_adc_res = sut_test.PrepareAdc(reg_freq, RefChannels, &half_buffer, &data, &sync);
 
     REQUIRE(prepare_adc_res == L_SUCCESS);
     REQUIRE(double_equals(reg_freq, RefRegFreq, 0.03));
