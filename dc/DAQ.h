@@ -34,11 +34,12 @@ public:
 
     virtual tl::expected<uint16_t, std::error_code> TtlIn() = 0;
 
-    virtual tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t point_count,
+    // TODO: нужна отмена долгого чтения
+    virtual tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t points_count,
             const _Channels& channels, int16_t* values) = 0;
 
     virtual tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
-            const std::atomic_bool& cancel_token, const std::function<AdcReadCallback>& callback) = 0;
+            const std::function<AdcReadCallback>& callback, const std::atomic_bool& cancel_token) = 0;
 };
 
 }}

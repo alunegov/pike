@@ -31,11 +31,11 @@ public:
 
     tl::expected<uint16_t, std::error_code> TtlIn() override;
 
-    tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t point_count, const _Channels& channels,
+    tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t points_count, const _Channels& channels,
             int16_t* values) override;
 
     tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
-            const std::atomic_bool& cancel_token, const std::function<AdcReadCallback>& callback) override;
+            const std::function<AdcReadCallback>& callback, const std::atomic_bool& cancel_token) override;
 };
 
 }}}

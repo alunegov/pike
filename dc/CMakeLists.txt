@@ -56,6 +56,9 @@ if(BUILD_TESTING)
         PUBLIC ${K3_ADCRAW}
         PUBLIC ${K3_ROSFLOAT}
     )
+    if(MSVC)
+        target_compile_definitions(${PROJECT_NAME}-test PRIVATE _SCL_SECURE_NO_WARNINGS)
+    endif()
 
     target_link_libraries(${PROJECT_NAME}-test
         PRIVATE ${PROJECT_NAME}

@@ -53,11 +53,11 @@ public:
 
     tl::expected<uint16_t, std::error_code> TtlIn() override;
 
-    tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t point_count, const _Channels& channels,
+    tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t points_count, const _Channels& channels,
             int16_t* values) override;
 
     tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
-            const std::atomic_bool& cancel_token, const std::function<AdcReadCallback>& callback) override;
+            const std::function<AdcReadCallback>& callback, const std::atomic_bool& cancel_token) override;
 
 private:
     tl::expected<void, std::error_code> NonVirtualDeinit();
@@ -66,7 +66,7 @@ private:
 
     static AdcRateParams DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr);
 
-    ULONG PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t* half_buffer, void** data, ULONG** sync);
+    ULONG PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t& half_buffer, void** data, ULONG** sync);
 
     // копия функции ___GetRate из проекта UsbE_dll_v2
     static std::pair<uint32_t, uint16_t> GetRate(const AdcRateParams& rateParams, double_t channelRate,

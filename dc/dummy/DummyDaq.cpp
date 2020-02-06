@@ -56,17 +56,17 @@ tl::expected<uint16_t, std::error_code> DummyDaq::TtlIn()
     return static_cast<uint16_t>(0);
 }
 
-tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, size_t point_count,
+tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, size_t points_count,
         const _Channels& channels, int16_t* values)
 {
     (void)values;
 
     assert(reg_freq > 0);
-    assert(point_count > 0);
+    assert(points_count > 0);
     assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
     assert(values != nullptr);
 
-    const auto reg_time = std::llround(point_count * channels.size() / reg_freq);
+    const auto reg_time = std::llround(points_count * channels.size() / reg_freq);
     std::this_thread::sleep_for(std::chrono::milliseconds{reg_time});
 
     // TODO: fill values with random
@@ -75,7 +75,7 @@ tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, size_t
 }
 
 tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, const _Channels& channels,
-        const std::atomic_bool& cancel_token, const std::function<AdcReadCallback>& callback)
+        const std::function<AdcReadCallback>& callback, const std::atomic_bool& cancel_token)
 {
     (void)reg_freq;
     (void)channels;

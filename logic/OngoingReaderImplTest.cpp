@@ -42,11 +42,11 @@ TEST_CASE("OngoingReaderImpl", "[OngoingReaderImpl]") {
     ros::pike::logic::OngoingReaderImpl sut{&pike, 1};
 
     using AdcRead2Func = tl::expected<void, std::error_code>(double_t&, const ros::dc::DAQ::_Channels&,
-            const std::atomic_bool&, const std::function<ros::dc::DAQ::AdcReadCallback>&);
+            const std::function<ros::dc::DAQ::AdcReadCallback>&, const std::atomic_bool&);
 
     SECTION("Start/Stop and adc thread") {
         const auto adcRead2 = [](double_t& reg_freq, const ros::dc::DAQ::_Channels& channels,
-                const std::atomic_bool& cancel_token, const std::function<ros::dc::DAQ::AdcReadCallback>& callback) -> tl::expected<void, std::error_code> {
+                const std::function<ros::dc::DAQ::AdcReadCallback>& callback, const std::atomic_bool& cancel_token) -> tl::expected<void, std::error_code> {
             callback(nullptr, 0);
             callback(nullptr, 0);
             return {};

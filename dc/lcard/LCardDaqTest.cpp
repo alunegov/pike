@@ -17,9 +17,77 @@ public:
         _daq{daq}
     {}
 
-    ULONG PrepareAdc(double_t& reg_freq, const ros::dc::DAQ::_Channels& channels, size_t* half_buffer, void** data, ULONG** sync)
+    ULONG PrepareAdc(double_t& reg_freq, const ros::dc::DAQ::_Channels& channels, size_t& half_buffer, void** data,
+            ULONG** sync)
     {
         return _daq.PrepareAdc(reg_freq, channels, half_buffer, data, sync);
+    }
+
+    ULONG PrepareAdcTest(double_t& reg_freq, const ros::dc::DAQ::_Channels& channels, ULONG& tm, ULONG& fifo,
+            ULONG& irq_step, ULONG& pages, size_t& half_buffer, void** data, ULONG** sync)
+    {
+        assert(_daq.device_ != nullptr);
+        assert((_daq.board_type_ == PCIA) || (_daq.board_type_ == PCIB) || (_daq.board_type_ == PCIC)
+                || (_daq.board_type_ == E440) || (_daq.board_type_ == E140) || (_daq.board_type_ == E154));  // adc_param.t1
+
+        assert(reg_freq > 0);
+        assert(!channels.empty());
+
+        ULONG status = _daq.device_->RequestBufferStream(&tm, L_STREAM_ADC);
+        if (status != L_SUCCESS) {
+            return status;
+        }
+
+        const auto rate = _daq.GetRate(_daq.adc_rate_params_, reg_freq, channels.size(), 0.1);
+
+        ADC_PAR adc_param;
+
+        memset(&adc_param, 0, sizeof(adc_param));
+        adc_param.t1.s_Type = L_ADC_PARAM;
+        adc_param.t1.AutoInit = 1;
+        adc_param.t1.dRate = _daq.adc_rate_params_.FClock / rate.first;
+        adc_param.t1.dKadr = rate.second / adc_param.t1.dRate;
+        if ((_daq.board_type_ == E440) || (_daq.board_type_ == E140) || (_daq.board_type_ == E154)) {
+            adc_param.t1.SynchroType = 0;
+        } else {
+            adc_param.t1.SynchroType = 3;
+        }
+        assert(channels.size() <= ULONG_MAX);
+        adc_param.t1.NCh = static_cast<ULONG>(channels.size());
+        assert(channels.size() <= std::size(adc_param.t1.Chn));
+        std::copy(channels.begin(), channels.end(), std::begin(adc_param.t1.Chn));
+        adc_param.t1.FIFO = fifo;
+        adc_param.t1.IrqStep = irq_step;
+        adc_param.t1.Pages = pages;
+        adc_param.t1.IrqEna = 1;
+        adc_param.t1.AdcEna = 1;
+
+        status = _daq.device_->FillDAQparameters(&adc_param.t1);
+        if (status != L_SUCCESS) {
+            return status;
+        }
+
+        const double_t old_reg_freq{reg_freq};
+        reg_freq = 1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr);
+        // большой уход выставленной от запрошенной частоты регистрации (частоты кадров)
+        if (abs(reg_freq - old_reg_freq) > (0.02 * old_reg_freq)) {
+            return 13;
+        }
+
+        status = _daq.device_->SetParametersStream(&adc_param.t1, &tm, data, (void**)sync, L_STREAM_ADC);
+        if (status != L_SUCCESS) {
+            return status;
+        }
+
+        // FillDAQparameters или SetParametersStream могли откорректировать параметры буфера
+        fifo = adc_param.t1.FIFO;
+        irq_step = adc_param.t1.IrqStep;
+        pages = adc_param.t1.Pages;
+
+        // размер половины буфера платы, в отсчётах
+        half_buffer = irq_step * pages / 2;
+
+        return status;
     }
 
 private:
@@ -153,7 +221,7 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
                 vals.insert(vals.end(), values, values + values_count);
             };
 
-            return sut.AdcRead(reg_freq, RefChannels, cancel_token, adc_read_callback);
+            return sut.AdcRead(reg_freq, RefChannels, adc_read_callback, cancel_token);
         });
 
         std::this_thread::sleep_for(std::chrono::seconds{3});
@@ -185,13 +253,19 @@ TEST_CASE("LCardDaq PrepareAdc", "[LCardDaq]") {
 
     REQUIRE(init_opt);
 
-    double_t reg_freq{RefRegFreq};
+    double_t reg_freq{90};
+    ULONG tm{10'000'000};
+    ULONG fifo{1};
+    ULONG irq_step = (reg_freq * 100) * RefChannels.size();
+    ULONG pages{4};
     size_t half_buffer{0};
     void* data{nullptr};
     ULONG* sync{nullptr};
 
     // PrepareAdc
-    const auto prepare_adc_res = sut_test.PrepareAdc(reg_freq, RefChannels, &half_buffer, &data, &sync);
+    //const auto prepare_adc_res = sut_test.PrepareAdc(reg_freq, RefChannels, half_buffer, &data, &sync);
+    const auto prepare_adc_res = sut_test.PrepareAdcTest(reg_freq, RefChannels, tm, fifo, irq_step, pages,
+            half_buffer, &data, &sync);
 
     REQUIRE(prepare_adc_res == L_SUCCESS);
     REQUIRE(double_equals(reg_freq, RefRegFreq, 0.03));

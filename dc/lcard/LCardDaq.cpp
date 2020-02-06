@@ -166,86 +166,42 @@ tl::expected<uint16_t, std::error_code> LCardDaq::TtlIn()
 // Задержка при ожидании заполнения половинки буфера при чтении
 constexpr std::chrono::milliseconds AdcFillDelay{1};
 
-tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t point_count,
+tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t points_count,
         const _Channels& channels, int16_t* values)
 {
     assert(device_ != nullptr);
 
-    assert(point_count > 0);
+    assert(points_count > 0);
     assert(!channels.empty());
     assert(values != nullptr);
 
-    size_t half_buffer{0};
-    void* data{nullptr};
-    ULONG* sync{nullptr};
+    std::atomic_bool cancel_token{false};
 
-    ULONG status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
-    if (status != L_SUCCESS) {
-        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::PrepareAdcErr));
-    }
+    int16_t* vals{values};
+    const int16_t* const vals_end{values + points_count * channels.size()};
+    // capture by ref are safe here as latter AdcRead is synchronous
+    const auto callback = [&vals, vals_end, &cancel_token](const int16_t* values, size_t values_count) {
+        assert(values != nullptr);
+        assert(values_count > 0);
 
-    // кол-во половинок, нужное для запрошенного количества точек
-    size_t half_buffer_count = point_count * channels.size() / half_buffer;
-    if (half_buffer * half_buffer_count < point_count * channels.size()) {
-        half_buffer_count++;
-    }
-    assert(half_buffer * half_buffer_count >= point_count * channels.size());
+        const auto cur_values_count = ((vals + values_count) <= vals_end) ? values_count : vals_end - vals;
+        assert(cur_values_count > 0);
+        assert(cur_values_count <= values_count);
 
-    // размер "последней половины" - чтобы завершить чтение сразу после получения запрошенного количества точек (при
-    // малой частоте сбора заполнение всей половины м.б. долгим).
-    const size_t final_half_buffer = point_count * channels.size() - (half_buffer_count - 1) * half_buffer;
+        memmove(vals, values, cur_values_count);
 
-    status = device_->InitStartLDevice();
-    if (status != L_SUCCESS) {
-        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::InitStartLDeviceErr));
-    }
+        vals += cur_values_count;
 
-    status = device_->StartLDevice();
-    if (status != L_SUCCESS) {
-        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::StartLDeviceErr));
-    }
-
-    //
-    // с момента запуска, пока мы спим - *sync увеличивается
-
-    // какой смысл использовать InterlockedExchange(&s, *sync) (как в примере)? - ведь нужно синхронизировать доступ
-    // к sync, а не к s.
-    size_t f1 = (*sync < half_buffer) ? 0 : 1;
-    size_t f2 = (*sync < half_buffer) ? 0 : 1;
-    size_t tmp_half_buffer{(half_buffer_count == 1) ? final_half_buffer : half_buffer};
-
-    for (size_t i = 0; i < half_buffer_count; i++) {
-        // ожидание заполнения очередной половины буфера
-        while (f1 == f2) {
-            std::this_thread::sleep_for(AdcFillDelay);
-
-            f2 = (*sync < tmp_half_buffer) ? 0 : 1;
+        if (vals >= vals_end) {
+            cancel_token = true;
         }
+    };
 
-        int16_t* const values_tmp = values + half_buffer * i;
-        const int16_t* const data_tmp = static_cast<int16_t*>(data) + half_buffer * f1;
-        memmove(values_tmp, data_tmp, tmp_half_buffer * sizeof(int16_t));
-
-        // для "последней половины" корректируем ожидаемое кол-во точек
-        if ((i + 1) == half_buffer_count) {
-            tmp_half_buffer = final_half_buffer;
-        }
-
-        std::this_thread::sleep_for(AdcFillDelay);
-
-        f1 = (*sync < half_buffer) ? 0 : 1;
-    }
-
-    status = device_->StopLDevice();
-    if (status != L_SUCCESS) {
-        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::StopLDeviceErr));
-    }
-
-    return {};
+    return AdcRead(reg_freq, channels, callback, cancel_token);
 }
 
 tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const _Channels& channels,
-        const std::atomic_bool& cancel_token, const std::function<AdcReadCallback>& callback)
+        const std::function<AdcReadCallback>& callback, const std::atomic_bool& cancel_token)
 {
     assert(device_ != nullptr);
 
@@ -259,7 +215,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
     //    - если скорость наполнения высокая - накапливать точки в промежуточном буфере, внутри или снаружи
     // 2. кол-во точек кратное кол-ву каналов, чтобы во всех кадрах было целое кол-во каналов (точки всех каналов)
 
-    ULONG status = PrepareAdc(reg_freq, channels, &half_buffer, &data, &sync);
+    ULONG status = PrepareAdc(reg_freq, channels, half_buffer, &data, &sync);
     if (status != L_SUCCESS) {
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::PrepareAdcErr));
     }
@@ -284,6 +240,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
 
     while (true) {
         // ожидание заполнения очередной половины буфера или отмены чтения
+        // TODO: таймаут ожидания заполнения буфера (иначе как узнать про физическое отключение платы и другие ошибки чтения)
         while ((f1 == f2) && !cancel_token) {
             std::this_thread::sleep_for(AdcFillDelay);
 
@@ -356,25 +313,25 @@ AdcRateParams LCardDaq::DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_
 
     switch (board_type) {
     case E440:
-        res = {48000.0 / 2.0, 60, 65536, 1, 65500};
+        res = {48'000.0 / 2.0, 60, 65'536, 1, 65'500};
         break;
     case E140:
         if (plata_descr.t5.Rev == 'A') {
-            res = {16000.0 / 2.0, 80, 65535, 1, 256};
+            res = {16'000.0 / 2.0, 80, 65'535, 1, 256};
         } else if (plata_descr.t5.Rev == 'B') {
-            res = {16000.0 / 2.0, 40, 65535, 1, 256};
+            res = {16'000.0 / 2.0, 40, 65'535, 1, 256};
         } else {
             assert(false);
         }
         break;
     case E154:
-        res = {48000.0 / 2.0, 10, 65530, 1, 65530};
+        res = {48'000.0 / 2.0, 10, 65'530, 1, 65'530};
         break;
     case E2010:
-        res = {30000.0, 3, 30, 1, 255};
+        res = {30'000.0, 3, 30, 1, 255};
         break;
     case E2010B:
-        res = {30000.0, 3, 30, 1, 65535};
+        res = {30'000.0, 3, 30, 1, 65'535};
         break;
     default:
         assert(false);
@@ -384,15 +341,17 @@ AdcRateParams LCardDaq::DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_
     return res;
 }
 
-ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t* half_buffer, void** data, ULONG** sync)
+ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t& half_buffer, void** data, ULONG** sync)
 {
     assert(device_ != nullptr);
-    assert((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154));  // adc_param.t1
+    assert((board_type_ == PCIA) || (board_type_ == PCIB) || (board_type_ == PCIC)
+            || (board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154));  // adc_param.t1
 
     assert(reg_freq > 0);
     assert(!channels.empty());
 
-    ULONG tm = 10000000;
+    // TODO: хватит ли 10 МБ для 2010?
+    ULONG tm = 10'000'000;
 
     ULONG status = device_->RequestBufferStream(&tm, L_STREAM_ADC);
     if (status != L_SUCCESS) {
@@ -408,21 +367,23 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t
     adc_param.t1.AutoInit = 1;
     adc_param.t1.dRate = adc_rate_params_.FClock / rate.first;
     adc_param.t1.dKadr = rate.second / adc_param.t1.dRate;
-    adc_param.t1.SynchroType = 3;
     if ((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154)) {
         adc_param.t1.SynchroType = 0;
+    } else {
+        adc_param.t1.SynchroType = 3;
     }
     assert(channels.size() <= ULONG_MAX);
     adc_param.t1.NCh = static_cast<ULONG>(channels.size());
     assert(channels.size() <= std::size(adc_param.t1.Chn));
     std::copy(channels.begin(), channels.end(), std::begin(adc_param.t1.Chn));
-    adc_param.t1.FIFO = 1024;
-    adc_param.t1.IrqStep = 1024;
-    adc_param.t1.Pages = 128;
     if ((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154)) {
         adc_param.t1.FIFO = 4096;
-        adc_param.t1.IrqStep = 4096;
-        adc_param.t1.Pages = 32;
+        adc_param.t1.IrqStep = (reg_freq * 100) * channels.size();
+        adc_param.t1.Pages = 64;
+    } else {
+        adc_param.t1.FIFO = 1024;
+        adc_param.t1.IrqStep = 1024;
+        adc_param.t1.Pages = 128;
     }
     adc_param.t1.IrqEna = 1;
     adc_param.t1.AdcEna = 1;
@@ -444,12 +405,12 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t
         return status;
     }
 
-    // SetParametersStream могла откорректировать параметры буфера
+    // FillDAQparameters или SetParametersStream могли откорректировать параметры буфера
     const ULONG irq_step = adc_param.t1.IrqStep; 
     const ULONG pages = adc_param.t1.Pages;
 
     // размер половины буфера платы, в отсчётах
-    *half_buffer = irq_step * pages / 2;
+    half_buffer = irq_step * pages / 2;
 
     // размер отсчёта
     ULONG point_size;
@@ -473,7 +434,7 @@ std::pair<uint32_t, uint16_t> LCardDaq::GetRate(const AdcRateParams& rateParams,
 
     std::pair<uint32_t, uint16_t> res{rateParams.FClock_MinDiv, rateParams.IKD_MinKoeff};
 
-    double_t dMinDelta{666666};
+    double_t dMinDelta{6'666'666};
     bool bTmp{false};
 
     for (uint32_t i1 = rateParams.FClock_MinDiv; i1 <= rateParams.FClock_MaxDiv; i1++) {

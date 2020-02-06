@@ -71,7 +71,7 @@ void OngoingReaderImpl::Start()
         // буфера АЦП
         // TODO: настраивать периодичность вызова callback (сейчас он зависит от типа платы и параметров регистрации -
         // скорости заполнения половины буфера АЦП)
-        const auto adc_read_opt = _pike->daq()->AdcRead(regFreq, channels, _cancel_token, adc_read_callback);
+        const auto adc_read_opt = _pike->daq()->AdcRead(regFreq, channels, adc_read_callback, _cancel_token);
         if (!adc_read_opt) {
             // TODO: log and return/output?
             _output->AdcError(adc_read_opt.error());
