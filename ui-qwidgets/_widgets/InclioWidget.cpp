@@ -47,6 +47,8 @@ void InclioWidget::SetAngle(double_t angle)
 
     angle_text_->setText(QString{"%1°"}.arg(angle));
 
+    //angle_ = angle;
+    //update_view();
     const auto v = (std::abs(angle - angle_) <= 180)
         ? std::make_pair(angle_, angle)
         : std::make_pair((angle_ < angle) ? 360 + angle_ : angle_, (angle_ < angle) ? angle : 360 + angle);

@@ -19,7 +19,7 @@ TEST_CASE("InclinometerImplTransTableMapper Load", "[InclinometerImplTransTableM
     const auto res = ros::devices::InclinometerImplTransTableMapper::Load(filename);
 
     REQUIRE(res.size() == 3);
-    REQUIRE(res[0] == ros::devices::InclinometerImplTransTableEntry{1, 4.1, 1.1});
-    REQUIRE(res[1] == ros::devices::InclinometerImplTransTableEntry{0, 2.58, 2.525});
-    REQUIRE(res[2] == ros::devices::InclinometerImplTransTableEntry{-1, 1.06, 4.15});
+    CHECK(res[0] == ros::devices::InclinometerImplTransTableEntry{1, 4.1, 1.1});
+    CHECK(res[1] == ros::devices::InclinometerImplTransTableEntry{0, 2.58, 2.525});
+    CHECK(res[2] == ros::devices::InclinometerImplTransTableEntry{-1, 1.06, 4.15});
 }

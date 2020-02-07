@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <functional>
@@ -39,7 +40,8 @@ public:
             const _Channels& channels, int16_t* values) = 0;
 
     virtual tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
-            const std::function<AdcReadCallback>& callback, const std::atomic_bool& cancel_token) = 0;
+            const std::function<AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
+            const std::atomic_bool& cancel_token) = 0;
 };
 
 }}

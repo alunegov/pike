@@ -72,10 +72,10 @@ TEST_CASE("SlicerImpl", "[SlicerImpl]") {
         fakeit::Verify(Method(output_mock, SliceTick)).Exactly(3);
         fakeit::Verify(Method(output_mock, TtlInTick)).Exactly(6);
 
-        REQUIRE(slice_msr.ok);
-        REQUIRE(!slice_msr.ec);
-        REQUIRE(slice_msr.inclio_angle == 10);
-        REQUIRE(slice_msr.angles == std::vector<double>{0, 1, 2});
-        REQUIRE(slice_msr.depths == std::vector<int16_t>{11, 12, 13});
+        CHECK(slice_msr.ok);
+        CHECK(!slice_msr.ec);
+        CHECK(slice_msr.inclio_angle == 10);
+        CHECK(slice_msr.angles == std::vector<double>{0, 1, 2});
+        CHECK(slice_msr.depths == std::vector<int16_t>{11, 12, 13});
     }
 }

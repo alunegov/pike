@@ -36,6 +36,8 @@ void DistanceWidget::SetDistance(double_t distance)
 
     //distance_view_->setText(QString{"%1 мм"}.arg(distance));
 
+    //distance_ = distance;
+    //update_view();
     _anim.setStartValue(distance_);
     _anim.setEndValue(distance);
 

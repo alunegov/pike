@@ -25,6 +25,8 @@ struct AdcRateParams
     uint32_t FClock_MaxDiv;
     uint16_t IKD_MinKoeff;
     uint16_t IKD_MaxKoeff;
+    uint32_t IrqStep_Min;
+    uint32_t IrqStep_Max;
 };
 
 // Плата АЦП/ЦАП/ТТЛ от Л-Кард (через lcomp)
@@ -57,7 +59,8 @@ public:
             int16_t* values) override;
 
     tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
-            const std::function<AdcReadCallback>& callback, const std::atomic_bool& cancel_token) override;
+            const std::function<AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
+            const std::atomic_bool& cancel_token) override;
 
 private:
     tl::expected<void, std::error_code> NonVirtualDeinit();
@@ -66,16 +69,20 @@ private:
 
     static AdcRateParams DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr);
 
-    ULONG PrepareAdc(double_t& reg_freq, const _Channels& channels, size_t& half_buffer, void** data, ULONG** sync);
+    ULONG PrepareAdc(double_t& reg_freq, const _Channels& channels, const std::chrono::milliseconds& tick_interval,
+            size_t& half_buffer, void** data, ULONG** sync);
 
     // копия функции ___GetRate из проекта UsbE_dll_v2
-    static std::pair<uint32_t, uint16_t> GetRate(const AdcRateParams& rateParams, double_t channelRate,
+    static std::pair<uint32_t, uint16_t> SelectRate(const AdcRateParams& rateParams, double_t channelRate,
             size_t channelCount, double_t eps);
+
+    static std::pair<uint32_t, uint32_t> SelectAdcBuffer(const AdcRateParams& rateParams, double_t channelRate,
+            size_t channelCount, const std::chrono::milliseconds& tick_interval);
 
     HINSTANCE lcomp_handle_{nullptr};
     IDaqLDevice* device_{nullptr};
     ULONG board_type_{NONE};
-    AdcRateParams adc_rate_params_{0.0, 0, 0, 0, 0};
+    AdcRateParams adc_rate_params_{};
 
     uint16_t ttl_out_value{0};
 };

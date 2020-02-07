@@ -75,24 +75,19 @@ tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, size_t
 }
 
 tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, const _Channels& channels,
-        const std::function<AdcReadCallback>& callback, const std::atomic_bool& cancel_token)
+        const std::function<AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
+        const std::atomic_bool& cancel_token)
 {
-    (void)reg_freq;
-    (void)channels;
-
     assert(reg_freq > 0);
     assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
 
-    // половина такого буфера б. заполняться за 640 мс при 12.8 кГц
-    const size_t buffer{16384};
-    const size_t half_buffer{buffer / 2};
-
-    std::vector<int16_t> data(buffer);
+    const size_t half_buffer{static_cast<size_t>(reg_freq * callback_interval.count()) * channels.size()};
+    std::vector<int16_t> data(2 * half_buffer);
 
     size_t f1 = 0;
 
     while (!cancel_token) {
-        std::this_thread::sleep_for(std::chrono::milliseconds{666});
+        std::this_thread::sleep_for(callback_interval);
 
         const int16_t* const data_tmp = data.data() + half_buffer * f1;
         // TODO: fill data_tmp with random
