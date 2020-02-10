@@ -69,10 +69,8 @@ void OngoingReaderImpl::Start()
 
         // запуск бесконечного чтения, во время которого будет вызываться adc_read_callback при заполнении половины
         // буфера АЦП
-        // TODO: настраивать периодичность вызова callback (сейчас он зависит от типа платы и параметров регистрации -
-        // скорости заполнения половины буфера АЦП)
-        const auto adc_read_opt = _pike->daq()->AdcRead(regFreq, channels, adc_read_callback,
-                std::chrono::milliseconds{555}, _cancel_token);
+        const auto adc_read_opt = _pike->daq()->AdcRead(regFreq, channels, adc_read_callback, AdcReadCallbackInterval,
+                _cancel_token);
         if (!adc_read_opt) {
             // TODO: log and return/output?
             _output->AdcError(adc_read_opt.error());
@@ -89,9 +87,6 @@ void OngoingReaderImpl::Start()
     }};*/
 
     _misc_thread = std::thread{[this]() {
-        // Задержка между чтениями depth и TtlIn (показания ender)
-        constexpr std::chrono::milliseconds MiscDelay{333};
-
         while (!_cancel_token) {
             std::this_thread::sleep_for(MiscDelay);
 

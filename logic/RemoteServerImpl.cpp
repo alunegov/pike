@@ -39,9 +39,6 @@ void RemoteServerImpl::Start()
     _cancel_token = false;
 
     _auto_reset_thread = std::thread{[this]() {
-        // Задержка между проверками для авто-сброса движения
-        constexpr std::chrono::seconds ResetDelay{1};
-
         while (!_cancel_token) {
             std::this_thread::sleep_for(ResetDelay);
 
@@ -124,9 +121,6 @@ void RemoteServerImpl::ProcessMotionData(double_t x_value, double_t y_value)
 
 void RemoteServerImpl::AutoResetMotion()
 {
-    // Период "неприхода" данных от клиента, после которого будет авто-сброс движения
-    constexpr std::chrono::seconds ResetDelta{5};
-
     std::lock_guard<std::mutex> lock{_state_locker};
 
     // сбрасываем движение, если прошло больше ResetDelta

@@ -34,6 +34,11 @@ public:
     void IdleDepth(bool value) override;
 
 private:
+    // Периодичность вызова callback из AdcRead
+    const std::chrono::milliseconds AdcReadCallbackInterval{555};
+    // Задержка между чтениями depth и TtlIn (показания ender)
+    const std::chrono::milliseconds MiscDelay{333};
+
     ros::pike::logic::Pike* _pike{nullptr};
 
     // Частота регистрации АЦП, кГц

@@ -19,10 +19,15 @@ enum class error_lcard
     ReadPlataDescrErr,
     DetectAdcRateParamsErr,
     IoAsyncErr,
-    PrepareAdcErr,
     InitStartLDeviceErr,
     StartLDeviceErr,
     StopLDeviceErr,
+    RequestBufferStreamErr,
+    FillDAQparametersErr,
+    SetParametersStreamErr,
+    GetParameterErr,
+    SetRegFreqErr,
+    NotFullCadrInHalfBuffer,
 };
 
 }

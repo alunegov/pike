@@ -63,21 +63,46 @@ public:
             const std::atomic_bool& cancel_token) override;
 
 private:
+    // TODO: use lcomp.dll for 32bit
+    const char* const LCompName{"lcomp64.dll"};
+    // Задержка при ожидании заполнения половинки буфера при чтении
+    const std::chrono::milliseconds AdcFillDelay{1};
+    // интервал получения данных через callback
+    const std::chrono::milliseconds SyncAdcReadCallbackInterval{100};
+
     tl::expected<void, std::error_code> NonVirtualDeinit();
 
     static const char* DetectBiosName(ULONG board_type);
 
     static AdcRateParams DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr);
 
-    ULONG PrepareAdc(double_t& reg_freq, const _Channels& channels, const std::chrono::milliseconds& tick_interval,
-            size_t& half_buffer, void** data, ULONG** sync);
+    tl::expected<void, std::error_code> PrepareAdc(double_t& reg_freq, const _Channels& channels,
+            const std::chrono::milliseconds& tick_interval, size_t& half_buffer, void** data, ULONG** sync);
 
-    // копия функции ___GetRate из проекта UsbE_dll_v2
-    static std::pair<uint32_t, uint16_t> SelectRate(const AdcRateParams& rateParams, double_t channelRate,
-            size_t channelCount, double_t eps);
+    struct RateParams
+    {
+        uint32_t FClock_Div;
+        uint16_t IKD_Koeff;
+    };
 
-    static std::pair<uint32_t, uint32_t> SelectAdcBuffer(const AdcRateParams& rateParams, double_t channelRate,
-            size_t channelCount, const std::chrono::milliseconds& tick_interval);
+    // Подбирает параметры для указанной частоты регистрации для обеспечения максимальной частоты в кадре и частоты
+    // channelRate между кадрами (каналами)
+    // Копия функции ___GetRate из проекта UsbE_dll_v2.
+    static RateParams SelectRate(const AdcRateParams& rateParams, double_t channelRate, size_t channelCount, double_t eps);
+
+    struct AdcBufferParams
+    {
+        ULONG FIFO;
+        ULONG IrqStep;
+        ULONG Pages;
+    };
+
+    // Подбирает параметры буфера (создаваемого драйвером в ОЗУ) таким образом, что половины буфера хватает на
+    // tick_interval мс, размер IrqStep кратен 32, количество Pages не менее 16 и размер половины буфера кратен числу
+    // каналов
+    // При задании маленького значения Pages счётчик точек sync изменяется редко и у нас callback вызывается непериодично.
+    static AdcBufferParams SelectAdcBuffer(const AdcRateParams& rateParams, double_t channelRate, size_t channelCount,
+            const std::chrono::milliseconds& tick_interval);
 
     HINSTANCE lcomp_handle_{nullptr};
     IDaqLDevice* device_{nullptr};

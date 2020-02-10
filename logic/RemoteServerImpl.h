@@ -31,6 +31,11 @@ public:
     void Stop() override;
 
 private:
+    // Задержка между проверками для авто-сброса движения
+    const std::chrono::seconds ResetDelay{1};
+    // Период "неприхода" данных от клиента, после которого будет авто-сброс движения
+    const std::chrono::seconds ResetDelta{5};
+
     void ReadPendingDatagrams();
 
     void ProcessMotionData(double_t x_value, double_t y_value);

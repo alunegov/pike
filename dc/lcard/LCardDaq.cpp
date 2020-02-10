@@ -10,9 +10,6 @@
 
 namespace ros { namespace dc { namespace lcard {
 
-// TODO: use lcomp.dll for 32bit
-const char* const LCompName{"lcomp64.dll"};
-
 LCardDaq::~LCardDaq()
 {
     NonVirtualDeinit();
@@ -164,9 +161,6 @@ tl::expected<uint16_t, std::error_code> LCardDaq::TtlIn()
     return static_cast<uint16_t>(async_param.Data[0]);
 }
 
-// Задержка при ожидании заполнения половинки буфера при чтении
-constexpr std::chrono::milliseconds AdcFillDelay{1};
-
 tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t points_count,
         const _Channels& channels, int16_t* values)
 {
@@ -198,9 +192,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
         }
     };
 
-    constexpr std::chrono::milliseconds callback_interval{100};
-
-    return AdcRead(reg_freq, channels, callback, callback_interval, cancel_token);
+    return AdcRead(reg_freq, channels, callback, SyncAdcReadCallbackInterval, cancel_token);
 }
 
 tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const _Channels& channels,
@@ -213,18 +205,12 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
     void* data{nullptr};
     ULONG* sync{nullptr};
 
-    // TODO: подгонять буфер/половину буфера под:
-    // 1. определённое время наполнения (например, 400 мс):
-    //    - если скорость наполнения низкая - уменьшать кол-во точек в шаге IrqStep или кол-во шагов Pages
-    //    - если скорость наполнения высокая - накапливать точки в промежуточном буфере, внутри или снаружи
-    // 2. кол-во точек кратное кол-ву каналов, чтобы во всех кадрах было целое кол-во каналов (точки всех каналов)
-
-    ULONG status = PrepareAdc(reg_freq, channels, callback_interval, half_buffer, &data, &sync);
-    if (status != L_SUCCESS) {
-        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::PrepareAdcErr));
+    const auto prepare_adc_opt = PrepareAdc(reg_freq, channels, callback_interval, half_buffer, &data, &sync);
+    if (!prepare_adc_opt) {
+        return tl::make_unexpected(prepare_adc_opt.error());
     }
 
-    status = device_->InitStartLDevice();
+    ULONG status = device_->InitStartLDevice();
     if (status != L_SUCCESS) {
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::InitStartLDeviceErr));
     }
@@ -345,8 +331,8 @@ AdcRateParams LCardDaq::DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_
     return res;
 }
 
-ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, const std::chrono::milliseconds& tick_interval,
-        size_t& half_buffer, void** data, ULONG** sync)
+tl::expected<void, std::error_code> LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels,
+        const std::chrono::milliseconds& tick_interval, size_t& half_buffer, void** data, ULONG** sync)
 {
     assert(device_ != nullptr);
     assert((board_type_ == PCIA) || (board_type_ == PCIB) || (board_type_ == PCIC)
@@ -360,7 +346,7 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, const 
 
     ULONG status = device_->RequestBufferStream(&tm, L_STREAM_ADC);
     if (status != L_SUCCESS) {
-        return status;
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::RequestBufferStreamErr));
     }
 
     ADC_PAR adc_param;
@@ -369,8 +355,8 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, const 
     adc_param.t1.s_Type = L_ADC_PARAM;
     adc_param.t1.AutoInit = 1;
     const auto rate = SelectRate(adc_rate_params_, reg_freq, channels.size(), 0.1);
-    adc_param.t1.dRate = adc_rate_params_.FClock / rate.first;
-    adc_param.t1.dKadr = rate.second / adc_param.t1.dRate;
+    adc_param.t1.dRate = adc_rate_params_.FClock / rate.FClock_Div;
+    adc_param.t1.dKadr = rate.IKD_Koeff / adc_param.t1.dRate;
     if ((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154)) {
         adc_param.t1.SynchroType = 0;
     } else {
@@ -380,31 +366,24 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, const 
     adc_param.t1.NCh = static_cast<ULONG>(channels.size());
     assert(channels.size() <= std::size(adc_param.t1.Chn));
     std::copy(channels.begin(), channels.end(), std::begin(adc_param.t1.Chn));
-    if ((board_type_ == E440) || (board_type_ == E140) || (board_type_ == E154)) {
-        const auto adc_buffer = SelectAdcBuffer(adc_rate_params_, reg_freq, channels.size(), tick_interval);
-
-        adc_param.t1.FIFO = 4096;
-        adc_param.t1.IrqStep = adc_buffer.first;
-        adc_param.t1.Pages = adc_buffer.second;
-    } else {
-        adc_param.t1.FIFO = 1024;
-        adc_param.t1.IrqStep = 1024;
-        adc_param.t1.Pages = 128;
-    }
+    const auto adc_buffer = SelectAdcBuffer(adc_rate_params_, reg_freq, channels.size(), tick_interval);
+    adc_param.t1.FIFO = adc_buffer.FIFO;
+    adc_param.t1.IrqStep = adc_buffer.IrqStep;
+    adc_param.t1.Pages = adc_buffer.Pages;
     adc_param.t1.IrqEna = 1;
     adc_param.t1.AdcEna = 1;
 
     // может откорректировать dRate, dKadr, FIFO, IrqStep и NCh в adc_param
     status = device_->FillDAQparameters(&adc_param.t1);
     if (status != L_SUCCESS) {
-        return status;
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::FillDAQparametersErr));
     }
     assert(adc_param.t1.NCh == static_cast<ULONG>(channels.size()));
 
     // может откорректировать FIFO, IrqStep и Pages в adc_param
     status = device_->SetParametersStream(&adc_param.t1, &tm, data, (void**)sync, L_STREAM_ADC);
     if (status != L_SUCCESS) {
-        return status;
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::SetParametersStreamErr));
     }
     assert(adc_param.t1.IrqStep * adc_param.t1.Pages == tm);
 
@@ -412,7 +391,7 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, const 
     reg_freq = 1 / ((channels.size() - 1) / adc_param.t1.dRate + adc_param.t1.dKadr);
     // большой уход выставленной от запрошенной частоты регистрации (частоты кадров)
     if (abs(reg_freq - old_reg_freq) > (0.02 * old_reg_freq)) {
-        return 13;
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::SetRegFreqErr));
     }
 
     // размер половины буфера платы, в отсчётах
@@ -420,27 +399,31 @@ ULONG LCardDaq::PrepareAdc(double_t& reg_freq, const _Channels& channels, const 
     const ULONG pages = adc_param.t1.Pages;
     half_buffer = irq_step * pages / 2;
     assert(half_buffer * 2 == irq_step * pages);
-    assert(half_buffer % channels.size() == 0);
+
+    // чтобы в последнем кадре были все каналы
+    if (half_buffer % channels.size() != 0) {
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::NotFullCadrInHalfBuffer));
+    }
 
     // размер отсчёта
     ULONG point_size;
     status = device_->GetParameter(L_POINT_SIZE, &point_size);
     if (status != L_SUCCESS) {
-        return status;
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::GetParameterErr));
     }
     assert(point_size == sizeof(int16_t));
 
-    return status;
+    return {};
 }
 
-std::pair<uint32_t, uint16_t> LCardDaq::SelectRate(const AdcRateParams& rateParams, double_t channelRate,
-        size_t channelCount, double_t eps)
+LCardDaq::RateParams LCardDaq::SelectRate(const AdcRateParams& rateParams, double_t channelRate, size_t channelCount,
+        double_t eps)
 {
     assert(channelRate > 0);
     assert(channelCount > 0);
     assert(eps > 0);
 
-    std::pair<uint32_t, uint16_t> res{rateParams.FClock_MinDiv, rateParams.IKD_MinKoeff};
+    LCardDaq::RateParams res{rateParams.FClock_MinDiv, rateParams.IKD_MinKoeff};
 
     double_t dMinDelta{666'666};
     bool bTmp{false};
@@ -464,9 +447,9 @@ std::pair<uint32_t, uint16_t> LCardDaq::SelectRate(const AdcRateParams& ratePara
 
         if ((d3 < dMinDelta) || (i2 == rateParams.IKD_MinKoeff)) {
             dMinDelta = d3;
-            res.first = i1; 
+            res.FClock_Div = i1; 
             assert(i2 <= UINT16_MAX);
-            res.second = static_cast<uint16_t>(i2);
+            res.IKD_Koeff = static_cast<uint16_t>(i2);
         }
 
         if ((d3 < eps) && !bTmp) {
@@ -477,31 +460,44 @@ std::pair<uint32_t, uint16_t> LCardDaq::SelectRate(const AdcRateParams& ratePara
     return res;
 }
 
-std::pair<uint32_t, uint32_t> LCardDaq::SelectAdcBuffer(const AdcRateParams& rateParams, double_t channelRate,
+// в примере было для E440/E140/E154 - 4096/4096/32, для PCIA/PCIB/PCIC - 1024/1024/128
+LCardDaq::AdcBufferParams LCardDaq::SelectAdcBuffer(const AdcRateParams& rateParams, double_t channelRate,
         size_t channelCount, const std::chrono::milliseconds& tick_interval)
 {
-    const auto points_in_tick{static_cast<size_t>(channelRate * tick_interval.count() * channelCount)};
-    assert(points_in_tick >= 1);
+    assert(channelRate > 0);
+    assert(channelCount > 0);
+    assert(tick_interval.count() > 0);
 
     // TODO: НОД rateParams.IrqStep_Min и channelCount для irq_step
-    std::pair<uint32_t, uint32_t> res{rateParams.IrqStep_Min * channelCount, 2};
+    assert(rateParams.IrqStep_Min * channelCount <= ULONG_MAX);
+    LCardDaq::AdcBufferParams res{4096, static_cast<ULONG>(rateParams.IrqStep_Min * channelCount), 2};
+
+    auto points_in_tick{static_cast<size_t>(channelRate * tick_interval.count() * channelCount)};
+    // слишком маленький полу-буфер - делаем хотя бы на кадр
+    if (points_in_tick == 0) {
+        points_in_tick = channelCount;
+    }
+
     double_t min_delta{6'666'666};
 
+    // irq_step д.б. кратен 32
     for (size_t irq_step = rateParams.IrqStep_Min; irq_step <= rateParams.IrqStep_Max; irq_step += 32) {
-        auto pages = 2 * points_in_tick / irq_step;
+        const auto pages = 2 * points_in_tick / irq_step;
         if (pages < 16) {
             continue;
         }
 
-        auto half_buffer = irq_step * pages / 2;
+        const auto half_buffer = irq_step * pages / 2;
         if (half_buffer % channelCount != 0) {
             continue;
         }
 
         if (std::abs((double_t)half_buffer - points_in_tick) <= min_delta) {
             min_delta = std::abs((double_t)half_buffer - points_in_tick);
-            res.first = irq_step;
-            res.second = pages;
+            assert(irq_step <= ULONG_MAX);
+            res.IrqStep = static_cast<ULONG>(irq_step);
+            assert(pages <= ULONG_MAX);
+            res.Pages = static_cast<ULONG>(pages);
         }
     }
 

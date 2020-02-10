@@ -63,10 +63,10 @@ tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, size_t
 
     assert(reg_freq > 0);
     assert(points_count > 0);
-    assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
+    assert(!channels.empty());
     assert(values != nullptr);
 
-    const auto reg_time = std::llround(points_count * channels.size() / reg_freq);
+    const auto reg_time{static_cast<std::chrono::milliseconds::rep>(points_count * channels.size() / reg_freq)};
     std::this_thread::sleep_for(std::chrono::milliseconds{reg_time});
 
     // TODO: fill values with random
@@ -79,10 +79,17 @@ tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, const 
         const std::atomic_bool& cancel_token)
 {
     assert(reg_freq > 0);
-    assert((0 < channels.size()) && (channels.size() <= ULONG_MAX));
+    assert(!channels.empty());
+    assert(callback_interval.count() > 0);
 
-    const size_t half_buffer{static_cast<size_t>(reg_freq * callback_interval.count()) * channels.size()};
-    std::vector<int16_t> data(2 * half_buffer);
+    // подбираем размер буфера так, чтобы он наполн€лс€ за callback_interval мс с частотой сбора reg_freq √ц
+    auto half_buffer{static_cast<size_t>(reg_freq * callback_interval.count()) * channels.size()};
+    // слишком маленький полу-буфер - делаем хот€ бы на кадр
+    if (half_buffer == 0) {
+        half_buffer = channels.size();
+    }
+
+    const std::vector<int16_t> data(2 * half_buffer);
 
     size_t f1 = 0;
 

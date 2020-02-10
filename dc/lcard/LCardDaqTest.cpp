@@ -17,22 +17,21 @@ public:
         _daq{daq}
     {}
 
-    ULONG PrepareAdc(double_t& reg_freq, const ros::dc::DAQ::_Channels& channels,
+    tl::expected<void, std::error_code> PrepareAdc(double_t& reg_freq, const ros::dc::DAQ::_Channels& channels,
             const std::chrono::milliseconds& tick_interval, size_t& half_buffer, void** data, ULONG** sync)
     {
         return _daq.PrepareAdc(reg_freq, channels, tick_interval, half_buffer, data, sync);
     }
 
+    static ros::dc::lcard::LCardDaq::AdcBufferParams SelectAdcBuffer(const ros::dc::lcard::AdcRateParams& rateParams,
+            double_t channelRate, size_t channelCount, const std::chrono::milliseconds& tick_interval)
+    {
+        return ros::dc::lcard::LCardDaq::SelectAdcBuffer(rateParams, channelRate, channelCount, tick_interval);
+    }
+
 private:
     ros::dc::lcard::LCardDaq& _daq;
 };
-
-template <typename T,
-    std::enable_if_t<std::is_floating_point<T>::value, int> = 0>
-constexpr bool double_equals(T a, T b, double_t eps = 0.01)
-{
-    return std::abs(a - b) < eps;
-}
 
 // экспорт сигнала в файл в формате dsv
 template <typename T>
@@ -131,13 +130,13 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
         const auto adc_read_opt = sut.AdcRead(reg_freq, points_count, RefChannels, vals.data());
 
         REQUIRE(adc_read_opt);
-        CHECK(double_equals(reg_freq, RefRegFreq, 0.03));
+        CHECK(reg_freq == Approx(RefRegFreq).epsilon(0.02));
 
         const size_t test_points_count{points_count};
         const auto max_harm = FindMaxHarmonicInChannel(vals, test_points_count, RefChannels.size(), 0, reg_freq);
 
         REQUIRE(std::get<2>(max_harm) != -1);
-        CHECK(double_equals(std::get<1>(max_harm), 262.0, 1.0));
+        CHECK(std::get<1>(max_harm) == Approx(262).margin(1.0));
     }
 
     SECTION("async mode") {
@@ -163,7 +162,7 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
         const auto adc_read_opt = adc_read_f.get();
 
         REQUIRE(adc_read_opt);
-        CHECK(double_equals(reg_freq, RefRegFreq, 0.03));
+        CHECK(reg_freq == Approx(RefRegFreq).epsilon(0.02));
         REQUIRE(callback_counter > 0);
         REQUIRE(vals.size() > 0);
 
@@ -171,13 +170,15 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
         const auto max_harm = FindMaxHarmonicInChannel(vals, test_points_count, RefChannels.size(), 0, reg_freq);
 
         REQUIRE(std::get<2>(max_harm) != -1);
-        CHECK(double_equals(std::get<1>(max_harm), 262.0, 1.0));
+        CHECK(std::get<1>(max_harm) == Approx(262).margin(1.0));
     }
 
     sut.Deinit();
 }
 
 TEST_CASE("LCardDaq PrepareAdc", "[LCardDaq]") {
+    const std::chrono::milliseconds RefCallbackInterval{555};
+
     ros::dc::lcard::LCardDaq sut;
     LCardDaqTest sut_test{sut};
 
@@ -186,20 +187,39 @@ TEST_CASE("LCardDaq PrepareAdc", "[LCardDaq]") {
 
     REQUIRE(init_opt);
 
+    // PrepareAdc
     double_t reg_freq{RefRegFreq};
     size_t half_buffer{0};
     void* data{nullptr};
     ULONG* sync{nullptr};
+    
+    const auto prepare_adc_opt = sut_test.PrepareAdc(reg_freq, RefChannels, RefCallbackInterval, half_buffer, &data, &sync);
 
-    // PrepareAdc
-    const auto prepare_adc_res = sut_test.PrepareAdc(reg_freq, RefChannels, std::chrono::milliseconds{600},
-            half_buffer, &data, &sync);
-
-    REQUIRE(prepare_adc_res == L_SUCCESS);
-    CHECK(double_equals(reg_freq, RefRegFreq, 0.02 * RefRegFreq));
-    CHECK(half_buffer / RefChannels.size() / reg_freq == 600);
+    REQUIRE(prepare_adc_opt);
+    CHECK(reg_freq == Approx(RefRegFreq).epsilon(0.02));
+    CHECK(half_buffer % RefChannels.size() == 0);
+    CHECK(half_buffer / RefChannels.size() / reg_freq == Approx(RefCallbackInterval.count()).margin(30));
     CHECK(data != nullptr);
-    CHECK(sync != nullptr);
+    REQUIRE(sync != nullptr);
+    CHECK(*sync == 0);
 
     sut.Deinit();
+}
+
+TEST_CASE("LCardDaq SelectAdcBuffer", "[LCardDaq]") {
+    ros::dc::lcard::AdcRateParams rateParams{};
+    rateParams.IrqStep_Min = 32;
+    rateParams.IrqStep_Max = 64000;
+    auto channelRate = GENERATE(range(3.0, 400.0, 11.1));
+    auto channelCount = GENERATE(range(1, 32, 1));
+    auto tick_interval_ = GENERATE(range(100, 3000, 111));
+
+    const std::chrono::milliseconds tick_interval{tick_interval_};
+    const auto adc_buffer = LCardDaqTest::SelectAdcBuffer(rateParams, channelRate, channelCount, tick_interval);
+
+    CHECK(adc_buffer.FIFO != 0);
+    CHECK(adc_buffer.IrqStep % 32 == 0);
+    const size_t half_buffer{adc_buffer.IrqStep * adc_buffer.Pages / 2};
+    CHECK(half_buffer % channelCount == 0);
+    CHECK(half_buffer / channelCount / channelRate == Approx(tick_interval.count()).margin(30));
 }
