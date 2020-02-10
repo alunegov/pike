@@ -1,6 +1,6 @@
 # pike
 
-## Build
+## Сборка
 
 Для сборки используется CMake, VS2015. Внешние зависимости - Qt5.
 
@@ -13,7 +13,7 @@ cmake --build . --target ALL_BUILD --config Release
 
 где ${VS_QT} - путь к тулчейну QT (например, C:/Qt/Qt5.12.3/5.12.3/msvc2015_64).
 
-### Build and run tests
+### Сборка с тестами
 
 ```
 cmake -G"Visual Studio 14 2015" -Ax64 -DQt5_DIR=${VS_QT}/lib/cmake/Qt5 -DBUILD_TESTING=ON ..
@@ -22,6 +22,21 @@ cmake --build . --target ALL_BUILD --config Release
 cmake --build . --target RUN_TESTS --config Release
 ctest
 ```
+
+## Дистрибутив
+
+Дистрибутив должен содержать следующие файлы:
+- conf.json (из `_misc/deploy`)
+- e440.bio (или другой биос для используемой АЦП) (из `_ext/lcomp/bios`)
+- inclinometer.tbl (из `_misc/deploy`)
+- lcomp64.dll (из `_ext/lcomp/lib`)
+- pike-qwidgets.exe
+- Qt5Core.dll
+- Qt5Gui.dll
+- Qt5Network.dll
+- Qt5Widgets.dll
+
+Для сбора необходимых файлов Qt рекомендуется использовать windeployqt.exe (для примера см. Korsar3RPi).
 
 ## Архитектура ПО
 
@@ -48,7 +63,7 @@ ctest
 
 ### Реализация logic
 
-- Conf - Конфигурация ПО через файл Conf.json.
+- Conf - Конфигурация ПО через файл conf.json.
 - OngoingReader - Режим измерения пройденного расстояния, положения в пространстве, состояния "концевых" датчиков и глубины. Измерение идёт постоянно, кроме "концевых" датчиков и глубины, которые "приостанавливаются" на время измерения сечения (Slicer).
 - Pike - "Пика". По идее сюда нужно перенести управление перемещением, вращением и измерением сечения из MainPresenterImpl.
 - RemoteServer - Режим приёма событий от джойстка, подключенного на удалённом копьютере, через UDP.
