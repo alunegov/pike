@@ -31,40 +31,7 @@ MainPresenterImpl::MainPresenterImpl(ros::pike::logic::Pike* pike, ros::pike::lo
 
 MainPresenterImpl::~MainPresenterImpl()
 {
-    if (pike_ != nullptr) {
-        if (pike_->IsMoving()) {
-            const auto mover_stop_opt = pike_->mover()->Stop();
-            if (!mover_stop_opt) {
-                // TODO: log
-                //"mover stop error: " + mover_stop_opt.error().message()
-            }
-            // TODO: уместно ли сбрасывать is_moving в случае ошибки mover()->Stop()?
-            pike_->SetIsMoving(false);
-        }
-
-        if (pike_->IsRotating()) {
-            pike_->rotator()->Stop();
-            pike_->SetIsRotating(false);
-        }
-
-        //pike_->rotator()->SetOutput(nullptr);
-    }
-
-    if (ongoingReader_ != nullptr) {
-        ongoingReader_->Stop();
-
-        //ongoingReader_->SetOutput(nullptr);
-    }
-    if (remote_ != nullptr) {
-        remote_->Stop();
-        
-        //remote_->SetOutput(nullptr);
-    }
-
-    if (slice_thread_.joinable()) {
-        slice_cancel_token_ = true;
-        slice_thread_.join();
-    }
+    NonVirtualOnHide();
 }
 
 void MainPresenterImpl::SetView(ros::pike::modules::MainView* view)
@@ -77,6 +44,11 @@ void MainPresenterImpl::OnShow()
 {
     ongoingReader_->Start();
     remote_->Start();
+}
+
+void MainPresenterImpl::OnHide()
+{
+    NonVirtualOnHide();
 }
 
 void MainPresenterImpl::StartMovement(ros::devices::MoverDirection dir)
@@ -413,6 +385,45 @@ void MainPresenterImpl::RotateError(const std::error_code& ec)
 
             InternalStopRotation();
         });
+    }
+}
+
+void MainPresenterImpl::NonVirtualOnHide()
+{
+    if (pike_ != nullptr) {
+        if (pike_->IsMoving()) {
+            const auto mover_stop_opt = pike_->mover()->Stop();
+            if (!mover_stop_opt) {
+                // TODO: log
+                //"mover stop error: " + mover_stop_opt.error().message()
+            }
+            // TODO: уместно ли сбрасывать is_moving в случае ошибки mover()->Stop()?
+            pike_->SetIsMoving(false);
+        }
+
+        if (pike_->IsRotating()) {
+            pike_->rotator()->Stop();
+            pike_->SetIsRotating(false);
+        }
+
+        //pike_->rotator()->SetOutput(nullptr);
+    }
+
+    if (ongoingReader_ != nullptr) {
+        ongoingReader_->Stop();
+
+        //ongoingReader_->SetOutput(nullptr);
+    }
+
+    if (remote_ != nullptr) {
+        remote_->Stop();
+        
+        //remote_->SetOutput(nullptr);
+    }
+
+    slice_cancel_token_ = true;
+    if (slice_thread_.joinable()) {
+        slice_thread_.join();
     }
 }
 

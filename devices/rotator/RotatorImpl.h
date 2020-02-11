@@ -55,9 +55,11 @@ public:
     tl::expected<void, std::error_code> Step() override;
 
 private:
-    tl::expected<void, std::error_code> applyDirection();
+    void NonVirtualStop();
 
-    tl::expected<void, std::error_code> applySpeed();
+    tl::expected<void, std::error_code> ApplyDirection();
+
+    tl::expected<void, std::error_code> ApplySpeed();
 
     ros::dc::DAQ* daq_{nullptr};
     uint16_t enable_pin_{0};

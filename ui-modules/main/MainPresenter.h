@@ -19,6 +19,8 @@ public:
 
     virtual void OnShow() = 0;
 
+    virtual void OnHide() = 0;
+
     virtual void StartMovement(ros::devices::MoverDirection dir) = 0;
 
     virtual void StopMovement() = 0;

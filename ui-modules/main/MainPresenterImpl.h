@@ -39,6 +39,8 @@ public:
 
     void OnShow() override;
 
+    void OnHide() override;
+
     void StartMovement(ros::devices::MoverDirection dir) override;
 
     void StopMovement() override;
@@ -98,6 +100,8 @@ public:
     void RotateError(const std::error_code& ec) override;
 
 private:
+    void NonVirtualOnHide();
+
     void InternalStartMovement(bool is_fwd, bool remote);
 
     void InternalStopMovement();

@@ -11,12 +11,7 @@ namespace ros { namespace pike { namespace logic {
 
 RemoteServerImpl::~RemoteServerImpl()
 {
-    delete _recv_socket;
-
-    _cancel_token = true;
-    if (_auto_reset_thread.joinable()) {
-        _auto_reset_thread.join();
-    }
+    NonVirtualStop();
 }
 
 void RemoteServerImpl::SetOutput(RemoteServerOutput* output)
@@ -49,14 +44,20 @@ void RemoteServerImpl::Start()
 
 void RemoteServerImpl::Stop()
 {
-    assert(_recv_socket != nullptr);
-    assert(_auto_reset_thread.joinable());
+    //assert((_recv_socket != nullptr) && _auto_reset_thread.joinable());
 
+    NonVirtualStop();
+}
+
+void RemoteServerImpl::NonVirtualStop()
+{
     delete _recv_socket;
     _recv_socket = nullptr;
 
     _cancel_token = true;
-    _auto_reset_thread.join();
+    if (_auto_reset_thread.joinable()) {
+        _auto_reset_thread.join();
+    }
 }
 
 void RemoteServerImpl::ReadPendingDatagrams()

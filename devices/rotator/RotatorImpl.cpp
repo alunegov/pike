@@ -9,10 +9,7 @@ namespace ros { namespace devices {
 
 RotatorImpl::~RotatorImpl()
 {
-    if (rotate_thread_.joinable()) {
-        rotate_cancel_token_ = true;
-        rotate_thread_.join();
-    }
+    NonVirtualStop();
 }
 
 void RotatorImpl::SetOutput(RotatorOutput* output)
@@ -75,11 +72,9 @@ tl::expected<void, std::error_code> RotatorImpl::Start()
 
 void RotatorImpl::Stop()
 {
-    assert(rotate_thread_.joinable());
+    //assert(rotate_thread_.joinable());
 
-    // останов (и завершение) потока, генерирующего step
-    rotate_cancel_token_ = true;
-    rotate_thread_.join();
+    NonVirtualStop();
 }
 
 tl::expected<void, std::error_code> RotatorImpl::Rotate(size_t steps_count)
@@ -122,8 +117,8 @@ tl::expected<void, std::error_code> RotatorImpl::PreStep()
 {
     //assert(!rotate_thread_.joinable());
 
-    return applyDirection()
-        .and_then([this]() { return applySpeed(); });
+    return ApplyDirection()
+        .and_then([this]() { return ApplySpeed(); });
 }
 
 tl::expected<void, std::error_code> RotatorImpl::Step()
@@ -133,7 +128,15 @@ tl::expected<void, std::error_code> RotatorImpl::Step()
         .and_then([this]() { return daq_->TtlOut_ClrPin(step_pin_); });  // delay MIN 1.9 microsec
 }
 
-tl::expected<void, std::error_code> RotatorImpl::applyDirection()
+void RotatorImpl::NonVirtualStop()
+{
+    rotate_cancel_token_ = true;
+    if (rotate_thread_.joinable()) {
+        rotate_thread_.join();
+    }
+}
+
+tl::expected<void, std::error_code> RotatorImpl::ApplyDirection()
 {
     tl::expected<void, std::error_code> res;
 
@@ -154,7 +157,7 @@ tl::expected<void, std::error_code> RotatorImpl::applyDirection()
     return res;
 }
 
-tl::expected<void, std::error_code> RotatorImpl::applySpeed()
+tl::expected<void, std::error_code> RotatorImpl::ApplySpeed()
 {
     tl::expected<void, std::error_code> res;
 

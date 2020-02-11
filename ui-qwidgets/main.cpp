@@ -87,58 +87,45 @@ int main(int argc, char** argv)
     }
 
     // dc and devices
-    //auto const daq = new ros::dc::lcard::LCardDaq;
-    auto const daq = new ros::dc::dummy::DummyDaq;
-    const auto daq_init_opt = daq->Init(conf.daq.slot);
+    //ros::dc::lcard::LCardDaq daq;
+    ros::dc::dummy::DummyDaq daq;
+    const auto daq_init_opt = daq.Init(conf.daq.slot);
     if (!daq_init_opt) {
         // TODO: log and cleanup
         QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq init error: " + daq_init_opt.error().message()));
 
-        delete daq;
-
         return 1;
     }
     // плата "закроется" в pike, или при удалении daq
-    const auto daq_ttlin_enable_opt = daq->TtlEnable(true);
+    const auto daq_ttlin_enable_opt = daq.TtlEnable(true);
     if (!daq_ttlin_enable_opt) {
         // TODO: log and cleanup
         QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq ttl enable error: " + daq_ttlin_enable_opt.error().message()));
 
-        delete daq;
-
         return 1;
     }
 
-    auto const ender1 = new ros::devices::EnderImpl{daq, conf.ender1.pin};
+    ros::devices::EnderImpl ender1{&daq, conf.ender1.pin};
 
-    auto const ender2 = new ros::devices::EnderImpl{daq, conf.ender2.pin};
+    ros::devices::EnderImpl ender2{&daq, conf.ender2.pin};
 
-    auto const rotator = new ros::devices::RotatorImpl{daq, conf.rotator.en_pin, conf.rotator.step_pin, conf.rotator.dir_pin,
+    ros::devices::RotatorImpl rotator{&daq, conf.rotator.en_pin, conf.rotator.step_pin, conf.rotator.dir_pin,
             conf.rotator.mx_pin, conf.rotator.steps_per_msr, conf.rotator.steps_per_view};
 
-    auto const mover = new ros::devices::MoverImpl{daq, conf.mover.pwm_pin, conf.mover.dir_pin};
+    ros::devices::MoverImpl mover{&daq, conf.mover.pwm_pin, conf.mover.dir_pin};
 
-    auto const odometer = new ros::devices::OdometerImpl{conf.odometer.a_channel, conf.odometer.b_channel,
-            conf.odometer.threshold, conf.odometer.distance_per_pulse};
+    ros::devices::OdometerImpl odometer{conf.odometer.a_channel, conf.odometer.b_channel, conf.odometer.threshold,
+            conf.odometer.distance_per_pulse};
 
     const auto trans_table = ros::devices::InclinometerImplTransTableMapper::Load(conf.inclinometer.trans_table_file);
     if (trans_table.size() < 2) {
         // TODO: log and cleanup
         QMessageBox::critical(nullptr, "pike", QString::fromStdString("empty trans table"));
 
-        delete ender1;
-        delete ender2;
-        delete rotator;
-        delete mover;
-        delete odometer;
-
-        delete daq;
-
         return 1;
     }
 
-    auto const inclinometer = new ros::devices::InclinometerImpl{conf.inclinometer.x_channel, conf.inclinometer.y_channel,
-            trans_table};
+    ros::devices::InclinometerImpl inclinometer{conf.inclinometer.x_channel, conf.inclinometer.y_channel, trans_table};
 
     ce::ceSerial depthometer_transport{conf.depthometer.port_name, conf.depthometer.baud_rate, 8, 'N', 1};
     const auto open_res = depthometer_transport.Open();
@@ -147,70 +134,44 @@ int main(int argc, char** argv)
         QMessageBox::critical(nullptr, "pike", QString("COM open error: %1").arg(open_res));
 
 #ifdef NDEBUG
-        delete ender1;
-        delete ender2;
-        delete rotator;
-        delete mover;
-        delete odometer;
-        delete inclinometer;
-
-        delete daq;
-
         return 1;
 #endif
     }
     // порт закроется в depthometer, или при удалении depthometer_transport (в конце main)
 
-    auto const depthometer = new ros::devices::CD22{depthometer_transport};
+    ros::devices::CD22 depthometer{depthometer_transport};
 
     // logic/interactors/save-mappers
-    auto const pike = new ros::pike::logic::PikeImpl{daq, ender1, ender2, rotator, mover, odometer, inclinometer, depthometer};
+    ros::pike::logic::PikeImpl pike{&daq, &ender1, &ender2, &rotator, &mover, &odometer, &inclinometer, &depthometer};
     
-    auto const ongoingReader = new ros::pike::logic::OngoingReaderImpl{pike, conf.daq.adc_rate};
+    ros::pike::logic::OngoingReaderImpl ongoingReader{&pike, conf.daq.adc_rate};
 
-    auto const slicer = new ros::pike::logic::SlicerImpl{pike};
+    ros::pike::logic::SlicerImpl slicer{&pike};
 
-    auto const sliceMsrMapper = new ros::pike::logic::SliceMsrMapperImpl;
+    ros::pike::logic::SliceMsrMapperImpl sliceMsrMapper;
 
-    auto const remoteServer = new ros::pike::logic::RemoteServerImpl{conf.remote.port};
+    ros::pike::logic::RemoteServerImpl remoteServer{conf.remote.port};
 
     // presenter and view
-    auto const mainPresenterImpl = new ros::pike::modules::MainPresenterImpl{pike, ongoingReader, slicer, sliceMsrMapper,
-            remoteServer};
+    ros::pike::modules::MainPresenterImpl mainPresenterImpl{&pike, &ongoingReader, &slicer, &sliceMsrMapper, &remoteServer};
 
     const auto setStatusMsgFunc = [&win](const std::string& msg) {
         assert(win.statusBar() != nullptr);
         win.statusBar()->showMessage(QString::fromStdString(msg));
     };
 
-    auto const mainViewImpl = new ros::pike::ui::MainViewImpl{mainPresenterImpl, conf.object_length, setStatusMsgFunc};
+    auto const mainViewImpl = new ros::pike::ui::MainViewImpl{&mainPresenterImpl, conf.object_length, setStatusMsgFunc};
     // выставляем mainview как центральный виджет QMainWindow
     win.setCentralWidget(mainViewImpl);
 
     const auto app_res = QApplication::exec();
 
+    // останавливаем всю обработку
+    mainPresenterImpl.OnHide();
+
     // забираем управление mainview и сами удаляем его (иначе он удалится через DeleteLater)
     win.takeCentralWidget();
     delete mainViewImpl;
-
-    delete mainPresenterImpl;
-
-    delete ongoingReader;
-    delete slicer;
-    delete sliceMsrMapper;
-    delete remoteServer;
-
-    delete pike;
-
-    delete ender1;
-    delete ender2;
-    delete rotator;
-    delete mover;
-    delete odometer;
-    delete inclinometer;
-    delete depthometer;
-
-    delete daq;
 
     return app_res;
 }

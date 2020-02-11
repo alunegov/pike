@@ -39,6 +39,8 @@ private:
     // Задержка между чтениями depth и TtlIn (показания ender)
     const std::chrono::milliseconds MiscDelay{333};
 
+    void NonVirtualStop();
+
     ros::pike::logic::Pike* _pike{nullptr};
 
     // Частота регистрации АЦП, кГц

@@ -10,16 +10,7 @@ namespace ros { namespace pike { namespace logic {
 
 OngoingReaderImpl::~OngoingReaderImpl()
 {
-    _cancel_token = true;
-    if (_adc_gather_thread.joinable()) {
-        _adc_gather_thread.join();
-    }
-    /*if (_adc_process_thread.joinable()) {
-        _adc_process_thread.join();
-    }*/
-    if (_misc_thread.joinable()) {
-        _misc_thread.join();
-    }
+    NonVirtualStop();
 }
 
 void OngoingReaderImpl::SetOutput(OngoingReaderOutput* output)
@@ -115,17 +106,28 @@ void OngoingReaderImpl::Start()
 
 void OngoingReaderImpl::Stop()
 {
-    assert(_adc_gather_thread.joinable()/* && _adc_process_thread.joinable()*/ && _misc_thread.joinable());
+    //assert(_adc_gather_thread.joinable()/* && _adc_process_thread.joinable()*/ && _misc_thread.joinable());
 
-    _cancel_token = true;
-    _adc_gather_thread.join();
-    //_adc_process_thread.join();
-    _misc_thread.join();
+    NonVirtualStop();
 }
 
 void OngoingReaderImpl::IdleDepth(bool value)
 {
     _depth_idle_token = value;
+}
+
+void OngoingReaderImpl::NonVirtualStop()
+{
+    _cancel_token = true;
+    if (_adc_gather_thread.joinable()) {
+        _adc_gather_thread.join();
+    }
+    /*if (_adc_process_thread.joinable()) {
+        _adc_process_thread.join();
+    }*/
+    if (_misc_thread.joinable()) {
+        _misc_thread.join();
+    }
 }
 
 }}}

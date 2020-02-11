@@ -36,6 +36,8 @@ private:
     // Период "неприхода" данных от клиента, после которого будет авто-сброс движения
     const std::chrono::seconds ResetDelta{5};
 
+    void NonVirtualStop();
+
     void ReadPendingDatagrams();
 
     void ProcessMotionData(double_t x_value, double_t y_value);
