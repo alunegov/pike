@@ -87,8 +87,12 @@ int main(int argc, char** argv)
     }
 
     // dc and devices
+#ifdef NDEBUG
+    ros::dc::lcard::LCardDaq daq;
+#else
     //ros::dc::lcard::LCardDaq daq;
     ros::dc::dummy::DummyDaq daq;
+#endif
     const auto daq_init_opt = daq.Init(conf.daq.slot);
     if (!daq_init_opt) {
         // TODO: log and cleanup
