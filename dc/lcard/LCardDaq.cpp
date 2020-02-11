@@ -81,6 +81,12 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::ReadPlataDescrErr));
     }
 
+    status = device_->EnableCorrection();
+    if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) {
+        Deinit();
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::EnableCorrectionErr));
+    }
+
     adc_rate_params_ = DetectAdcRateParams(board_type_, plata_descr);
     if (adc_rate_params_.FClock == 0) {
         Deinit();

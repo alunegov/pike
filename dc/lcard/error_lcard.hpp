@@ -17,6 +17,7 @@ enum class error_lcard
     GetSlotParamErr,
     LoadBiosErr,
     ReadPlataDescrErr,
+    EnableCorrectionErr,
     DetectAdcRateParamsErr,
     IoAsyncErr,
     InitStartLDeviceErr,

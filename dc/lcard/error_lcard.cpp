@@ -25,6 +25,8 @@ std::string error_lcard_messages::message(int ev) const
         return "LoadBiosErr";
     case error_lcard::ReadPlataDescrErr:
         return "ReadPlataDescrErr";
+    case error_lcard::EnableCorrectionErr:
+        return "EnableCorrectionErr";
     case error_lcard::DetectAdcRateParamsErr:
         return "DetectAdcRateParamsErr";
     case error_lcard::IoAsyncErr:
