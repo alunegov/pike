@@ -1,12 +1,10 @@
 #pragma once
 
-//#include <algorithm>
 #include <cassert>
-//#include <memory>
 #include <string>
 #include <system_error>
-//#include <type_traits>
 
+// https://github.com/cryptocode/raiblocks/wiki/Error-handling-in-the-node-using-std::error_code-and-std::expected
 // Convenience macro to implement the standard boilerplate for using std::error_code with enums
 // Use this at the end of any header defining one or more error code enums.
 #define REGISTER_ERROR_CODES(namespace_name, enum_type)                                                      \
