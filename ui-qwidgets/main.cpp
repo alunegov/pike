@@ -77,7 +77,7 @@ int main(int argc, char** argv)
     conf.rotator.dir_pin -= 1;
     conf.rotator.mx_pin -= 1;
     if (conf.daq.common_gnd) {
-        constexpr uint16_t AdcCommonGnd{1 << 5};
+        const uint16_t AdcCommonGnd{1 << 5};
 
         conf.inclinometer.x_channel |= AdcCommonGnd;
         conf.inclinometer.y_channel |= AdcCommonGnd;
@@ -93,15 +93,21 @@ int main(int argc, char** argv)
     if (!daq_init_opt) {
         // TODO: log and cleanup
         QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq init error: " + daq_init_opt.error().message()));
+
+        delete daq;
+
         return 1;
     }
+    // плата "закроется" в pike, или при удалении daq
     const auto daq_ttlin_enable_opt = daq->TtlEnable(true);
     if (!daq_ttlin_enable_opt) {
         // TODO: log and cleanup
         QMessageBox::critical(nullptr, "pike", QString::fromStdString("daq ttl enable error: " + daq_ttlin_enable_opt.error().message()));
+
+        delete daq;
+
         return 1;
     }
-    // плата "закрывается" в pike
 
     auto const ender1 = new ros::devices::EnderImpl{daq, conf.ender1.pin};
 
@@ -119,6 +125,15 @@ int main(int argc, char** argv)
     if (trans_table.size() < 2) {
         // TODO: log and cleanup
         QMessageBox::critical(nullptr, "pike", QString::fromStdString("empty trans table"));
+
+        delete ender1;
+        delete ender2;
+        delete rotator;
+        delete mover;
+        delete odometer;
+
+        delete daq;
+
         return 1;
     }
 
@@ -129,10 +144,22 @@ int main(int argc, char** argv)
     const auto open_res = depthometer_transport.Open();
     if (open_res != 0) {
         // TODO: log and cleanup
-        //QMessageBox::critical(nullptr, "pike", QString("COM open error: %1").arg(open_res));
-        //return 1;
+        QMessageBox::critical(nullptr, "pike", QString("COM open error: %1").arg(open_res));
+
+#ifdef NDEBUG
+        delete ender1;
+        delete ender2;
+        delete rotator;
+        delete mover;
+        delete odometer;
+        delete inclinometer;
+
+        delete daq;
+
+        return 1;
+#endif
     }
-    // порт закроется в depthometer, или автоматически при удалении depthometer_transport (в конце main)
+    // порт закроется в depthometer, или при удалении depthometer_transport (в конце main)
 
     auto const depthometer = new ros::devices::CD22{depthometer_transport};
 
@@ -173,7 +200,6 @@ int main(int argc, char** argv)
     delete sliceMsrMapper;
     delete remoteServer;
 
-    // удаляемые выше зависят от pike
     delete pike;
 
     delete ender1;
@@ -184,7 +210,6 @@ int main(int argc, char** argv)
     delete inclinometer;
     delete depthometer;
 
-    // удаляемые выше зависят от daq
     delete daq;
 
     return app_res;
