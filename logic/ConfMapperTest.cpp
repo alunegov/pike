@@ -3,7 +3,7 @@
 #include <ConfMapper.h>
 
 TEST_CASE("ConfMapper Load", "[ConfMapper]") {
-    const auto res = ros::pike::logic::ConfMapper::Load("ref_conf.json");
+    const auto res = ros::pike::logic::ConfMapper::Load("ref_pike.json");
 
     CHECK(res.object_length == 110);
 
@@ -11,7 +11,7 @@ TEST_CASE("ConfMapper Load", "[ConfMapper]") {
     CHECK(res.daq.common_gnd);
     CHECK(res.daq.adc_rate == 12.8);
 
-    CHECK(res.depthometer.port_name == "\\\\.\\COM43");
+    CHECK(res.depthometer.port_name == R"(\\.\COM43)");
     CHECK(res.depthometer.baud_rate == 115200);
 
     CHECK(res.ender1.pin == 3);

@@ -61,7 +61,7 @@ int main(int argc, char** argv)
 
     win.show();
 
-    auto conf = ros::pike::logic::ConfMapper::Load("conf.json");
+    auto conf = ros::pike::logic::ConfMapper::Load("pike.json");
 
     // адаптация настроек под Л-Кард (нумерация каналов/пинов с нуля и флаг общей земли)
     conf.ender1.pin -= 1;
