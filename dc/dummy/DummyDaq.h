@@ -37,6 +37,9 @@ public:
     tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
             const std::function<AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
             const std::atomic_bool& cancel_token) override;
+
+private:
+    const std::chrono::milliseconds TtlOpDelay{1};
 };
 
 }}}

@@ -29,7 +29,7 @@ tl::expected<void, std::error_code> DummyDaq::TtlOut(uint16_t value)
 {
     (void)value;
 
-    std::this_thread::yield();
+    std::this_thread::sleep_for(TtlOpDelay);
 
     return {};
 }
@@ -50,7 +50,7 @@ tl::expected<void, std::error_code> DummyDaq::TtlOut_ClrPin(uint16_t value)
 
 tl::expected<uint16_t, std::error_code> DummyDaq::TtlIn()
 {
-    std::this_thread::yield();
+    std::this_thread::sleep_for(TtlOpDelay);
 
     // TODO: return random
     return static_cast<uint16_t>(0);
