@@ -189,7 +189,7 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
         assert(cur_values_count > 0);
         assert(cur_values_count <= values_count);
 
-        memmove(vals, values, cur_values_count);
+        memmove(vals, values, cur_values_count * sizeof(int16_t));
 
         vals += cur_values_count;
 
