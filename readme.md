@@ -47,7 +47,7 @@ cmake --build . --target ALL_BUILD --config Release
 - Qt5Network.dll
 - Qt5Widgets.dll
 
-Для сбора необходимых файлов Qt рекомендуется использовать windeployqt.exe (для примера см. Korsar3RPi).
+Для сбора необходимых файлов Qt рекомендуется использовать windeployqt.exe (для примера см. Korsar3RPi). Также в системе должен быть установлен VCRedist 2015 x64.
 
 ## Архитектура ПО
 
