@@ -41,19 +41,19 @@ TEST_CASE("OngoingReaderImpl", "[OngoingReaderImpl]") {
 
     ros::pike::logic::OngoingReaderImpl sut{&pike, 1};
 
-    using AdcRead2Func = tl::expected<void, std::error_code>(double_t&, const ros::dc::DAQ::_Channels&,
-            const std::function<ros::dc::DAQ::AdcReadCallback>&, const std::chrono::milliseconds&, const std::atomic_bool&);
+    using InfiniteAdcReadFunc = tl::expected<void, std::error_code>(double_t&, const ros::dc::DAQ::_Channels&,
+            const std::function<ros::dc::DAQ::InfiniteAdcReadCallback>&, const std::chrono::milliseconds&, const std::atomic_bool&);
 
     SECTION("Start/Stop and adc thread") {
-        const auto adcRead2 = [](double_t& reg_freq, const ros::dc::DAQ::_Channels& channels,
-                const std::function<ros::dc::DAQ::AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
+        const auto infiniteAdcRead = [](double_t& reg_freq, const ros::dc::DAQ::_Channels& channels,
+                const std::function<ros::dc::DAQ::InfiniteAdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
                 const std::atomic_bool& cancel_token) -> tl::expected<void, std::error_code> {
             callback(nullptr, 0);
             callback(nullptr, 0);
             return {};
         };
 
-        fakeit::When(OverloadedMethod(daq_mock, AdcRead, AdcRead2Func)).Do(adcRead2);
+        fakeit::When(OverloadedMethod(daq_mock, AdcRead, InfiniteAdcReadFunc)).Do(infiniteAdcRead);
 
         fakeit::Fake(Method(odometer_mock, FillChannels));
         fakeit::Fake(Method(odometer_mock, Update));
@@ -88,7 +88,7 @@ TEST_CASE("OngoingReaderImpl", "[OngoingReaderImpl]") {
     }
 
     SECTION("Start/Stop and misc thread") {
-        fakeit::Fake(OverloadedMethod(daq_mock, AdcRead, AdcRead2Func));
+        fakeit::Fake(OverloadedMethod(daq_mock, AdcRead, InfiniteAdcReadFunc));
 
         fakeit::When(Method(ender1_mock, Get)).AlwaysReturn(false);
 

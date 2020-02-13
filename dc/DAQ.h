@@ -17,7 +17,11 @@ class DAQ
 {
 public:
     using _Channels = std::vector<uint16_t>;
-    using AdcReadCallback = void(const int16_t* values, size_t values_count);
+
+    // cur_values_count - сколько точек добавили в values за текущий вызов
+    using FiniteAdcReadCallback = void(size_t cur_values_count);
+
+    using InfiniteAdcReadCallback = void(const int16_t* values, size_t values_count);
 
     virtual ~DAQ() = default;
 
@@ -35,12 +39,11 @@ public:
 
     virtual tl::expected<uint16_t, std::error_code> TtlIn() = 0;
 
-    // TODO: нужна отмена долгого чтения
-    virtual tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t points_count,
-            const _Channels& channels, int16_t* values) = 0;
+    virtual tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t points_count, const _Channels& channels,
+            int16_t* values, const std::function<FiniteAdcReadCallback>& callback, const std::atomic_bool& cancel_token) = 0;
 
     virtual tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
-            const std::function<AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
+            const std::function<InfiniteAdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
             const std::atomic_bool& cancel_token) = 0;
 };
 

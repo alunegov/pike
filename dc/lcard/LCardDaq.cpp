@@ -167,8 +167,8 @@ tl::expected<uint16_t, std::error_code> LCardDaq::TtlIn()
     return static_cast<uint16_t>(async_param.Data[0]);
 }
 
-tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t points_count,
-        const _Channels& channels, int16_t* values)
+tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t points_count, const _Channels& channels,
+        int16_t* values, const std::function<FiniteAdcReadCallback>& callback, const std::atomic_bool& cancel_token)
 {
     assert(device_ != nullptr);
 
@@ -176,12 +176,13 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
     assert(!channels.empty());
     assert(values != nullptr);
 
-    std::atomic_bool cancel_token{false};
+    std::atomic_bool infinite_cancel_token{false};
 
     int16_t* vals{values};
     const int16_t* const vals_end{values + points_count * channels.size()};
+
     // capture by ref are safe here as latter AdcRead is synchronous
-    const auto callback = [&vals, vals_end, &cancel_token](const int16_t* values, size_t values_count) {
+    const auto infinite_callback = [&vals, vals_end, &callback, &cancel_token, &infinite_cancel_token](const int16_t* values, size_t values_count) {
         assert(values != nullptr);
         assert(values_count > 0);
 
@@ -189,20 +190,24 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, size_t
         assert(cur_values_count > 0);
         assert(cur_values_count <= values_count);
 
-        memmove(vals, values, cur_values_count * sizeof(int16_t));
+        memcpy(vals, values, cur_values_count * sizeof(int16_t));
 
         vals += cur_values_count;
 
-        if (vals >= vals_end) {
-            cancel_token = true;
+        if (callback) {
+            callback(cur_values_count);
+        }
+
+        if ((vals >= vals_end) || cancel_token) {
+            infinite_cancel_token = true;
         }
     };
 
-    return AdcRead(reg_freq, channels, callback, SyncAdcReadCallbackInterval, cancel_token);
+    return AdcRead(reg_freq, channels, infinite_callback, FiniteAdcReadCallbackInterval, infinite_cancel_token);
 }
 
 tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const _Channels& channels,
-        const std::function<AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
+        const std::function<InfiniteAdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
         const std::atomic_bool& cancel_token)
 {
     assert(device_ != nullptr);

@@ -56,10 +56,11 @@ tl::expected<uint16_t, std::error_code> DummyDaq::TtlIn()
     return static_cast<uint16_t>(0);
 }
 
-tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, size_t points_count,
-        const _Channels& channels, int16_t* values)
+tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, size_t points_count, const _Channels& channels,
+        int16_t* values, const std::function<FiniteAdcReadCallback>& callback, const std::atomic_bool& cancel_token)
 {
     (void)values;
+    (void)cancel_token;
 
     assert(reg_freq > 0);
     assert(points_count > 0);
@@ -71,11 +72,15 @@ tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, size_t
 
     // TODO: fill values with random
 
+    if (callback) {
+        callback(points_count * channels.size());
+    }
+
     return {};
 }
 
 tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, const _Channels& channels,
-        const std::function<AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
+        const std::function<InfiniteAdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
         const std::atomic_bool& cancel_token)
 {
     assert(reg_freq > 0);

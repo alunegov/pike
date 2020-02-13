@@ -32,10 +32,10 @@ public:
     tl::expected<uint16_t, std::error_code> TtlIn() override;
 
     tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t points_count, const _Channels& channels,
-            int16_t* values) override;
+            int16_t* values, const std::function<FiniteAdcReadCallback>& callback, const std::atomic_bool& cancel_token) override;
 
     tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
-            const std::function<AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
+            const std::function<InfiniteAdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
             const std::atomic_bool& cancel_token) override;
 
 private:

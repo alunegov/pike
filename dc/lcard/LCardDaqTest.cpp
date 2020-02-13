@@ -122,12 +122,13 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
 
     REQUIRE(init_opt);
 
-    SECTION("sync mode") {
+    SECTION("finite mode") {
         double_t reg_freq{RefRegFreq};
         const size_t points_count{1024};
         std::vector<int16_t> vals(points_count * RefChannels.size());
+        std::atomic_bool cancel_token{false};
 
-        const auto adc_read_opt = sut.AdcRead(reg_freq, points_count, RefChannels, vals.data());
+        const auto adc_read_opt = sut.AdcRead(reg_freq, points_count, RefChannels, vals.data(), nullptr, cancel_token);
 
         REQUIRE(adc_read_opt);
         CHECK(reg_freq == Approx(RefRegFreq).epsilon(0.02));
@@ -139,7 +140,7 @@ TEST_CASE("LCardDaq AdcRead", "[LCardDaq]") {
         CHECK(std::get<1>(max_harm) == Approx(262).margin(1.0));
     }
 
-    SECTION("async mode") {
+    SECTION("infinite mode") {
         double_t reg_freq{RefRegFreq};
         std::atomic_bool cancel_token{false};
 

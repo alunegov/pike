@@ -23,6 +23,17 @@ cmake --build . --target RUN_TESTS --config Release
 ctest
 ```
 
+### Сборка dc.dll
+
+Библиотека dc.dll повторяет интерфейс UsbE_dll_v2.dll (см. uLCardUSBv2SDK.pas) для использования в DCHW.LCard.Ex40.dll.
+
+```
+md build-dc
+cd build-dc
+cmake -G"Visual Studio 14 2015" -AWin32 -DBUILD_SHARED_LIBS=ON ../dc
+cmake --build . --target ALL_BUILD --config Release
+```
+
 ## Дистрибутив
 
 Дистрибутив должен содержать следующие файлы:

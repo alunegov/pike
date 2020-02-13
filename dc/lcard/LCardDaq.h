@@ -56,19 +56,22 @@ public:
     tl::expected<uint16_t, std::error_code> TtlIn() override;
 
     tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, size_t points_count, const _Channels& channels,
-            int16_t* values) override;
+            int16_t* values, const std::function<FiniteAdcReadCallback>& callback, const std::atomic_bool& cancel_token) override;
 
     tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
-            const std::function<AdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
+            const std::function<InfiniteAdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
             const std::atomic_bool& cancel_token) override;
 
 private:
-    // TODO: use lcomp.dll for 32bit
+#if INTPTR_MAX == INT64_MAX
     const char* const LCompName{"lcomp64.dll"};
+#else
+    const char* const LCompName{"lcomp.dll"};
+#endif
     // «адержка при ожидании заполнени€ половинки буфера при чтении
     const std::chrono::milliseconds AdcFillDelay{1};
-    // интервал получени€ данных через callback
-    const std::chrono::milliseconds SyncAdcReadCallbackInterval{100};
+    // интервал получени€ данных через callback при вызове finite AdcRead
+    const std::chrono::milliseconds FiniteAdcReadCallbackInterval{100};
 
     tl::expected<void, std::error_code> NonVirtualDeinit();
 

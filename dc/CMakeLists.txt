@@ -1,18 +1,18 @@
-cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
 
 project(dc LANGUAGES CXX)
 
-set(source_list
+add_library(${PROJECT_NAME}
     "DAQ.h"
     "dummy/DummyDaq.cpp"
     "dummy/DummyDaq.h"
+    "lcard/DchwBridge.cpp"
+    "lcard/DchwBridge.h"
     "lcard/error_lcard.cpp"
     "lcard/error_lcard.hpp"
     "lcard/LCardDaq.cpp"
     "lcard/LCardDaq.h"
 )
-
-add_library(${PROJECT_NAME} ${source_list})
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 14)
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
@@ -36,6 +36,18 @@ if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE /W4)
 else()
     target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
+endif()
+
+# поддержка экспорта/импорта символов библиотеки
+if(BUILD_SHARED_LIBS AND WIN32)
+    target_compile_definitions(${PROJECT_NAME}
+        PUBLIC DC_LCARD_DLL
+        PRIVATE DC_LCARD_EXPORTS
+    )
+
+    target_link_options(${PROJECT_NAME}
+        PRIVATE /DEF:${CMAKE_CURRENT_SOURCE_DIR}/dc.def
+    )
 endif()
 
 if(BUILD_TESTING)

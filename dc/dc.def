@@ -1,0 +1,14 @@
+EXPORTS
+    GetDllProtoVer
+    InitDevice
+    DestroyDevice
+    GetErrorText2
+    GetRate
+    Break_Adc
+    Slow_Adc
+    Fast_Adc
+    SetTTL_Line
+    GetTTL_Line
+    ActiveTTL_Line
+    DAC_Exists
+    DAC_Sample
