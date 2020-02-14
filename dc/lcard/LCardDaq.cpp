@@ -73,6 +73,12 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::LoadBiosErr));
     }
 
+    status = device_->PlataTest();
+    if (status != L_SUCCESS) {
+        Deinit();
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::PlataTestErr));
+    }
+
     PLATA_DESCR_U2 plata_descr;
 
     status = device_->ReadPlataDescr(&plata_descr);
@@ -81,16 +87,18 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::ReadPlataDescrErr));
     }
 
-    status = device_->EnableCorrection();
-    if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) {
-        Deinit();
-        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::EnableCorrectionErr));
-    }
+    _revision = DetectRevision(board_type_, plata_descr);
 
     adc_rate_params_ = DetectAdcRateParams(board_type_, plata_descr);
     if (adc_rate_params_.FClock == 0) {
         Deinit();
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::DetectAdcRateParamsErr));
+    }
+
+    status = device_->EnableCorrection();
+    if ((status != L_SUCCESS) && (status != L_NOTSUPPORTED)) {
+        Deinit();
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::EnableCorrectionErr));
     }
 
     return {};
@@ -288,6 +296,30 @@ tl::expected<void, std::error_code> LCardDaq::NonVirtualDeinit()
     }
 
     return {};
+}
+
+char LCardDaq::DetectRevision(ULONG board_type, const PLATA_DESCR_U2& plata_descr)
+{
+    switch (board_type) {
+    case PCIA:
+    case PCIB:
+    case PCIC:
+        return plata_descr.t1.Rev;
+    case E440:
+        return plata_descr.t4.Rev;
+    case E140:
+        return plata_descr.t5.Rev;
+    case E2010:
+    case E2010B:
+        return plata_descr.t6.Rev;
+    case E154:
+        return plata_descr.t7.Rev;
+    case L791:
+        return plata_descr.t3.Rev;
+    default:
+        assert(false);
+        return '\0';
+    }
 }
 
 const char* LCardDaq::DetectBiosName(ULONG board_type)

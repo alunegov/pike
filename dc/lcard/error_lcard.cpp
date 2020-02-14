@@ -23,6 +23,8 @@ std::string error_lcard_messages::message(int ev) const
         return "GetSlotParamErr";
     case error_lcard::LoadBiosErr:
         return "LoadBiosErr";
+    case error_lcard::PlataTestErr:
+        return "PlataTestErr";
     case error_lcard::ReadPlataDescrErr:
         return "ReadPlataDescrErr";
     case error_lcard::EnableCorrectionErr:

@@ -54,7 +54,7 @@ struct UsbLModul
     void* Modul;
 
     /// <summary>
-    /// Скорость работы модуля на шине USB: 0 - USB 1.1, 1 - USB 2.0 
+    /// Скорость работы модуля на шине USB: 0 - USB 1.1, 1 - USB 2.0
     /// </summary>
     /// <remarks>
     /// Значения совпадают с константами USB11_LUSBAPI и USB20_LUSBAPI модуля Lusbapi

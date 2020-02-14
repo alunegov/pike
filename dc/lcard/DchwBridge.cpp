@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <memory>
 #include <thread>
 
 #include <Windows.h>
@@ -37,26 +38,51 @@ uint8_t __stdcall InitDevice(uint8_t ModulType, uint8_t NumberSlot, struct UsbLM
     assert(UsbLModul);
     assert(!(*UsbLModul));
 
-    auto modul_adapter = new ModulAdapter;
+    auto modul_adapter = std::make_unique<ModulAdapter>();
+    ros::dc::lcard::LCardDaq& daq{modul_adapter->daq};
 
-    const auto init_opt = modul_adapter->daq.Init(NumberSlot);
+    const auto init_opt = daq.Init(NumberSlot);
     if (!init_opt) {
         assert(init_opt.error().value() <= UINT8_MAX);
         return static_cast<uint8_t>(init_opt.error().value());
     }
 
-    // TODO: ModulType должен совпадать с загруженным модулем
+    // ModulType (см. DcDeviceExt_Kamerton.TDchwModuleType, код плюс 1) должен совпадать с типом загруженного модул€
+    switch (ModulType) {
+    case 1:
+        if (daq.GetBoardType() != E440) {
+            return 1;
+        }
+        break;
+    case 2:
+        if (daq.GetBoardType() != E140) {
+            return 1;
+        }
+        break;
+    case 3:
+        if ((daq.GetBoardType() != E2010) && (daq.GetBoardType() != E2010B)) {
+            return 1;
+        }
+        break;
+    case 4:
+        if (daq.GetBoardType() != E154) {
+            return 1;
+        }
+        break;
+    default:
+        return 1;
+    }
 
-    //modul_adapter->cancel_token = false;
+    auto modul = std::make_unique<struct UsbLModul>();
 
-    *UsbLModul = new struct UsbLModul;
+    modul->ModuleType = ModulType;
+    //modul->ModulState не используем
+    modul->Modul = modul_adapter.release();
+    modul->UsbSpeed = 1;  // ѕредполагаем, что USB 2.0. ¬ IDaqLDevice нет соответсвующего метода
+    //modul->RMD не используем
+    modul->Revision = daq.GetRevision();  // daq ещЄ валиден, хот€ modul_adapter уже нет
 
-    (*UsbLModul)->ModuleType = ModulType;
-    //(*UsbLModul)->ModulState
-    (*UsbLModul)->Modul = modul_adapter;
-    (*UsbLModul)->UsbSpeed = 0;
-    //(*UsbLModul)->RMD
-    (*UsbLModul)->Revision = '\0';
+    *UsbLModul = modul.release();
 
     return 0;
 }
@@ -103,7 +129,7 @@ struct Point __stdcall GetRate(const struct UsbLModul* aModule, double_t aChanne
     (void)aChannelRate;
     (void)aChannelCount;
 
-    return {};
+    return {0, 0};
 }
 
 DC_LCARD_API
@@ -181,7 +207,7 @@ uint8_t __stdcall Fast_Adc(struct UsbLModul* pULM, struct ParamRead* AdcParam, s
     (void)AdcParam;
     (void)pOR;
 
-    return 101;
+    return 101;  // Ќеподдерживаема€ команда
 }
 
 DC_LCARD_API

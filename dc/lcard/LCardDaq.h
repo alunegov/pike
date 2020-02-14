@@ -39,6 +39,10 @@ public:
 
     ~LCardDaq() override;
 
+    uint32_t GetBoardType() const { return board_type_; }
+
+    char GetRevision() const { return _revision; }
+
     // DAQ
 
     tl::expected<void, std::error_code> Init(size_t slot_num) override;
@@ -77,6 +81,8 @@ private:
 
     static const char* DetectBiosName(ULONG board_type);
 
+    static char DetectRevision(ULONG board_type, const PLATA_DESCR_U2& plata_descr);
+
     static AdcRateParams DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr);
 
     tl::expected<void, std::error_code> PrepareAdc(double_t& reg_freq, const _Channels& channels,
@@ -110,6 +116,7 @@ private:
     HINSTANCE lcomp_handle_{nullptr};
     IDaqLDevice* device_{nullptr};
     ULONG board_type_{NONE};
+    char _revision{'\0'};
     AdcRateParams adc_rate_params_{};
 
     uint16_t ttl_out_value{0};
