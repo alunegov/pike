@@ -7,13 +7,13 @@ set(K3_ADCRAW "AdcRaw_t=int16_t")
 set(K3_ROSFLOAT "RosFloat_t=double_t")
 set(K3_L10N "RUS")
 
+if(BUILD_TESTING)
+    enable_testing()
+endif()
+
 add_subdirectory(_ext/RosMath RosMath)
 add_subdirectory(dc)
 add_subdirectory(devices)
 add_subdirectory(logic)
 add_subdirectory(ui-modules)
 add_subdirectory(ui-qwidgets)
-
-if(BUILD_TESTING)
-    enable_testing()
-endif()
