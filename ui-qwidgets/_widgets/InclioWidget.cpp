@@ -1,8 +1,6 @@
 #include <InclioWidget.h>
 
 #include <cmath>
-#define _USE_MATH_DEFINES
-#include <math.h>
 
 #include <QTimer>
 #include <QtGui/QPainter>
@@ -83,10 +81,12 @@ void InclioWidget::update_view()
     painter.setPen(pen2_);
     painter.drawEllipse(c, r, r);
 
-    const auto x = c.x() + r * std::cos(angle_ * M_PI / 180);
-    const auto y = c.y() + r * std::sin(angle_ * M_PI / 180);
     painter.setPen(pen1_);
-    painter.drawLine(c, QPoint{(int)x, (int)y});
+    //painter.save();
+    painter.translate(c.x(), c.y());
+    painter.rotate(-angle_);
+    painter.drawLine(0, 0, r, 0);
+    //painter.restore();
 
     angle_view_->setPixmap(pixmap);
 }
