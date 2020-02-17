@@ -45,6 +45,10 @@ public:
     virtual tl::expected<void, std::error_code> AdcRead(double_t& reg_freq, const _Channels& channels,
             const std::function<InfiniteAdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
             const std::atomic_bool& cancel_token) = 0;
+
+    virtual bool IsDacPresent() = 0;
+
+    virtual tl::expected<void, std::error_code> DacWrite(uint16_t channel, int16_t value) = 0;
 };
 
 }}

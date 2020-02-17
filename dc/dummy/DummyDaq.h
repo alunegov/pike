@@ -38,6 +38,10 @@ public:
             const std::function<InfiniteAdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
             const std::atomic_bool& cancel_token) override;
 
+    bool IsDacPresent() override { return true; };
+
+    tl::expected<void, std::error_code> DacWrite(uint16_t channel, int16_t value) override;
+
 private:
     const std::chrono::milliseconds TtlOpDelay{1};
 };

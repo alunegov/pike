@@ -87,7 +87,7 @@ tl::expected<void, std::error_code> LCardDaq::Init(size_t slot_num)
         return tl::make_unexpected(ros::make_error_code(ros::error_lcard::ReadPlataDescrErr));
     }
 
-    _revision = DetectRevision(board_type_, plata_descr);
+    _board_desription = ExtractBoardDesription(board_type_, plata_descr);
 
     adc_rate_params_ = DetectAdcRateParams(board_type_, plata_descr);
     if (adc_rate_params_.FClock == 0) {
@@ -275,6 +275,43 @@ tl::expected<void, std::error_code> LCardDaq::AdcRead(double_t& reg_freq, const 
     return {};
 }
 
+tl::expected<void, std::error_code> LCardDaq::DacWrite(uint16_t channel, int16_t value)
+{
+    assert(device_ != nullptr);
+    //assert(IsDacPresent());
+
+    assert((channel == 0) || (channel == 1));
+    // TODO: знаковый value передаётся как беззнаковый и ещё обрезается сверху в lcomp (в lusbapi value знаковый)
+
+    ASYNC_PAR async_param;
+
+    async_param.s_Type = L_ASYNC_DAC_OUT;
+    if (board_type_ == L791) {
+        // у L791 нужно указывать состояние сразу двух каналов - заполняем указанный, другой выключаем (получается,
+        // что одновременно с двумя каналами работать не получится).
+
+        // сначала выключаем вывод на оба канала
+        async_param.Chn[0] = 0;
+        async_param.Chn[1] = 0;
+
+        async_param.Chn[channel] = 1;
+        async_param.Data[channel] = value;
+    } else {
+        // у E140revB дополнительно есть режим вывода сразу двух каналов (Mode == 2, Data[0] и Data[1])
+        // у E154 один канал ЦАП (Mode не используется)
+
+        async_param.Mode = channel;
+        async_param.Data[0] = value;
+    }
+
+    const ULONG status = device_->IoAsync(&async_param);
+    if (status != L_SUCCESS) {
+        return tl::make_unexpected(ros::make_error_code(ros::error_lcard::IoAsyncErr));
+    }
+
+    return {};
+}
+
 tl::expected<void, std::error_code> LCardDaq::NonVirtualDeinit()
 {
     if (device_ != nullptr) {
@@ -298,30 +335,6 @@ tl::expected<void, std::error_code> LCardDaq::NonVirtualDeinit()
     return {};
 }
 
-char LCardDaq::DetectRevision(ULONG board_type, const PLATA_DESCR_U2& plata_descr)
-{
-    switch (board_type) {
-    case PCIA:
-    case PCIB:
-    case PCIC:
-        return plata_descr.t1.Rev;
-    case E440:
-        return plata_descr.t4.Rev;
-    case E140:
-        return plata_descr.t5.Rev;
-    case E2010:
-    case E2010B:
-        return plata_descr.t6.Rev;
-    case E154:
-        return plata_descr.t7.Rev;
-    case L791:
-        return plata_descr.t3.Rev;
-    default:
-        assert(false);
-        return '\0';
-    }
-}
-
 const char* LCardDaq::DetectBiosName(ULONG board_type)
 {
     switch (board_type) {
@@ -338,6 +351,46 @@ const char* LCardDaq::DetectBiosName(ULONG board_type)
     default:
         return "dummy";  // no bios needed
     }
+}
+
+LCardDaq::BoardDesription LCardDaq::ExtractBoardDesription(ULONG board_type, const PLATA_DESCR_U2& plata_descr)
+{
+    LCardDaq::BoardDesription res{};
+
+    switch (board_type) {
+    case PCIA:
+    case PCIB:
+    case PCIC:
+        res.Revision = plata_descr.t1.Rev;
+        res.IsDacPresent = plata_descr.t1.IsDacPresent == 1u;
+        break;
+    case E440:
+        res.Revision = plata_descr.t4.Rev;
+        res.IsDacPresent = plata_descr.t4.IsDacPresent == '\1';
+        break;
+    case E140:
+        res.Revision = plata_descr.t5.Rev;
+        res.IsDacPresent = plata_descr.t5.IsDacPresent == '\1';
+        break;
+    case E2010:
+    case E2010B:
+        res.Revision = plata_descr.t6.Rev;
+        res.IsDacPresent = plata_descr.t6.IsDacPresent == '\1';
+        break;
+    case E154:
+        res.Revision = plata_descr.t7.Rev;
+        res.IsDacPresent = plata_descr.t7.IsDacPresent == '\1';
+        break;
+    case L791:
+        res.Revision = plata_descr.t3.Rev;
+        res.IsDacPresent = plata_descr.t3.IsDacPresent == 1u;
+        break;
+    default:
+        assert(false);
+        break;
+    }
+
+    return res;
 }
 
 AdcRateParams LCardDaq::DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr)

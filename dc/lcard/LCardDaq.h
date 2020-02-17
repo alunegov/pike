@@ -41,7 +41,7 @@ public:
 
     uint32_t GetBoardType() const { return board_type_; }
 
-    char GetRevision() const { return _revision; }
+    char GetRevision() const { return _board_desription.Revision; }
 
     // DAQ
 
@@ -66,6 +66,10 @@ public:
             const std::function<InfiniteAdcReadCallback>& callback, const std::chrono::milliseconds& callback_interval,
             const std::atomic_bool& cancel_token) override;
 
+    bool IsDacPresent() override { return _board_desription.IsDacPresent; };
+
+    tl::expected<void, std::error_code> DacWrite(uint16_t channel, int16_t value) override;
+
 private:
 #if INTPTR_MAX == INT64_MAX
     const char* const LCompName{"lcomp64.dll"};
@@ -81,7 +85,13 @@ private:
 
     static const char* DetectBiosName(ULONG board_type);
 
-    static char DetectRevision(ULONG board_type, const PLATA_DESCR_U2& plata_descr);
+    struct BoardDesription
+    {
+        char Revision;
+        bool IsDacPresent;
+    };
+
+    static BoardDesription ExtractBoardDesription(ULONG board_type, const PLATA_DESCR_U2& plata_descr);
 
     static AdcRateParams DetectAdcRateParams(ULONG board_type, const PLATA_DESCR_U2& plata_descr);
 
@@ -116,7 +126,7 @@ private:
     HINSTANCE lcomp_handle_{nullptr};
     IDaqLDevice* device_{nullptr};
     ULONG board_type_{NONE};
-    char _revision{'\0'};
+    BoardDesription _board_desription{};
     AdcRateParams adc_rate_params_{};
 
     uint16_t ttl_out_value{0};

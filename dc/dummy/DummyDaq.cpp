@@ -111,4 +111,12 @@ tl::expected<void, std::error_code> DummyDaq::AdcRead(double_t& reg_freq, const 
     return {};
 }
 
+tl::expected<void, std::error_code> DummyDaq::DacWrite(uint16_t channel, int16_t value)
+{
+    (void)channel;
+    (void)value;
+
+    return {};
+}
+
 }}}

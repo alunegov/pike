@@ -207,7 +207,7 @@ uint8_t __stdcall Fast_Adc(struct UsbLModul* pULM, struct ParamRead* AdcParam, s
     (void)AdcParam;
     (void)pOR;
 
-    return 101;  // Неподдерживаемая команда
+    return 101;  // "Неподдерживаемая команда" в DCHW.LCard.Ex40.dll
 }
 
 DC_LCARD_API
@@ -257,17 +257,22 @@ void __stdcall ActiveTTL_Line(struct UsbLModul* pULM, bool Active)
 DC_LCARD_API
 bool __stdcall DAC_Exists(struct UsbLModul* aULM)
 {
-    (void)aULM;
+    assert(aULM);
 
-    return false;
+    auto const modul_adapter = static_cast<ModulAdapter*>(aULM->Modul);
+    assert(modul_adapter);
+
+    return modul_adapter->daq.IsDacPresent();
 }
 
 DC_LCARD_API
 bool __stdcall DAC_Sample(struct UsbLModul* aULM, uint8_t aDACChannel, int16_t aValue)
 {
-    (void)aULM;
-    (void)aDACChannel;
-    (void)aValue;
+    assert(aULM);
 
-    return false;
+    auto const modul_adapter = static_cast<ModulAdapter*>(aULM->Modul);
+    assert(modul_adapter);
+
+    // kind of explicit operator bool()
+    return static_cast<bool>(modul_adapter->daq.DacWrite(aDACChannel, aValue));
 }
