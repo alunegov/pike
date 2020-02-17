@@ -4,7 +4,7 @@
 
 Для сборки используется CMake, VS2015. Внешние зависимости - Qt5.
 
-```
+```bash
 md build
 cd build
 cmake -G"Visual Studio 14 2015" -Ax64 -DQt5_DIR=${VS_QT}/lib/cmake/Qt5 ..
@@ -15,7 +15,7 @@ cmake --build . --target ALL_BUILD --config Release
 
 ### Сборка с тестами
 
-```
+```bash
 cmake -G"Visual Studio 14 2015" -Ax64 -DQt5_DIR=${VS_QT}/lib/cmake/Qt5 -DBUILD_TESTING=ON ..
 cmake --build . --target ALL_BUILD --config Release
 # или так, чтобы собрать только тесты
@@ -27,7 +27,7 @@ ctest
 
 Библиотека dc.dll повторяет интерфейс UsbE_dll_v2.dll (см. uLCardUSBv2SDK.pas) для использования в DCHW.LCard.Ex40.dll.
 
-```
+```bash
 md build-dc
 cd build-dc
 cmake -G"Visual Studio 14 2015" -AWin32 -DBUILD_SHARED_LIBS=ON ../dc
