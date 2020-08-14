@@ -38,8 +38,7 @@ set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
 target_include_directories(${PROJECT_NAME}
     PUBLIC "."
 
-    PRIVATE "../shared"
-
+    PRIVATE "../_ext/errors-helper"
     PRIVATE "../_ext/rapidjson/include"
 )
 

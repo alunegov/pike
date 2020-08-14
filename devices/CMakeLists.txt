@@ -44,8 +44,7 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE "odometer"
     PRIVATE "rotator"
 
-    PRIVATE "../shared"
-
+    PRIVATE "../_ext/errors-helper"
     PUBLIC "../_ext/expected/include"
     PRIVATE "../_ext/serial"
 )
