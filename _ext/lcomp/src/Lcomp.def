@@ -1,3 +1,0 @@
-LIBRARY lcomp.dll
-EXPORTS
-   CreateInstance @1 PRIVATE
