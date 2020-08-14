@@ -16,3 +16,6 @@
 [submodule "_ext/expected"]
 	path = _ext/expected
 	url = https://github.com/TartanLlama/expected.git
+[submodule "_ext/lcomp"]
+	path = _ext/lcomp
+	url = ../lcomp
