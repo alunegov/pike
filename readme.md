@@ -1,13 +1,20 @@
 # pike
 
+## Подготовка
+
+Для сборки используются:
+1. CMake
+2. Visual Studio 2015
+3. Qt 5.12 с набором msvc2015_64, опционально Qt Creator/Qt Designer для разработки UI
+
 ## Сборка
 
-Для сборки используется CMake, VS2015. Внешние зависимости - Qt5.
+Компиляция для Windows идёт под 64-битную архитектуру, п.ч. Qt поставляет для VS 2015 только 64-битный набор (тулчейн) msvc2015_64. Сама Qt рекомендует собирать 32-bit в VS 2015 с использованием набора msvc2017.
 
-```bash
+```sh
 md build
 cd build
-cmake -G"Visual Studio 14 2015" -Ax64 -DQt5_DIR=${VS_QT}/lib/cmake/Qt5 ..
+cmake -G "Visual Studio 14 2015" -A x64 -D Qt5_DIR=${VS_QT}/lib/cmake/Qt5 ..
 cmake --build . --target ALL_BUILD --config Release
 ```
 
@@ -15,8 +22,8 @@ cmake --build . --target ALL_BUILD --config Release
 
 ### Сборка с тестами
 
-```bash
-cmake -G"Visual Studio 14 2015" -Ax64 -DQt5_DIR=${VS_QT}/lib/cmake/Qt5 -DBUILD_TESTING=ON ..
+```sh
+cmake -G "Visual Studio 14 2015" -A x64 -D Qt5_DIR=${VS_QT}/lib/cmake/Qt5 -D BUILD_TESTING=ON ..
 cmake --build . --target ALL_BUILD --config Release
 # или так, чтобы собрать только тесты
 cmake --build . --target RUN_TESTS --config Release
@@ -27,10 +34,10 @@ ctest
 
 Библиотека dc.dll повторяет интерфейс UsbE_dll_v2.dll (см. uLCardUSBv2SDK.pas) для использования в DCHW.LCard.Ex40.dll.
 
-```bash
+```sh
 md build-dc
 cd build-dc
-cmake -G"Visual Studio 14 2015" -AWin32 -DBUILD_SHARED_LIBS=ON ../dc
+cmake -G "Visual Studio 14 2015" -A Win32 -D BUILD_SHARED_LIBS=ON ../_ext/dc
 cmake --build . --target ALL_BUILD --config Release
 ```
 

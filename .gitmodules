@@ -16,6 +16,9 @@
 [submodule "_ext/expected"]
 	path = _ext/expected
 	url = https://github.com/TartanLlama/expected.git
+[submodule "_ext/dc"]
+	path = _ext/dc
+	url = ../dc-cpp
 [submodule "_ext/errors-helper"]
 	path = _ext/errors-helper
 	url = ../errors-helper

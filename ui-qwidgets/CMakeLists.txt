@@ -57,9 +57,8 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE "../devices/pike"
     PRIVATE "../devices/rotator"
 
-    PRIVATE "../dc/dummy"
-    PRIVATE "../dc/lcard"
-
+    PRIVATE "../_ext/dc/dummy"
+    PRIVATE "../_ext/dc/lcard"
     PRIVATE "../_ext/lcomp/include"
     PRIVATE "../_ext/serial"
 )
