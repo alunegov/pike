@@ -25,20 +25,7 @@ cmake --build . --target ALL_BUILD --config Release
 ```sh
 cmake -G "Visual Studio 14 2015" -A x64 -D Qt5_DIR=${VS_QT}/lib/cmake/Qt5 -D BUILD_TESTING=ON ..
 cmake --build . --target ALL_BUILD --config Release
-# или так, чтобы собрать только тесты
-cmake --build . --target RUN_TESTS --config Release
 ctest
-```
-
-### Сборка dc.dll
-
-Библиотека dc.dll повторяет интерфейс UsbE_dll_v2.dll (см. uLCardUSBv2SDK.pas) для использования в DCHW.LCard.Ex40.dll.
-
-```sh
-md build-dc
-cd build-dc
-cmake -G "Visual Studio 14 2015" -A Win32 -D BUILD_SHARED_LIBS=ON ../_ext/dc
-cmake --build . --target ALL_BUILD --config Release
 ```
 
 ## Дистрибутив
@@ -54,7 +41,7 @@ cmake --build . --target ALL_BUILD --config Release
 - Qt5Network.dll
 - Qt5Widgets.dll
 
-Для сбора необходимых файлов Qt рекомендуется использовать windeployqt.exe (для примера см. Korsar3RPi). Также в системе должен быть установлен VCRedist 2015 x64.
+Для сбора всех необходимых файлов Qt рекомендуется использовать windeployqt.exe (для примера см. Korsar3RPi). Также в системе должен быть установлен VCRedist 2015 x64.
 
 ## Архитектура ПО
 
